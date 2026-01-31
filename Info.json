@@ -1,0 +1,12 @@
+{
+  "Id": "Iridium",
+  "DisplayName": "Iridium",
+  "Author": "Xbodwf",
+  "Version": "1.0.0",
+  "ManagerVersion": "0.27.0",
+  "Requirements": [],
+  "AssemblyName": "Iridium.dll",
+  "EntryMethod": "Iridium.Main.Load",
+  "HomePage": "",
+  "Repository": ""
+}
