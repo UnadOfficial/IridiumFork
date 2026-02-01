@@ -17,6 +17,8 @@ namespace Iridium
         public bool dontCompress = false;
         public bool dontResizeMultipleOf4 = false;
         public bool dontResizeCollider = false;
+        public bool disableShadows = false;
+        public bool optimizeDecorationUpdate = false;
 
         public bool removeNews = false;
 
@@ -40,21 +42,21 @@ namespace Iridium
         private static GUIStyle? _textFieldStyle;
         private static GUIStyle? _infoBoxStyle;
         private static GUIStyle? _warningBoxStyle;
-        private static readonly System.Collections.Generic.Dictionary<string, Texture2D> _textureCache = new System.Collections.Generic.Dictionary<string, Texture2D>();
+        private static readonly System.Collections.Generic.Dictionary<string, Texture2D> _textureCache = [];
 
         private void InitializeStyles()
         {
             if (_cardStyle != null) return;
 
             // Android 14 / Material 3 Dark Palette
-            Color surfaceContainer = new Color(0.13f, 0.13f, 0.15f); // Surface Container
-            Color primary = new Color(0.66f, 0.76f, 1.0f);           // Primary (M3 Blue)
-            Color onSurface = new Color(0.88f, 0.88f, 0.9f);         // On Surface
-            Color surfaceContainerHigh = new Color(0.17f, 0.17f, 0.19f);
-            Color errorContainer = new Color(0.35f, 0.1f, 0.1f);     // Error Container
-            Color onErrorContainer = new Color(1.0f, 0.7f, 0.7f);    // On Error Container
-            Color infoContainer = new Color(0.1f, 0.2f, 0.35f);      // Info/Secondary Container
-            Color onInfoContainer = new Color(0.7f, 0.85f, 1.0f);    // On Info Container
+            Color surfaceContainer = new(0.13f, 0.13f, 0.15f); // Surface Container
+            Color primary = new(0.66f, 0.76f, 1.0f);           // Primary (M3 Blue)
+            Color onSurface = new(0.88f, 0.88f, 0.9f);         // On Surface
+            Color surfaceContainerHigh = new(0.17f, 0.17f, 0.19f);
+            Color errorContainer = new(0.35f, 0.1f, 0.1f);     // Error Container
+            Color onErrorContainer = new(1.0f, 0.7f, 0.7f);    // On Error Container
+            Color infoContainer = new(0.1f, 0.2f, 0.35f);      // Info/Secondary Container
+            Color onInfoContainer = new(0.7f, 0.85f, 1.0f);    // On Info Container
 
             _cardStyle = new GUIStyle(GUI.skin.box)
             {
@@ -125,13 +127,10 @@ namespace Iridium
         private bool M3Switch(bool value, string label)
         {
             GUILayout.BeginHorizontal(GUILayout.Height(32));
-            if (!string.IsNullOrEmpty(label))
-            {
-                GUILayout.Label(label, _labelStyle, GUILayout.ExpandWidth(true));
-            }
+            if (!string.IsNullOrEmpty(label)) GUILayout.Label(label, _labelStyle, GUILayout.ExpandWidth(true));
             
-            Color trackColor = value ? new Color(0.66f, 0.76f, 1.0f) : new Color(0.28f, 0.28f, 0.31f);
-            Color thumbColor = value ? new Color(0.0f, 0.2f, 0.4f) : new Color(0.55f, 0.55f, 0.58f);
+            Color trackColor = value ? new(0.66f, 0.76f, 1.0f) : new(0.28f, 0.28f, 0.31f);
+            Color thumbColor = value ? new(0.0f, 0.2f, 0.4f) : new(0.55f, 0.55f, 0.58f);
 
             Rect rect = GUILayoutUtility.GetRect(40, 24, GUILayout.Width(40), GUILayout.Height(24));
             
@@ -142,16 +141,12 @@ namespace Iridium
             // Draw Thumb (Circle)
             float thumbSize = 18;
             float thumbX = value ? rect.x + rect.width - thumbSize - 3 : rect.x + 3;
-            Rect thumbRect = new Rect(thumbX, rect.y + (rect.height - thumbSize) / 2, thumbSize, thumbSize);
+            Rect thumbRect = new(thumbX, rect.y + (rect.height - thumbSize) / 2, thumbSize, thumbSize);
             GUI.color = thumbColor;
             GUI.DrawTexture(thumbRect, GetCachedRoundedTex(32, 32, 16, Color.white));
             
             GUI.color = Color.white;
-            
-            if (GUI.Button(rect, "", GUIStyle.none))
-            {
-                value = !value;
-            }
+            if (GUI.Button(rect, "", GUIStyle.none)) value = !value;
             
             GUILayout.EndHorizontal();
             return value;
@@ -160,19 +155,17 @@ namespace Iridium
         private Texture2D GetCachedRoundedTex(int width, int height, float radius, Color col)
         {
             string key = $"{width}_{height}_{radius}_{col.r}_{col.g}_{col.b}_{col.a}";
-            if (_textureCache.TryGetValue(key, out Texture2D tex) && tex != null)
-            {
-                return tex;
-            }
+            if (_textureCache.TryGetValue(key, out Texture2D tex) && tex != null) return tex;
 
             tex = MakeRoundedTex(width, height, radius, col);
+            tex.hideFlags = HideFlags.HideAndDontSave;
             _textureCache[key] = tex;
             return tex;
         }
 
         private Texture2D MakeRoundedTex(int width, int height, float radius, Color col)
         {
-            Texture2D tex = new Texture2D(width, height);
+            Texture2D tex = new(width, height);
             Color[] pix = new Color[width * height];
 
             for (int y = 0; y < height; y++)
@@ -212,7 +205,7 @@ namespace Iridium
         {
             Color[] pix = new Color[width * height];
             for (int i = 0; i < pix.Length; ++i) pix[i] = col;
-            Texture2D result = new Texture2D(width, height);
+            Texture2D result = new(width, height);
             result.SetPixels(pix);
             result.Apply();
             return result;
@@ -231,8 +224,9 @@ namespace Iridium
             foreach (var lang in langs)
             {
                 bool isCurrent = language == lang;
-                if (isCurrent) GUI.color = new Color(0.66f, 0.76f, 1.0f);
-                if (GUILayout.Button(lang.ToUpper(), _buttonStyle, GUILayout.Width(60)))
+                if (isCurrent) GUI.color = new(0.66f, 0.76f, 1.0f);
+                string displayName = Localization.GetDisplayName(lang);
+                if (GUILayout.Button(displayName.ToUpper(), _buttonStyle, GUILayout.Width(100)))
                 {
                     language = lang;
                 }
@@ -279,6 +273,8 @@ namespace Iridium
 
                 GUILayout.Space(4);
                 dontResizeCollider = M3Switch(dontResizeCollider, Localization.Get("DontResizeCollider"));
+                disableShadows = M3Switch(disableShadows, Localization.Get("DisableShadows"));
+                optimizeDecorationUpdate = M3Switch(optimizeDecorationUpdate, Localization.Get("OptimizeDecorationUpdate"));
 
                 // Error states
                 if (typeof(Notification).GetMethod("SetupNotification", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic) == null)

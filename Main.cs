@@ -11,7 +11,7 @@ namespace Iridium
         public static UnityModManager.ModEntry? Mod { get; private set; }
         public static Harmony? Harmony { get; private set; }
         public static Settings Settings { get; private set; } = null!;
-        public static UnityModManager.ModEntry.ModLogger Logger;
+        public static UnityModManager.ModEntry.ModLogger? Logger;
 
         public static bool Load(UnityModManager.ModEntry modEntry)
         {

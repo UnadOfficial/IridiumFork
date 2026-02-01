@@ -10,7 +10,7 @@ namespace Iridium.Patches
 {
     public static class OptimizerPatches
     {
-        public static Dictionary<string, Vector3> decorRatios = new Dictionary<string, Vector3>();
+        public static Dictionary<string, Vector3> decorRatios = [];
         public static float savedVRAM_MB = 0f;
 
         public static void ResetDecorOptimization(bool fullReset)
@@ -39,9 +39,9 @@ namespace Iridium.Patches
                 var rt = RenderTexture.GetTemporary(targetW, targetH, 0, RenderTextureFormat.ARGB32);
                 rt.filterMode = FilterMode.Bilinear;
                 Graphics.Blit(source, rt);
-                var result = new Texture2D(targetW, targetH, TextureFormat.RGBA32, false);
+                Texture2D result = new(targetW, targetH, TextureFormat.RGBA32, false);
                 RenderTexture.active = rt;
-                result.ReadPixels(new Rect(0, 0, targetW, targetH), 0, 0);
+                result.ReadPixels(new(0, 0, targetW, targetH), 0, 0);
                 result.Apply(false);
                 RenderTexture.active = null;
                 RenderTexture.ReleaseTemporary(rt);
@@ -81,7 +81,7 @@ namespace Iridium.Patches
 
                     if (__result.width != newW || __result.height != newH)
                     {
-                        decorRatios[__result.name] = new Vector3((float)__result.width / newW, (float)__result.height / newH, 1f);
+                        decorRatios[__result.name] = new((float)__result.width / newW, (float)__result.height / newH, 1f);
                         var optimized = CreateProcessedTexture(__result, newW, newH);
                         if (!Main.Settings.dontCompress)
                         {
@@ -103,7 +103,7 @@ namespace Iridium.Patches
                 }
                 catch (Exception e)
                 {
-                    Main.Logger.Log("Decoration optimization failed: " + e.Message);
+                    Main.Logger?.Log("Decoration optimization failed: " + e.Message);
                 }
 
                 if (!Main.Settings.dontShowSavedMemory)
@@ -114,14 +114,17 @@ namespace Iridium.Patches
             }
         }
 
-        [HarmonyPatch(typeof(scnGame), "OnDestroy")]
-        public static class OptimizationCleanupPatch { public static void Prefix() => ResetDecorOptimization(true); }
+        [HarmonyPatch(typeof(scnGame))]
+        public static class OptimizationResetPatches
+        {
+            [HarmonyPatch("OnDestroy")]
+            [HarmonyPatch("LoadAndPlayLevel")]
+            [HarmonyPrefix]
+            public static void FullReset() => ResetDecorOptimization(true);
 
-        [HarmonyPatch(typeof(scnGame), "LoadAndPlayLevel")]
-        public static class OptimizationResetPatch { public static void Prefix() => ResetDecorOptimization(true); }
-
-        [HarmonyPatch(typeof(scnGame), "LoadLevel")]
-        public static class OptimizationSoftResetPatch { public static void Prefix() => ResetDecorOptimization(false); }
+            [HarmonyPatch("LoadLevel"), HarmonyPrefix]
+            public static void SoftReset() => ResetDecorOptimization(false);
+        }
 
         [HarmonyPatch(typeof(scrCustomBackgroundSprite), "SetCustomBG")]
         public static class BackgroundScalingPatch
@@ -131,8 +134,11 @@ namespace Iridium.Patches
                 if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null) return;
                 var sprite = __instance.displayedSprite.sprite;
                 if (sprite?.texture == null) return;
+
                 if (TryGetDecorRatio(sprite.texture.name, out Vector3 ratio))
+                {
                     __instance.imgSize = Vector2.Scale(__instance.imgSize, ratio);
+                }
             }
         }
 
@@ -141,7 +147,10 @@ namespace Iridium.Patches
         {
             public static void Postfix(Texture2D texture)
             {
-                if (texture.name.EndsWith("(Clone)")) texture.name = texture.name.Substring(0, texture.name.Length - 7);
+                if (texture.name.EndsWith("(Clone)"))
+                {
+                    texture.name = texture.name.Substring(0, texture.name.Length - 7);
+                }
             }
         }
 
@@ -157,6 +166,7 @@ namespace Iridium.Patches
                 if (TryGetDecorRatio(sprite.texture.name, out Vector3 ratio))
                 {
                     if (__instance.spriteRenderer != null) __instance.spriteRenderer.transform.localScale = ratio;
+
                     if (!Main.Settings.dontResizeCollider)
                     {
                         __instance.boxCollider.size = Vector2.Scale(__instance.boxCollider.size, ratio);
@@ -177,11 +187,18 @@ namespace Iridium.Patches
             public static void Postfix(scrDecorationManager __instance)
             {
                 if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || Main.Settings.dontResizeCollider) return;
+
                 var targets = new HashSet<LevelEvent>(ADOBase.editor.selectedDecorations);
                 if (__instance.hoveredDecoration != null)
                 {
-                    if (ADOBase.editor.decorations.Contains(__instance.hoveredDecoration)) targets.Add(__instance.hoveredDecoration);
-                    else targets.Remove(__instance.hoveredDecoration);
+                    if (ADOBase.editor.decorations.Contains(__instance.hoveredDecoration))
+                    {
+                        targets.Add(__instance.hoveredDecoration);
+                    }
+                    else
+                    {
+                        targets.Remove(__instance.hoveredDecoration);
+                    }
                 }
 
                 foreach (var ev in targets)
@@ -192,7 +209,7 @@ namespace Iridium.Patches
                         float ppu = decor.spriteRenderer.sprite.pixelsPerUnit;
                         float offset = 0.5f / ppu;
                         Vector3 baseScale = decor.transform.localScale;
-                        Vector2 sign = new Vector2(offset * Mathf.Sign(baseScale.x), offset * Mathf.Sign(baseScale.y));
+                        Vector2 sign = new(offset * Mathf.Sign(baseScale.x), offset * Mathf.Sign(baseScale.y));
                         Vector3 ratio = decor.spriteRenderer.transform.localScale;
                         decor.bordersRenderer.size = Vector2.Scale(decor.bordersRenderer.size - sign, ratio) + sign;
                         decor.cachedBorderSize = decor.bordersRenderer.size;
@@ -207,10 +224,13 @@ namespace Iridium.Patches
             public static void Postfix()
             {
                 if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || Main.Settings.dontResizeCollider) return;
+
                 foreach (var ev in ADOBase.editor.selectedDecorations)
                 {
                     if (ev != null && scrDecorationManager.GetDecoration(ev) is scrVisualDecoration decor && decor.spriteRenderer != null)
+                    {
                         decor.hitboxRenderer.size = Vector2.Scale(decor.hitboxRenderer.size, decor.spriteRenderer.transform.localScale);
+                    }
                 }
             }
         }
@@ -222,7 +242,37 @@ namespace Iridium.Patches
             {
                 if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || Main.Settings.dontResizeCollider) return;
                 var tex = __instance.spriteRenderer?.sprite?.texture;
-                if (tex != null && TryGetDecorRatio(tex.name, out Vector3 ratio)) __result = Vector2.Scale(__result, ratio);
+                if (tex != null && TryGetDecorRatio(tex.name, out Vector3 ratio))
+                {
+                    __result = Vector2.Scale(__result, ratio);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Light), "shadows", MethodType.Getter)]
+        public static class ShadowOptimizationPatch
+        {
+            public static void Postfix(ref LightShadows __result)
+            {
+                if (Main.Settings.enableOptimizer && Main.Settings.disableShadows) __result = LightShadows.None;
+            }
+        }
+
+        [HarmonyPatch(typeof(scrVisualDecoration), "Awake")]
+        public static class DecorationUpdateOptimizationPatch
+        {
+            public static void Postfix(scrVisualDecoration __instance)
+            {
+                if (!Main.Settings.enableOptimizer || !Main.Settings.optimizeDecorationUpdate) return;
+                var eventsField = typeof(scrVisualDecoration).GetField("events", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (eventsField?.GetValue(__instance) is System.Collections.IList { Count: 0 } or null)
+                {
+                    __instance.enabled = false;
+                }
+                else if (eventsField == null && __instance.transform.childCount == 0)
+                {
+                    __instance.enabled = false;
+                }
             }
         }
 
@@ -233,9 +283,18 @@ namespace Iridium.Patches
             {
                 if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || !__instance.useHitbox || __instance.spriteRenderer == null) return;
                 Vector3 ratio = __instance.spriteRenderer.transform.localScale;
-                if (__instance.hitboxType == Hitbox.Box) __instance.damageBox.size = Vector2.Scale(__instance.damageBox.size, ratio);
-                else if (__instance.hitboxType == Hitbox.Capsule) __instance.damageCapsule.size = Vector2.Scale(__instance.damageCapsule.size, ratio);
-                else __instance.damageCircle.radius *= ratio.x;
+                if (__instance.hitboxType == Hitbox.Box)
+                {
+                    __instance.damageBox.size = Vector2.Scale(__instance.damageBox.size, ratio);
+                }
+                else if (__instance.hitboxType == Hitbox.Capsule)
+                {
+                    __instance.damageCapsule.size = Vector2.Scale(__instance.damageCapsule.size, ratio);
+                }
+                else
+                {
+                    __instance.damageCircle.radius *= ratio.x;
+                }
             }
         }
 
@@ -246,13 +305,14 @@ namespace Iridium.Patches
             public static void Postfix(bool reloadDecorations)
             {
                 if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || isFinished || !reloadDecorations || Main.Settings.dontShowSavedMemory) return;
+
                 if (savedVRAM_MB > 0.1f)
                 {
                     var notify = Notification.instance;
                     notify.ShowEntitlementMessage(true, "optimize.savedMem");
                     var setup = typeof(Notification).GetMethod("SetupNotification", BindingFlags.Instance | BindingFlags.NonPublic);
-                    setup?.Invoke(notify, new object[] { 2f, 0.7f, true });
-                    Main.Logger.Log($"Optimized VRAM: {savedVRAM_MB:F2} MB");
+                    setup?.Invoke(notify, [2f, 0.7f, true]);
+                    Main.Logger?.Log(Localization.Get("SavedMemoryLog", savedVRAM_MB.ToString("F2")));
                 }
                 isFinished = true;
             }

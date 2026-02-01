@@ -9,9 +9,10 @@ namespace Iridium
 {
     public static class Localization
     {
-        private static Dictionary<string, Dictionary<string, string>> languages = new Dictionary<string, Dictionary<string, string>>();
+        private static readonly Dictionary<string, Dictionary<string, string>> languages = [];
+        private static readonly Dictionary<string, string> languageDisplayNames = [];
         private static bool loaded = false;
-        private static List<string> _availableLanguages = new List<string>();
+        private static readonly List<string> _availableLanguages = [];
         public static List<string> AvailableLanguages
         {
             get
@@ -21,11 +22,18 @@ namespace Iridium
             }
         }
 
+        public static string GetDisplayName(string langId)
+        {
+            if (!loaded) Load();
+            return languageDisplayNames.TryGetValue(langId, out string name) ? name : langId;
+        }
+
         public static void Load()
         {
             try
             {
                 languages.Clear();
+                languageDisplayNames.Clear();
                 _availableLanguages.Clear();
                 string langDir = Path.Combine(ResourceLoader.ResourcesPath, "lang");
                 
@@ -36,14 +44,24 @@ namespace Iridium
                     {
                         try
                         {
-                            string langName = Path.GetFileNameWithoutExtension(file);
+                            string langId = Path.GetFileNameWithoutExtension(file);
                             string json = File.ReadAllText(file);
                             var dict = ParseJson(json);
                             if (dict.Count > 0)
                             {
-                                languages[langName] = dict;
-                                _availableLanguages.Add(langName);
-                                Main.Mod?.Logger.Log($"Loaded language: {langName} ({dict.Count} keys)");
+                                languages[langId] = dict;
+                                _availableLanguages.Add(langId);
+                                
+                                if (dict.TryGetValue("displayName", out string displayName))
+                                {
+                                    languageDisplayNames[langId] = displayName;
+                                }
+                                else
+                                {
+                                    languageDisplayNames[langId] = langId;
+                                }
+
+                                Main.Mod?.Logger.Log($"Loaded language: {langId} ({languageDisplayNames[langId]}) - {dict.Count} keys");
                             }
                         }
                         catch (Exception ex)
@@ -56,14 +74,15 @@ namespace Iridium
                 if (languages.Count == 0)
                 {
                     Main.Mod?.Logger.Warning("No language files found, using empty 'en' fallback.");
-                    languages["en"] = new Dictionary<string, string>();
+                    languages["en"] = [];
+                    languageDisplayNames["en"] = "English";
                     _availableLanguages.Add("en");
                 }
             }
             catch (Exception ex)
             {
                 Main.Mod?.Logger.Error($"Critical error in Localization.Load: {ex.Message}");
-                if (languages.Count == 0) languages["en"] = new Dictionary<string, string>();
+                if (languages.Count == 0) languages["en"] = [];
             }
             finally
             {

@@ -1,4 +1,5 @@
 {
+  "displayName": "简体中文",
   "Language": "语言",
   "EnableOptimizer": "启用 压缩装饰",
   "OptimizerSettings": "压缩装饰 设置",
@@ -7,7 +8,10 @@
   "MultipleOf4": "将尺寸调整为 4 的倍数 (提升兼容性)",
   "DivideImageBy": "装饰缩放倍率",
   "DontResizeCollider": "不对装饰物的碰撞箱进行缩放",
+  "DisableShadows": "禁用装饰阴影",
+  "OptimizeDecorationUpdate": "优化装饰物更新逻辑",
   "SavedMemoryMsg": "已节省内存: {0}MB",
+  "SavedMemoryLog": "已优化显存占用: {0} MB",
   "MethodNotFound": "找不到 {0} 方法！",
   "PropertyNotFound": "找不到 {0} 属性！",
   "ModLoaded": "Mod 已加载 (语言: {0})",
@@ -25,5 +29,18 @@
   "TailFollowPitch": "拖尾长度随倍速变化",
   "CompatibilitySettings": "兼容性与修复",
   "EnableLegacyPauseFix": "撤销 2.9.4 对逆时针发卡弯暂停的修复",
-  "EnableNoFailTooEarly": "不死模式下死亡装饰物转为“按太快”判定"
+  "EnableNoFailTooEarly": "不死模式下死亡装饰物转为紫色判定",
+  "ModNotInitialized": "Mod 未初始化",
+  "TextFileNotFound": "文本文件未找到: {0}",
+  "LoadedTextFile": "已加载文本文件: {0}",
+  "FailedToLoadTextFile": "加载文本文件失败: {0}\n{1}",
+  "ImageFileNotFound": "图像文件未找到: {0}",
+  "LoadedTexture": "已加载纹理: {0} ({1}x{2})",
+  "FailedToLoadImageData": "加载图像数据失败: {0}",
+  "FailedToLoadTexture": "加载纹理失败: {0}\n{1}",
+  "BinaryFileNotFound": "二进制文件未找到: {0}",
+  "LoadedBinaryFile": "已加载二进制文件: {0} ({1} 字节)",
+  "FailedToLoadBinaryFile": "加载二进制文件失败: {0}\n{1}",
+  "ResourcesFolderNotFound": "Resources 文件夹未找到: {0}",
+  "FailedToGetFiles": "获取文件失败: {0}"
 }

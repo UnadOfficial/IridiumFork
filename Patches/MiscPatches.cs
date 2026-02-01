@@ -9,29 +9,33 @@ namespace Iridium.Patches
 {
     public static class MiscPatches
     {
-        [HarmonyPatch(typeof(scnLevelSelect), "Awake")]
-        public static class RemoveNewsPatch_Awake
-        {
-            public static void Postfix() { RemoveNewsPatch.newsContainer = GameObject.Find("News Container"); }
-        }
-
-        [HarmonyPatch(typeof(scnLevelSelect), "Update")]
+        [HarmonyPatch(typeof(scnLevelSelect))]
         public static class RemoveNewsPatch
         {
-            internal static GameObject newsContainer = null;
+            internal static GameObject? newsContainer = null;
+
+            [HarmonyPatch("Awake"), HarmonyPostfix]
+            public static void Postfix()
+            {
+                newsContainer = GameObject.Find("News Container");
+            }
+
+            [HarmonyPatch("Update"), HarmonyTranspiler]
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                var codes = new List<CodeInstruction>(instructions);
-                codes.Insert(0, new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(RemoveNewsPatch), nameof(UpdateNews))));
-                return codes;
+                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(RemoveNewsPatch), nameof(UpdateNews)));
+                foreach (CodeInstruction c in instructions)
+                {
+                    yield return c;
+                }
+                yield break;
             }
+
             public static void UpdateNews()
             {
-                if (newsContainer != null)
-                {
-                    bool shouldBeActive = !Main.Settings.removeNews;
-                    if (newsContainer.activeSelf != shouldBeActive) newsContainer.SetActive(shouldBeActive);
-                }
+                if (newsContainer is null) return;
+                bool shouldBeActive = !Main.Settings.removeNews;
+                if (newsContainer.activeSelf != shouldBeActive) newsContainer.SetActive(shouldBeActive);
             }
         }
 
@@ -50,30 +54,39 @@ namespace Iridium.Patches
             public static bool Prefix(float angleA, float angleB, ref float __result)
             {
                 if (!Main.Settings.enableCircleArc) return true;
-                float diff = Mod(angleB - angleA, Mathf.PI * 2);
-                float diff2 = Mod(angleA - angleB, Mathf.PI * 2);
+                float diff = Mathf.Repeat(angleB - angleA, Mathf.PI * 2);
+                float diff2 = Mathf.Repeat(angleA - angleB, Mathf.PI * 2);
                 float minDiff = Mathf.Min(diff, diff2);
                 if (Mathf.Abs(minDiff - Mathf.PI / 2f) < 0.01f)
                 {
-                    __result = minDiff * 0.08726645f;
+                    __result = minDiff * 5f / 180f * Mathf.PI;
                     return false;
                 }
                 return true;
             }
-            private static float Mod(float a, float b) => (a % b + b) % b;
         }
 
         [HarmonyPatch(typeof(scrConductor), "Update")]
         public static class TailTweakPatch
         {
-            public static void Postfix()
+            [HarmonyTranspiler]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                if (!Main.Settings.enableTailTweak || scrController.instance == null || scrController.instance.planetarySystem == null) return;
+                foreach (var instruction in instructions)
+                {
+                    yield return instruction;
+                }
+                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TailTweakPatch), nameof(UpdateTail)));
+            }
+
+            public static void UpdateTail()
+            {
+                if (!Main.Settings.enableTailTweak || scrController.instance?.planetarySystem == null) return;
                 foreach (var planet in scrController.instance.planetarySystem.availablePlanets)
                 {
-                    if (planet == null || planet.planetRenderer == null || planet.planetRenderer.tailParticles == null) continue;
+                    if (planet?.planetRenderer?.tailParticles is null) continue;
                     var ps = planet.planetRenderer.tailParticles.GetComponent<ParticleSystem>();
-                    if (ps == null) continue;
+                    if (ps is null) continue;
                     var main = ps.main;
                     var emission = ps.emission;
                     if (Main.Settings.tailFollowPitch)
