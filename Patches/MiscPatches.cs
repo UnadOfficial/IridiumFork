@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using ADOFAI;
 using HarmonyLib;
 using UnityEngine;
@@ -86,9 +87,54 @@ namespace Iridium.Patches
             }
         }
 
+        [HarmonyPatch(typeof(scrUIController), "Update")]
+        public static class AutoplayTextPositionPatch
+        {
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MiscPatches), nameof(RefreshAutoplayTextPosition)));
+                foreach (var instruction in instructions)
+                {
+                    yield return instruction;
+                }
+            }
+        }
+
+        private static bool _isAutoplayModified = false;
+        private static Vector3 _originalAutoplayPos;
+
+        public static void RefreshAutoplayTextPosition()
+        {
+            if (Main.Settings.moveAutoplayText)
+            {
+                if (scrUIController.instance?.txtDebug == null) return;
+                
+                // 仅在第一次修改前记录位置
+                if (!_isAutoplayModified)
+                {
+                    _originalAutoplayPos = scrUIController.instance.txtDebug.transform.localPosition;
+                    _isAutoplayModified = true;
+                }
+
+                scrUIController.instance.txtDebug.transform.localPosition = new Vector3(Main.Settings.autoplayTextX, Main.Settings.autoplayTextY, 0f);
+            }
+            else if (_isAutoplayModified)
+            {
+                // 如果之前修改过，则恢复一次并重置标记位
+                if (scrUIController.instance?.txtDebug != null)
+                {
+                    scrUIController.instance.txtDebug.transform.localPosition = _originalAutoplayPos;
+                }
+                _isAutoplayModified = false;
+            }
+            // 如果 moveAutoplayText 为 false 且 _isAutoplayModified 也为 false，则完全不执行任何逻辑，不触碰对象
+        }
+
         [HarmonyPatch(typeof(scrConductor), "Update")]
         public static class TailTweakPatch
         {
+            private static readonly ConditionalWeakTable<scrPlanet, ParticleSystem> _psCache = new();
+
             [HarmonyTranspiler]
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
@@ -101,11 +147,20 @@ namespace Iridium.Patches
 
             public static void UpdateTail()
             {
-                if (!Main.Settings.enableTailTweak || scrController.instance?.planetarySystem == null) return;
+                if (!Main.Settings.enableTailTweak || scrController.instance?.planetarySystem is null)
+                {
+                    return;
+                }
                 foreach (var planet in scrController.instance.planetarySystem.availablePlanets)
                 {
                     if (planet?.planetRenderer?.tailParticles is null) continue;
-                    var ps = planet.planetRenderer.tailParticles.GetComponent<ParticleSystem>();
+
+                    if (!_psCache.TryGetValue(planet, out var ps))
+                    {
+                        ps = planet.planetRenderer.tailParticles.GetComponent<ParticleSystem>();
+                        if (ps is not null) _psCache.Add(planet, ps);
+                    }
+
                     if (ps is null) continue;
                     var main = ps.main;
                     var emission = ps.emission;
@@ -114,6 +169,27 @@ namespace Iridium.Patches
                     else
                         main.simulationSpeed = Main.Settings.tailLength;
                     emission.rateOverTime = Main.Settings.tailEmission;
+                }
+            }
+
+            public static void ResetTails()
+            {
+                if (scrController.instance?.planetarySystem is null) return;
+                foreach (var planet in scrController.instance.planetarySystem.availablePlanets)
+                {
+                    if (planet?.planetRenderer?.tailParticles is null) continue;
+
+                    if (!_psCache.TryGetValue(planet, out var ps))
+                    {
+                        ps = planet.planetRenderer.tailParticles.GetComponent<ParticleSystem>();
+                        if (ps is not null) _psCache.Add(planet, ps);
+                    }
+
+                    if (ps is null) continue;
+                    var main = ps.main;
+                    var emission = ps.emission;
+                    main.simulationSpeed = 1f;
+                    emission.rateOverTime = 20f; // Default ADOFAI emission rate is usually around here
                 }
             }
         }

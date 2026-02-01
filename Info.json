@@ -2,11 +2,11 @@
   "Id": "Iridium",
   "DisplayName": "Iridium",
   "Author": "Xbodwf",
-  "Version": "1.0.0",
+  "Version": "1.0.1",
   "ManagerVersion": "0.27.0",
   "Requirements": [],
   "AssemblyName": "Iridium.dll",
   "EntryMethod": "Iridium.Main.Load",
-  "HomePage": "",
-  "Repository": ""
+  "HomePage": "https://github.com/adofaiex",
+  "Repository": "https://github.com/Xbodwf/Iridium"
 }

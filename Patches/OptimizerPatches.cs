@@ -311,13 +311,105 @@ namespace Iridium.Patches
 
                 if (savedVRAM_MB > 0.1f)
                 {
-                    var notify = Notification.instance;
-                    notify.ShowEntitlementMessage(true, "optimize.savedMem");
-                    var setup = typeof(Notification).GetMethod("SetupNotification", BindingFlags.Instance | BindingFlags.NonPublic);
-                    setup?.Invoke(notify, [2f, 0.7f, true]);
+                    VRAMNotificationUI.Show(Localization.Get("SavedMemoryMsg", savedVRAM_MB.ToString("F2")));
                     Main.Logger?.Log(Localization.Get("SavedMemoryLog", savedVRAM_MB.ToString("F2")));
                 }
                 isFinished = true;
+            }
+        }
+
+        public class VRAMNotificationUI : MonoBehaviour
+        {
+            private static VRAMNotificationUI? _instance;
+            private string _message = "";
+            private float _timer = 0f;
+            private const float FadeDuration = 0.5f;
+            private const float DisplayDuration = 2.5f;
+            private GUIStyle? _style;
+            private Texture2D? _background;
+
+            public static void Show(string message)
+            {
+                if (_instance == null)
+                {
+                    var go = new GameObject("Iridium_VRAMNotification");
+                    _instance = go.AddComponent<VRAMNotificationUI>();
+                    DontDestroyOnLoad(go);
+                }
+                _instance._message = message;
+                _instance._timer = FadeDuration + DisplayDuration + FadeDuration;
+            }
+
+            private void OnGUI()
+            {
+                if (_timer <= 0f) return;
+
+                if (_style == null || _background == null)
+                {
+                    InitializeStyle();
+                }
+
+                float alpha = 1f;
+                if (_timer > DisplayDuration + FadeDuration)
+                {
+                    alpha = (FadeDuration + DisplayDuration + FadeDuration - _timer) / FadeDuration;
+                }
+                else if (_timer < FadeDuration)
+                {
+                    alpha = _timer / FadeDuration;
+                }
+
+                GUI.color = new Color(1f, 1f, 1f, alpha);
+                
+                // Position: Top-left, Size: 0.75 of a typical toast
+                // M3 style: Rounded corners, Surface Container colors
+                float width = 240f * 0.75f;
+                float height = 50f * 0.75f;
+                Rect rect = new(20, 20, width, height);
+                
+                GUI.Box(rect, "✨ " + _message, _style);
+                GUI.color = Color.white;
+            }
+
+            private void Update()
+            {
+                if (_timer > 0f)
+                {
+                    _timer -= Time.deltaTime;
+                }
+            }
+
+            private void InitializeStyle()
+            {
+                Color infoContainer = new(0.1f, 0.2f, 0.35f);      // Info/Secondary Container
+                Color onInfoContainer = new(0.7f, 0.85f, 1.0f);    // On Info Container
+                
+                _background = MakeRoundedTex(128, 128, 16, infoContainer);
+                _style = new GUIStyle(GUI.skin.box)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontSize = Mathf.RoundToInt(14 * 0.75f),
+                    normal = { background = _background, textColor = onInfoContainer },
+                    padding = new RectOffset(8, 8, 4, 4)
+                };
+            }
+
+            private Texture2D MakeRoundedTex(int width, int height, int radius, Color col)
+            {
+                Color[] pix = new Color[width * height];
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        float dx = x < radius ? radius - x : (x >= width - radius ? x - (width - radius - 1) : 0);
+                        float dy = y < radius ? radius - y : (y >= height - radius ? y - (height - radius - 1) : 0);
+                        pix[y * width + x] = (dx * dx + dy * dy <= radius * radius) ? col : Color.clear;
+                    }
+                }
+                Texture2D result = new(width, height);
+                result.SetPixels(pix);
+                result.Apply();
+                return result;
             }
         }
 

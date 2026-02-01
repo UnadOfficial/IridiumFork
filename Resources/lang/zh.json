@@ -20,6 +20,7 @@
   "UISettings": "UI 设置",
   "RemoveNews": "移除首页新闻",
   "HideBetaWatermark": "隐藏测试版字样",
+  "MoveAutoplayText": "自定义“自动播放”字样位置",
   "ForceDifficultyUI": "强制启用判定选择 (CLS)",
   "EnableCircleArc": "启用圆弧转角",
   "RestartRequired": "重进游戏后生效",

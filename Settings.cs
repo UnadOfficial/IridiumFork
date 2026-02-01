@@ -23,6 +23,10 @@ namespace Iridium
         public bool removeNews = false;
         public bool hideBetaWatermark = false;
 
+        public bool moveAutoplayText = false;
+        public float autoplayTextX = 0f;
+        public float autoplayTextY = 0f;
+
         public bool forceDifficultyUI = false;
 
         public bool enableCircleArc = false;
@@ -216,8 +220,13 @@ namespace Iridium
         {
             InitializeStyles();
 
+            GUILayout.BeginHorizontal();
+
+            // --- Left Column ---
+            GUILayout.BeginVertical(GUILayout.Width(420));
+
             // Language Selection Card
-            GUILayout.BeginVertical(_cardStyle, GUILayout.Width(400));
+            GUILayout.BeginVertical(_cardStyle);
             GUILayout.Label(Localization.Get("Language"), _headerStyle);
             
             GUILayout.BeginHorizontal();
@@ -240,12 +249,18 @@ namespace Iridium
             GUILayout.Space(8);
 
             // CompressDecorations Card
-            GUILayout.BeginVertical(_cardStyle, GUILayout.Width(400));
+            GUILayout.BeginVertical(_cardStyle);
             
             GUILayout.BeginHorizontal();
             GUILayout.Label(Localization.Get("EnableOptimizer"), _headerStyle);
             GUILayout.FlexibleSpace();
-            enableOptimizer = M3Switch(enableOptimizer, "");
+            bool newEnableOptimizer = M3Switch(enableOptimizer, "");
+            if (newEnableOptimizer != enableOptimizer)
+            {
+                enableOptimizer = newEnableOptimizer;
+                if (enableOptimizer && disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
+                else QualitySettings.shadows = ShadowQuality.All;
+            }
             GUILayout.EndHorizontal();
 
             if (enableOptimizer)
@@ -258,9 +273,23 @@ namespace Iridium
                     GUILayout.Space(8);
                 }
 
-                dontShowSavedMemory = !M3Switch(!dontShowSavedMemory, Localization.Get("ShowSavedMemory"));
-                dontCompress = !M3Switch(!dontCompress, Localization.Get("CompressImage"));
-                dontResizeMultipleOf4 = !M3Switch(!dontResizeMultipleOf4, Localization.Get("MultipleOf4"));
+                bool showSavedMemory = M3Switch(!dontShowSavedMemory, Localization.Get("ShowSavedMemory"));
+                if (showSavedMemory == dontShowSavedMemory)
+                {
+                    dontShowSavedMemory = !showSavedMemory;
+                }
+
+                bool compressImage = M3Switch(!dontCompress, Localization.Get("CompressImage"));
+                if (compressImage == dontCompress)
+                {
+                    dontCompress = !compressImage;
+                }
+
+                bool multipleOf4 = M3Switch(!dontResizeMultipleOf4, Localization.Get("MultipleOf4"));
+                if (multipleOf4 == dontResizeMultipleOf4)
+                {
+                    dontResizeMultipleOf4 = !multipleOf4;
+                }
                 
                 if (dontCompress) dontResizeMultipleOf4 = true;
 
@@ -274,7 +303,15 @@ namespace Iridium
 
                 GUILayout.Space(4);
                 dontResizeCollider = M3Switch(dontResizeCollider, Localization.Get("DontResizeCollider"));
-                disableShadows = M3Switch(disableShadows, Localization.Get("DisableShadows"));
+                
+                bool newDisableShadows = M3Switch(disableShadows, Localization.Get("DisableShadows"));
+                if (newDisableShadows != disableShadows)
+                {
+                    disableShadows = newDisableShadows;
+                    if (enableOptimizer && disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
+                    else QualitySettings.shadows = ShadowQuality.All;
+                }
+
                 optimizeDecorationUpdate = M3Switch(optimizeDecorationUpdate, Localization.Get("OptimizeDecorationUpdate"));
 
                 // Error states
@@ -293,13 +330,23 @@ namespace Iridium
             }
             GUILayout.EndVertical();
 
-            GUILayout.Space(8);
+            GUILayout.EndVertical(); // End Left Column
+
+            GUILayout.Space(16);
+
+            // --- Right Column ---
+            GUILayout.BeginVertical(GUILayout.Width(420));
 
             // UI Adjustments Card
-            GUILayout.BeginVertical(_cardStyle, GUILayout.Width(400));
+            GUILayout.BeginVertical(_cardStyle);
             GUILayout.Label(Localization.Get("UISettings"), _headerStyle);
             GUILayout.Space(8);
-            removeNews = M3Switch(removeNews, Localization.Get("RemoveNews"));
+            bool newRemoveNews = M3Switch(removeNews, Localization.Get("RemoveNews"));
+            if (newRemoveNews != removeNews)
+            {
+                removeNews = newRemoveNews;
+                Iridium.Patches.MiscPatches.RemoveNewsPatch.UpdateNews();
+            }
             bool newHideBeta = M3Switch(hideBetaWatermark, Localization.Get("HideBetaWatermark"));
             if (newHideBeta != hideBetaWatermark)
             {
@@ -307,6 +354,33 @@ namespace Iridium
                 Iridium.Patches.MiscPatches.RefreshBetaWatermark();
             }
             forceDifficultyUI = M3Switch(forceDifficultyUI, Localization.Get("ForceDifficultyUI"));
+
+            bool newMoveAutoplay = M3Switch(moveAutoplayText, Localization.Get("MoveAutoplayText"));
+            if (newMoveAutoplay != moveAutoplayText)
+            {
+                moveAutoplayText = newMoveAutoplay;
+                Iridium.Patches.MiscPatches.RefreshAutoplayTextPosition();
+            }
+
+            if (moveAutoplayText)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("X:", GUILayout.Width(20));
+                autoplayTextX = GUILayout.HorizontalSlider(autoplayTextX, -Screen.width / 2f, Screen.width / 2f);
+                GUILayout.Label(autoplayTextX.ToString("F0"), GUILayout.Width(40));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Y:", GUILayout.Width(20));
+                autoplayTextY = GUILayout.HorizontalSlider(autoplayTextY, -Screen.height / 2f, Screen.height / 2f);
+                GUILayout.Label(autoplayTextY.ToString("F0"), GUILayout.Width(40));
+                GUILayout.EndHorizontal();
+
+                if (GUI.changed)
+                {
+                    Iridium.Patches.MiscPatches.RefreshAutoplayTextPosition();
+                }
+            }
             
             GUILayout.Space(8);
             enableCircleArc = M3Switch(enableCircleArc, Localization.Get("EnableCircleArc"));
@@ -317,17 +391,27 @@ namespace Iridium
             GUILayout.Space(8);
 
             // Tail Settings Card
-            GUILayout.BeginVertical(_cardStyle, GUILayout.Width(400));
+            GUILayout.BeginVertical(_cardStyle);
             GUILayout.BeginHorizontal();
             GUILayout.Label(Localization.Get("TailSettings"), _headerStyle);
             GUILayout.FlexibleSpace();
-            enableTailTweak = M3Switch(enableTailTweak, "");
+            bool newEnableTail = M3Switch(enableTailTweak, "");
+            if (newEnableTail != enableTailTweak)
+            {
+                enableTailTweak = newEnableTail;
+                if (!enableTailTweak) Iridium.Patches.MiscPatches.TailTweakPatch.ResetTails();
+            }
             GUILayout.EndHorizontal();
 
             if (enableTailTweak)
             {
                 GUILayout.Space(8);
-                tailFollowPitch = M3Switch(tailFollowPitch, Localization.Get("TailFollowPitch"));
+                bool newFollowPitch = M3Switch(tailFollowPitch, Localization.Get("TailFollowPitch"));
+                if (newFollowPitch != tailFollowPitch)
+                {
+                    tailFollowPitch = newFollowPitch;
+                    if (!tailFollowPitch) Iridium.Patches.MiscPatches.TailTweakPatch.ResetTails();
+                }
                 
                 if (!tailFollowPitch)
                 {
@@ -351,13 +435,23 @@ namespace Iridium
             GUILayout.Space(8);
 
             // Compatibility & Fixes Card
-            GUILayout.BeginVertical(_cardStyle, GUILayout.Width(400));
+            GUILayout.BeginVertical(_cardStyle);
             GUILayout.Label(Localization.Get("CompatibilitySettings"), _headerStyle);
             GUILayout.Space(8);
             enableLegacyPauseFix = M3Switch(enableLegacyPauseFix, Localization.Get("EnableLegacyPauseFix"));
             enableNoFailTooEarly = M3Switch(enableNoFailTooEarly, Localization.Get("EnableNoFailTooEarly"));
             GUILayout.EndVertical();
+
+            GUILayout.EndVertical(); // End Right Column
+
+            GUILayout.EndHorizontal();
+
+            if (GUI.changed)
+            {            
+                Save(modEntry);
+            }
         }
+
 
         /// <summary>
         /// Called when saving GUI / 保存设置时调用
