@@ -21,6 +21,7 @@ namespace Iridium
         public bool optimizeDecorationUpdate = false;
 
         public bool removeNews = false;
+        public bool hideBetaWatermark = false;
 
         public bool forceDifficultyUI = false;
 
@@ -299,11 +300,17 @@ namespace Iridium
             GUILayout.Label(Localization.Get("UISettings"), _headerStyle);
             GUILayout.Space(8);
             removeNews = M3Switch(removeNews, Localization.Get("RemoveNews"));
+            bool newHideBeta = M3Switch(hideBetaWatermark, Localization.Get("HideBetaWatermark"));
+            if (newHideBeta != hideBetaWatermark)
+            {
+                hideBetaWatermark = newHideBeta;
+                Iridium.Patches.MiscPatches.RefreshBetaWatermark();
+            }
             forceDifficultyUI = M3Switch(forceDifficultyUI, Localization.Get("ForceDifficultyUI"));
             
             GUILayout.Space(8);
             enableCircleArc = M3Switch(enableCircleArc, Localization.Get("EnableCircleArc"));
-            DrawInfoBox("ℹ " + Localization.Get("RestartRequired"));
+            if (enableCircleArc) DrawInfoBox("⚠ " + Localization.Get("RestartRequired"));
             
             GUILayout.EndVertical();
 

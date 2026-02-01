@@ -19,6 +19,7 @@
   "ModDisabled": "Mod 已禁用",
   "UISettings": "UI 设置",
   "RemoveNews": "移除首页新闻",
+  "HideBetaWatermark": "隐藏测试版字样",
   "ForceDifficultyUI": "强制启用判定选择 (CLS)",
   "EnableCircleArc": "启用圆弧转角",
   "RestartRequired": "重进游戏后生效",

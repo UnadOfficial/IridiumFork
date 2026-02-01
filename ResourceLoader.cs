@@ -4,16 +4,8 @@ using UnityEngine;
 
 namespace Iridium
 {
-    /// <summary>
-    /// Helper class for loading resources from the Resources folder
-    /// 从 Resources 文件夹加载资源的辅助类
-    /// </summary>
     public static class ResourceLoader
     {
-        /// <summary>
-        /// Gets the path to the mod's Resources folder
-        /// 获取 Mod 的 Resources 文件夹路径
-        /// </summary>
         public static string ResourcesPath
         {
             get

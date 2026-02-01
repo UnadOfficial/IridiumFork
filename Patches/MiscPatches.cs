@@ -54,15 +54,35 @@ namespace Iridium.Patches
             public static bool Prefix(float angleA, float angleB, ref float __result)
             {
                 if (!Main.Settings.enableCircleArc) return true;
-                float diff = Mathf.Repeat(angleB - angleA, Mathf.PI * 2);
-                float diff2 = Mathf.Repeat(angleA - angleB, Mathf.PI * 2);
-                float minDiff = Mathf.Min(diff, diff2);
+                float minDiff = Mathf.Abs(Mathf.DeltaAngle(angleA * Mathf.Rad2Deg, angleB * Mathf.Rad2Deg)) * Mathf.Deg2Rad;
                 if (Mathf.Abs(minDiff - Mathf.PI / 2f) < 0.01f)
                 {
                     __result = minDiff * 5f / 180f * Mathf.PI;
                     return false;
                 }
                 return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(scrEnableIfBeta), "Awake")]
+        public static class HideBetaWatermarkPatch
+        {
+            public static void Postfix(scrEnableIfBeta __instance)
+            {
+                if (Main.Settings.hideBetaWatermark) __instance.gameObject.SetActive(false);
+            }
+        }
+
+        public static void RefreshBetaWatermark()
+        {
+            foreach (var watermark in Resources.FindObjectsOfTypeAll<scrEnableIfBeta>())
+            {
+                if (Main.Settings.hideBetaWatermark) watermark.gameObject.SetActive(false);
+                else
+                {
+                    bool isBeta = SteamIntegration.initialized && !string.IsNullOrEmpty(GCS.steamBranchName);
+                    watermark.gameObject.SetActive(isBeta);
+                }
             }
         }
 

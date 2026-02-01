@@ -249,12 +249,15 @@ namespace Iridium.Patches
             }
         }
 
-        [HarmonyPatch(typeof(Light), "shadows", MethodType.Getter)]
+        [HarmonyPatch(typeof(scnGame), "ApplyCoreEventsToFloors", typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>), typeof(List<LevelEvent>[]))]
         public static class ShadowOptimizationPatch
         {
-            public static void Postfix(ref LightShadows __result)
+            public static void Postfix()
             {
-                if (Main.Settings.enableOptimizer && Main.Settings.disableShadows) __result = LightShadows.None;
+                if (Main.Settings.enableOptimizer && Main.Settings.disableShadows)
+                {
+                    QualitySettings.shadows = ShadowQuality.Disable;
+                }
             }
         }
 
@@ -269,7 +272,7 @@ namespace Iridium.Patches
                 {
                     __instance.enabled = false;
                 }
-                else if (eventsField == null && __instance.transform.childCount == 0)
+                else if (eventsField is null && __instance.transform.childCount == 0)
                 {
                     __instance.enabled = false;
                 }
