@@ -38,6 +38,7 @@ namespace Iridium.Config
         public bool enableSmartGC = false;
         public float gcInterval = 60f;
         public bool gcInGame = false;
+        public bool gcInLoadScene = false;
     }
 
     public class CompatibilitySettings
