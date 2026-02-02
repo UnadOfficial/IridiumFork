@@ -195,6 +195,14 @@ namespace Iridium.Patches
                 }
             }
         }
+        [HarmonyPatch(typeof(UnityEngine.SceneManagement.SceneManager), "GetSceneAt")]
+        public static class SceneGC
+        {
+            public static void Prefix()
+            {
+                if (Main.Settings.memory.gcInLoadScene) GC.Collect();
+            }
+        }
 
         [HarmonyPatch(typeof(scrController), "Awake")]
         public static class SmartGCPatch
