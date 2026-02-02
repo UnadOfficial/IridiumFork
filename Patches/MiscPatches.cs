@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -35,7 +36,7 @@ namespace Iridium.Patches
             public static void UpdateNews()
             {
                 if (newsContainer is null) return;
-                bool shouldBeActive = !Main.Settings.removeNews;
+                bool shouldBeActive = !Main.Settings.ui.removeNews;
                 if (newsContainer.activeSelf != shouldBeActive) newsContainer.SetActive(shouldBeActive);
             }
         }
@@ -45,7 +46,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(ref DifficultyUIMode __result)
             {
-                if (Main.Settings.forceDifficultyUI && ADOBase.isCLSLevel) __result = DifficultyUIMode.ShowAll;
+                if (Main.Settings.ui.forceDifficultyUI && ADOBase.isCLSLevel) __result = DifficultyUIMode.ShowAll;
             }
         }
 
@@ -54,9 +55,10 @@ namespace Iridium.Patches
         {
             public static bool Prefix(float angleA, float angleB, ref float __result)
             {
-                if (!Main.Settings.enableCircleArc) return true;
+                if (!Main.Settings.ui.enableCircleArc) return true;
                 float minDiff = Mathf.Abs(Mathf.DeltaAngle(angleA * Mathf.Rad2Deg, angleB * Mathf.Rad2Deg)) * Mathf.Deg2Rad;
-                if (Mathf.Abs(minDiff - Mathf.PI / 2f) < 0.01f)
+                float minDiffDeg = minDiff * Mathf.Rad2Deg;
+                if (minDiffDeg >= 89.9f && minDiffDeg <= 105.1f)
                 {
                     __result = minDiff * 5f / 180f * Mathf.PI;
                     return false;
@@ -70,7 +72,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrEnableIfBeta __instance)
             {
-                if (Main.Settings.hideBetaWatermark) __instance.gameObject.SetActive(false);
+                if (Main.Settings.ui.hideBetaWatermark) __instance.gameObject.SetActive(false);
             }
         }
 
@@ -78,7 +80,7 @@ namespace Iridium.Patches
         {
             foreach (var watermark in Resources.FindObjectsOfTypeAll<scrEnableIfBeta>())
             {
-                if (Main.Settings.hideBetaWatermark) watermark.gameObject.SetActive(false);
+                if (Main.Settings.ui.hideBetaWatermark) watermark.gameObject.SetActive(false);
                 else
                 {
                     bool isBeta = SteamIntegration.initialized && !string.IsNullOrEmpty(GCS.steamBranchName);
@@ -105,7 +107,7 @@ namespace Iridium.Patches
 
         public static void RefreshAutoplayTextPosition()
         {
-            if (Main.Settings.moveAutoplayText)
+            if (Main.Settings.ui.moveAutoplayText)
             {
                 if (scrUIController.instance?.txtDebug == null) return;
                 
@@ -116,7 +118,7 @@ namespace Iridium.Patches
                     _isAutoplayModified = true;
                 }
 
-                scrUIController.instance.txtDebug.transform.localPosition = new Vector3(Main.Settings.autoplayTextX, Main.Settings.autoplayTextY, 0f);
+                scrUIController.instance.txtDebug.transform.localPosition = new Vector3(Main.Settings.ui.autoplayTextX, Main.Settings.ui.autoplayTextY, 0f);
             }
             else if (_isAutoplayModified)
             {
@@ -147,7 +149,7 @@ namespace Iridium.Patches
 
             public static void UpdateTail()
             {
-                if (!Main.Settings.enableTailTweak || scrController.instance?.planetarySystem is null)
+                if (!Main.Settings.tail.enableTailTweak || scrController.instance?.planetarySystem is null)
                 {
                     return;
                 }
@@ -164,11 +166,11 @@ namespace Iridium.Patches
                     if (ps is null) continue;
                     var main = ps.main;
                     var emission = ps.emission;
-                    if (Main.Settings.tailFollowPitch)
+                    if (Main.Settings.tail.tailFollowPitch)
                         main.simulationSpeed = scrConductor.instance.song.pitch * (scnEditor.instance != null ? scnEditor.instance.playbackSpeed : 1f);
                     else
-                        main.simulationSpeed = Main.Settings.tailLength;
-                    emission.rateOverTime = Main.Settings.tailEmission;
+                        main.simulationSpeed = Main.Settings.tail.tailLength;
+                    emission.rateOverTime = Main.Settings.tail.tailEmission;
                 }
             }
 
@@ -191,6 +193,73 @@ namespace Iridium.Patches
                     main.simulationSpeed = 1f;
                     emission.rateOverTime = 20f; // Default ADOFAI emission rate is usually around here
                 }
+            }
+        }
+
+        [HarmonyPatch(typeof(scrController), "Awake")]
+        public static class SmartGCPatch
+        {
+            private static float _lastCleanTime = 0f;
+            private static bool _isCleaning = false;
+
+            public static void Postfix(scrController __instance)
+            {
+                __instance.StartCoroutine(GCLoop());
+            }
+
+            private static IEnumerator GCLoop()
+            {
+                while (true)
+                {
+                    yield return new WaitForSeconds(5f);
+
+                    if (!Main.Settings.memory.enableSmartGC) continue;
+
+                    // 检查是否达到间隔
+                    if (Time.realtimeSinceStartup - _lastCleanTime < Main.Settings.memory.gcInterval) continue;
+
+                    // 安全性检查：如果在关卡内且未开启 gcInGame，则跳过
+                    bool isInLevel = scrController.instance != null && !scrController.instance.paused && scrController.instance.gameworld;
+                    if (isInLevel && !Main.Settings.memory.gcInGame) continue;
+
+                    // 避免重叠清理
+                    if (_isCleaning) continue;
+
+                    yield return CleanMemoryRoutine();
+                }
+            }
+
+            private static IEnumerator CleanMemoryRoutine()
+            {
+                _isCleaning = true;
+                _lastCleanTime = Time.realtimeSinceStartup;
+
+                Main.Mod?.Logger.Log(Localization.Get("CleaningMemory"));
+
+                // 1. 异步卸载未使用的资源 (Unity 推荐方式)
+                AsyncOperation asyncUnload = Resources.UnloadUnusedAssets();
+                while (!asyncUnload.isDone)
+                {
+                    yield return null;
+                }
+
+                // 2. 只有在不在关卡内时，才尝试卸载 AssetBundles (防止画面内容缺失)
+                bool isInLevel = scrController.instance != null && scrController.instance.gameworld;
+                if (!isInLevel)
+                {
+                    // 使用 false 表示只卸载 bundle 容器，不销毁已加载的对象
+                    AssetBundle.UnloadAllAssetBundles(false);
+                }
+
+                // 3. 强制 GC (分步进行以减缓卡顿)
+                GC.Collect(0, GCCollectionMode.Optimized, false);
+                yield return null;
+                
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false);
+                yield return null;
+
+                Main.Mod?.Logger.Log(Localization.Get("CleanedMemory"));
+                _isCleaning = false;
             }
         }
     }

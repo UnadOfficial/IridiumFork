@@ -5,6 +5,7 @@ using ADOFAI;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityModManagerNet;
 
 namespace Iridium.Patches
 {
@@ -34,40 +35,70 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(TextureManager), "LoadTexture")]
         public static class TextureOptimizationPatch
         {
-            public static Texture2D CreateProcessedTexture(Texture2D source, int targetW, int targetH)
+            public static Texture2D? CreateProcessedTexture(Texture2D source, int targetW, int targetH)
             {
-                var rt = RenderTexture.GetTemporary(targetW, targetH, 0, RenderTextureFormat.ARGB32);
-                rt.filterMode = FilterMode.Bilinear;
-                Graphics.Blit(source, rt);
-                Texture2D result = new(targetW, targetH, TextureFormat.RGBA32, false);
-                RenderTexture.active = rt;
-                result.ReadPixels(new(0, 0, targetW, targetH), 0, 0);
-                result.Apply(false);
-                RenderTexture.active = null;
-                RenderTexture.ReleaseTemporary(rt);
-                result.name = source.name;
-                return result;
+                // Ensure we are on main thread for RenderTexture operations
+                if (!Main.IsMainThread)
+                {
+                    return null;
+                }
+
+                RenderTexture? rt = null;
+                try
+                {
+                    rt = RenderTexture.GetTemporary(targetW, targetH, 0, RenderTextureFormat.ARGB32);
+                    rt.filterMode = FilterMode.Bilinear;
+                    Graphics.Blit(source, rt);
+                    
+                    Texture2D result = new(targetW, targetH, TextureFormat.RGBA32, false);
+                    RenderTexture.active = rt;
+                    result.ReadPixels(new Rect(0, 0, targetW, targetH), 0, 0);
+                    result.Apply(false);
+                    RenderTexture.active = null;
+                    result.name = source.name;
+                    return result;
+                }
+                finally
+                {
+                    if (rt != null)
+                    {
+                        RenderTexture.ReleaseTemporary(rt);
+                    }
+                }
             }
 
             private static int AlignTo4(int val) => Math.Max(4, (val + 2) & ~3);
 
-            public static void Postfix(ref Texture2D __result)
+            public static void Postfix(ref Texture2D? __result)
             {
-                if (!Main.Settings.enableOptimizer || __result == null || GCS.internalLevelName != null) return;
-                if (__result.width < 8 || __result.height < 8) return;
+                if (!Main.Settings.optimizer.enableOptimizer || __result == null || GCS.internalLevelName != null) return;
+                
+                // Skip small textures (icons, etc)
+                if (__result.width <= 32 || __result.height <= 32) return;
+
+                // Safety: if we are not on main thread, we can't use RenderTexture/Blit
+                if (!Main.IsMainThread) return;
 
                 long oldSize = 0;
-                if (!Main.Settings.dontShowSavedMemory) oldSize = Profiler.GetRuntimeMemorySizeLong(__result);
+                if (!Main.Settings.optimizer.dontShowSavedMemory) 
+                {
+                    try { oldSize = Profiler.GetRuntimeMemorySizeLong(__result); } catch { }
+                }
 
+                string texName = __result.name;
                 try
                 {
-                    double scaleFactor = Main.Settings.divideBy;
+                    double scaleFactor = Main.Settings.optimizer.divideBy;
+                    
+                    // If scale is 1.0 and no compression, skip
+                    if (scaleFactor <= 1.01 && Main.Settings.optimizer.dontCompress) return;
+
                     int newW = (int)Math.Round(__result.width / scaleFactor);
                     int newH = (int)Math.Round(__result.height / scaleFactor);
 
                     if (newW >= 4 && newH >= 4)
                     {
-                        if (!Main.Settings.dontResizeMultipleOf4)
+                        if (!Main.Settings.optimizer.dontResizeMultipleOf4)
                         {
                             newW = AlignTo4(newW);
                             newH = AlignTo4(newH);
@@ -79,37 +110,57 @@ namespace Iridium.Patches
                         newH = __result.height;
                     }
 
+                    bool resized = false;
                     if (__result.width != newW || __result.height != newH)
                     {
-                        decorRatios[__result.name] = new((float)__result.width / newW, (float)__result.height / newH, 1f);
                         var optimized = CreateProcessedTexture(__result, newW, newH);
-                        if (!Main.Settings.dontCompress)
+                        if (optimized != null)
                         {
-                            optimized.Compress(true);
-                            optimized.Apply(false, true);
+                            decorRatios[texName] = new((float)__result.width / newW, (float)__result.height / newH, 1f);
+                            
+                            if (!Main.Settings.optimizer.dontCompress)
+                            {
+                                // Use highQuality = false for better stability and speed
+                                optimized.Compress(false);
+                                optimized.Apply(false, true);
+                            }
+                            else
+                            {
+                                optimized.Apply(false, false);
+                            }
+
+                            // Use DestroyImmediate to free memory RIGHT NOW
+                            // This prevents OOM during mass loading
+                            UnityEngine.Object.DestroyImmediate(__result);
+                            __result = optimized;
+                            resized = true;
                         }
-                        UnityEngine.Object.Destroy(__result);
-                        __result = optimized;
                     }
-                    else
+                    
+                    if (!resized)
                     {
-                        decorRatios[__result.name] = Vector3.one;
-                        if (!Main.Settings.dontCompress)
+                        decorRatios[texName] = Vector3.one;
+                        if (!Main.Settings.optimizer.dontCompress)
                         {
-                            __result.Compress(true);
+                            // Already at target size, just compress
+                            __result.Compress(false);
                             __result.Apply(false, true);
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    Main.Logger?.Log("Decoration optimization failed: " + e.Message);
+                    Main.Logger?.Log($"[Optimizer] Optimization failed for {texName}: {e.Message}");
                 }
 
-                if (!Main.Settings.dontShowSavedMemory)
+                if (!Main.Settings.optimizer.dontShowSavedMemory)
                 {
-                    long newSize = Profiler.GetRuntimeMemorySizeLong(__result);
-                    savedVRAM_MB += (oldSize - newSize) / 1048576f;
+                    try
+                    {
+                        long newSize = Profiler.GetRuntimeMemorySizeLong(__result);
+                        savedVRAM_MB += (oldSize - newSize) / 1048576f;
+                    }
+                    catch { }
                 }
             }
         }
@@ -131,8 +182,8 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrCustomBackgroundSprite __instance)
             {
-                if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null) return;
-                var sprite = __instance.displayedSprite.sprite;
+                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null) return;
+                var sprite = __instance.displayedSprite?.sprite;
                 if (sprite?.texture == null) return;
 
                 if (TryGetDecorRatio(sprite.texture.name, out Vector3 ratio))
@@ -157,9 +208,11 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(scrVisualDecoration), "SetSprite", typeof(TextureManager.CustomSprite), typeof(TextureManager.ImageOptions))]
         public static class DecorationScalingPatch
         {
+            private static readonly System.Reflection.PropertyInfo? spriteUnscaledSizeProp = typeof(scrVisualDecoration).GetProperty("spriteUnscaledSize", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+
             public static void Postfix(scrVisualDecoration __instance)
             {
-                if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null) return;
+                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null) return;
                 var sprite = __instance.spriteRenderer?.sprite;
                 if (sprite?.texture == null) return;
 
@@ -167,14 +220,13 @@ namespace Iridium.Patches
                 {
                     if (__instance.spriteRenderer != null) __instance.spriteRenderer.transform.localScale = ratio;
 
-                    if (!Main.Settings.dontResizeCollider)
+                    if (!Main.Settings.optimizer.dontResizeCollider)
                     {
                         __instance.boxCollider.size = Vector2.Scale(__instance.boxCollider.size, ratio);
-                        var prop = typeof(scrVisualDecoration).GetProperty("spriteUnscaledSize", BindingFlags.Instance | BindingFlags.Public);
-                        if (prop != null)
+                        if (spriteUnscaledSizeProp != null)
                         {
-                            var oldSize = (Vector2)prop.GetValue(__instance);
-                            prop.SetValue(__instance, Vector2.Scale(oldSize, ratio));
+                            var oldSize = (Vector2)spriteUnscaledSizeProp.GetValue(__instance, null);
+                            spriteUnscaledSizeProp.SetValue(__instance, Vector2.Scale(oldSize, ratio), null);
                         }
                     }
                 }
@@ -186,12 +238,15 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrDecorationManager __instance)
             {
-                if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || Main.Settings.dontResizeCollider) return;
+                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
 
-                var targets = new HashSet<LevelEvent>(ADOBase.editor.selectedDecorations);
+                var selected = ADOBase.editor?.selectedDecorations;
+                if (selected == null) return;
+
+                var targets = new HashSet<LevelEvent>(selected);
                 if (__instance.hoveredDecoration != null)
                 {
-                    if (ADOBase.editor.decorations.Contains(__instance.hoveredDecoration))
+                    if (ADOBase.editor != null && ADOBase.editor.decorations.Contains(__instance.hoveredDecoration))
                     {
                         targets.Add(__instance.hoveredDecoration);
                     }
@@ -223,9 +278,12 @@ namespace Iridium.Patches
         {
             public static void Postfix()
             {
-                if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || Main.Settings.dontResizeCollider) return;
+                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
 
-                foreach (var ev in ADOBase.editor.selectedDecorations)
+                var selected = ADOBase.editor?.selectedDecorations;
+                if (selected == null) return;
+
+                foreach (var ev in selected)
                 {
                     if (ev != null && scrDecorationManager.GetDecoration(ev) is scrVisualDecoration decor && decor.spriteRenderer != null)
                     {
@@ -240,7 +298,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrVisualDecoration __instance, ref Vector2 __result)
             {
-                if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || Main.Settings.dontResizeCollider) return;
+                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
                 var tex = __instance.spriteRenderer?.sprite?.texture;
                 if (tex != null && TryGetDecorRatio(tex.name, out Vector3 ratio))
                 {
@@ -254,7 +312,7 @@ namespace Iridium.Patches
         {
             public static void Postfix()
             {
-                if (Main.Settings.enableOptimizer && Main.Settings.disableShadows)
+                if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.disableShadows)
                 {
                     QualitySettings.shadows = ShadowQuality.Disable;
                 }
@@ -266,37 +324,75 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrVisualDecoration __instance)
             {
-                if (!Main.Settings.enableOptimizer || !Main.Settings.optimizeDecorationUpdate) return;
-                var eventsField = typeof(scrVisualDecoration).GetField("events", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                if (eventsField?.GetValue(__instance) is System.Collections.IList { Count: 0 } or null)
+                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeDecorationUpdate) return;
+                
+                // 仅优化渲染器设置，不禁用组件
+                // 禁用组件（enabled = false）会导致初始化失败或游戏逻辑中断（导致崩溃）
+                var sr = __instance.spriteRenderer;
+                if (sr != null)
                 {
-                    __instance.enabled = false;
+                    sr.receiveShadows = false;
+                    sr.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+                    sr.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
                 }
-                else if (eventsField is null && __instance.transform.childCount == 0)
+            }
+        }
+
+        [HarmonyPatch(typeof(scrFloor), "Awake")]
+        public static class TileUpdateOptimizationPatch
+        {
+            public static void Postfix(scrFloor __instance)
+            {
+                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeTileUpdate) return;
+
+                // 仅优化渲染器设置，不禁用组件
+                // 格子的 enabled 状态对游戏核心逻辑（判定、路径）至关重要，绝不能禁用
+                var mr = __instance.GetComponent<MeshRenderer>();
+                if (mr != null)
                 {
-                    __instance.enabled = false;
+                    mr.receiveShadows = false;
+                    mr.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+                    mr.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
                 }
             }
         }
 
         [HarmonyPatch(typeof(scrVisualDecoration), "UpdateHitbox")]
-        public static class DamageBoxScalingPatch
+        public static class VisualDecorationUpdateHitboxPatch
         {
+            [HarmonyPrefix]
+            public static bool Prefix(scrVisualDecoration __instance)
+            {
+                // 如果开启了快速加载且不在编辑器模式，直接跳过碰撞体更新逻辑
+                // 这样可以避免大量的 AddComponent/GetComponent 相关的物理计算
+                if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.fastLoading && scnEditor.instance == null)
+                {
+                    if (__instance.boxCollider != null && __instance.boxCollider.enabled)
+                        __instance.boxCollider.enabled = false;
+                    return false;
+                }
+                return true;
+            }
+
+            [HarmonyPostfix]
             public static void Postfix(scrVisualDecoration __instance)
             {
-                if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || !__instance.useHitbox || __instance.spriteRenderer == null) return;
+                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || !__instance.useHitbox || __instance.spriteRenderer == null) return;
                 Vector3 ratio = __instance.spriteRenderer.transform.localScale;
                 if (__instance.hitboxType == Hitbox.Box)
                 {
-                    __instance.damageBox.size = Vector2.Scale(__instance.damageBox.size, ratio);
+                    if (__instance.damageBox != null)
+                        __instance.damageBox.size = Vector2.Scale(__instance.damageBox.size, ratio);
                 }
                 else if (__instance.hitboxType == Hitbox.Capsule)
                 {
-                    __instance.damageCapsule.size = Vector2.Scale(__instance.damageCapsule.size, ratio);
+                    if (__instance.damageCapsule != null)
+                        __instance.damageCapsule.size = Vector2.Scale(__instance.damageCapsule.size, ratio);
                 }
                 else
                 {
-                    __instance.damageCircle.radius *= ratio.x;
+                    if (__instance.damageCircle != null)
+                        __instance.damageCircle.radius *= ratio.x;
                 }
             }
         }
@@ -307,7 +403,7 @@ namespace Iridium.Patches
             public static bool isFinished = false;
             public static void Postfix(bool reloadDecorations)
             {
-                if (!Main.Settings.enableOptimizer || GCS.internalLevelName != null || isFinished || !reloadDecorations || Main.Settings.dontShowSavedMemory) return;
+                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || isFinished || !reloadDecorations || Main.Settings.optimizer.dontShowSavedMemory) return;
 
                 if (savedVRAM_MB > 0.1f)
                 {

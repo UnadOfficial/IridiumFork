@@ -1,224 +1,24 @@
 using System;
 using UnityModManagerNet;
 using UnityEngine;
+using Iridium.UI;
+using Iridium.Config;
 
 namespace Iridium
 {
-    /// <summary>
-    /// Mod settings class
-    /// Mod 设置类
-    /// </summary>
     public class Settings : UnityModManager.ModSettings
     {
         public string language = "en";
-        public bool enableOptimizer = false;
-        public double divideBy = 1.0;
-        public bool dontShowSavedMemory = false;
-        public bool dontCompress = false;
-        public bool dontResizeMultipleOf4 = false;
-        public bool dontResizeCollider = false;
-        public bool disableShadows = false;
-        public bool optimizeDecorationUpdate = false;
-
-        public bool removeNews = false;
-        public bool hideBetaWatermark = false;
-
-        public bool moveAutoplayText = false;
-        public float autoplayTextX = 0f;
-        public float autoplayTextY = 0f;
-
-        public bool forceDifficultyUI = false;
-
-        public bool enableCircleArc = false;
-
-        public bool enableTailTweak = false;
-        public float tailLength = 1f;
-        public float tailEmission = 1f;
-        public bool tailFollowPitch = false;
-
-        public bool enableLegacyPauseFix = false;
-        public bool enableNoFailTooEarly = false;
-
-        private static GUIStyle? _cardStyle;
-        private static GUIStyle? _headerStyle;
-        private static GUIStyle? _buttonStyle;
-        private static GUIStyle? _toggleStyle;
-        private static GUIStyle? _labelStyle;
-        private static GUIStyle? _textFieldStyle;
-        private static GUIStyle? _infoBoxStyle;
-        private static GUIStyle? _warningBoxStyle;
-        private static readonly System.Collections.Generic.Dictionary<string, Texture2D> _textureCache = [];
-
-        private void InitializeStyles()
-        {
-            if (_cardStyle != null) return;
-
-            // Android 14 / Material 3 Dark Palette
-            Color surfaceContainer = new(0.13f, 0.13f, 0.15f); // Surface Container
-            Color primary = new(0.66f, 0.76f, 1.0f);           // Primary (M3 Blue)
-            Color onSurface = new(0.88f, 0.88f, 0.9f);         // On Surface
-            Color surfaceContainerHigh = new(0.17f, 0.17f, 0.19f);
-            Color errorContainer = new(0.35f, 0.1f, 0.1f);     // Error Container
-            Color onErrorContainer = new(1.0f, 0.7f, 0.7f);    // On Error Container
-            Color infoContainer = new(0.1f, 0.2f, 0.35f);      // Info/Secondary Container
-            Color onInfoContainer = new(0.7f, 0.85f, 1.0f);    // On Info Container
-
-            _cardStyle = new GUIStyle(GUI.skin.box)
-            {
-                padding = new RectOffset(12, 12, 12, 12),
-                margin = new RectOffset(0, 0, 6, 6),
-                normal = { background = GetCachedRoundedTex(128, 128, 12, surfaceContainer) }
-            };
-
-            _headerStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 16,
-                fontStyle = FontStyle.Normal,
-                normal = { textColor = primary },
-                margin = new RectOffset(0, 0, 0, 8)
-            };
-
-            _labelStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 13,
-                normal = { textColor = onSurface },
-                alignment = TextAnchor.MiddleLeft
-            };
-
-            _buttonStyle = new GUIStyle(GUI.skin.button)
-            {
-                fontSize = 12,
-                fixedHeight = 28,
-                padding = new RectOffset(12, 12, 0, 0),
-                normal = { background = GetCachedRoundedTex(64, 64, 8, surfaceContainerHigh), textColor = primary },
-                hover = { background = GetCachedRoundedTex(64, 64, 8, primary * 0.2f), textColor = Color.white },
-                active = { background = GetCachedRoundedTex(64, 64, 8, primary), textColor = Color.black }
-            };
-
-            _textFieldStyle = new GUIStyle(GUI.skin.textField)
-            {
-                fontSize = 12,
-                fixedHeight = 24,
-                alignment = TextAnchor.MiddleCenter,
-                padding = new RectOffset(4, 4, 0, 0),
-                normal = { background = GetCachedRoundedTex(64, 64, 4, surfaceContainerHigh), textColor = onSurface },
-                focused = { background = GetCachedRoundedTex(64, 64, 4, surfaceContainerHigh), textColor = Color.white }
-            };
-
-            _infoBoxStyle = new GUIStyle(GUI.skin.box)
-            {
-                padding = new RectOffset(10, 10, 8, 8),
-                margin = new RectOffset(0, 0, 4, 4),
-                alignment = TextAnchor.MiddleLeft,
-                fontSize = 12,
-                normal = { background = GetCachedRoundedTex(64, 64, 8, infoContainer), textColor = onInfoContainer }
-            };
-
-            _warningBoxStyle = new GUIStyle(GUI.skin.box)
-            {
-                padding = new RectOffset(10, 10, 8, 8),
-                margin = new RectOffset(0, 0, 4, 4),
-                alignment = TextAnchor.MiddleLeft,
-                fontSize = 12,
-                normal = { background = GetCachedRoundedTex(64, 64, 8, errorContainer), textColor = onErrorContainer }
-            };
-        }
-
-        private void DrawInfoBox(string text, bool isError = false)
-        {
-            GUILayout.Box(text, isError ? _warningBoxStyle : _infoBoxStyle, GUILayout.ExpandWidth(true));
-        }
-
-        private bool M3Switch(bool value, string label)
-        {
-            GUILayout.BeginHorizontal(GUILayout.Height(32));
-            if (!string.IsNullOrEmpty(label)) GUILayout.Label(label, _labelStyle, GUILayout.ExpandWidth(true));
-            
-            Color trackColor = value ? new(0.66f, 0.76f, 1.0f) : new(0.28f, 0.28f, 0.31f);
-            Color thumbColor = value ? new(0.0f, 0.2f, 0.4f) : new(0.55f, 0.55f, 0.58f);
-
-            Rect rect = GUILayoutUtility.GetRect(40, 24, GUILayout.Width(40), GUILayout.Height(24));
-            
-            // Draw Track (Rounded)
-            GUI.color = trackColor;
-            GUI.DrawTexture(rect, GetCachedRoundedTex(64, 32, 16, Color.white));
-            
-            // Draw Thumb (Circle)
-            float thumbSize = 18;
-            float thumbX = value ? rect.x + rect.width - thumbSize - 3 : rect.x + 3;
-            Rect thumbRect = new(thumbX, rect.y + (rect.height - thumbSize) / 2, thumbSize, thumbSize);
-            GUI.color = thumbColor;
-            GUI.DrawTexture(thumbRect, GetCachedRoundedTex(32, 32, 16, Color.white));
-            
-            GUI.color = Color.white;
-            if (GUI.Button(rect, "", GUIStyle.none)) value = !value;
-            
-            GUILayout.EndHorizontal();
-            return value;
-        }
-
-        private Texture2D GetCachedRoundedTex(int width, int height, float radius, Color col)
-        {
-            string key = $"{width}_{height}_{radius}_{col.r}_{col.g}_{col.b}_{col.a}";
-            if (_textureCache.TryGetValue(key, out Texture2D tex) && tex != null) return tex;
-
-            tex = MakeRoundedTex(width, height, radius, col);
-            tex.hideFlags = HideFlags.HideAndDontSave;
-            _textureCache[key] = tex;
-            return tex;
-        }
-
-        private Texture2D MakeRoundedTex(int width, int height, float radius, Color col)
-        {
-            Texture2D tex = new(width, height);
-            Color[] pix = new Color[width * height];
-
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    float dx = Math.Min(x, width - 1 - x);
-                    float dy = Math.Min(y, height - 1 - y);
-
-                    if (dx < radius && dy < radius)
-                    {
-                        float d = (float)Math.Sqrt(Math.Pow(radius - dx, 2) + Math.Pow(radius - dy, 2));
-                        if (d > radius)
-                        {
-                            pix[y * width + x] = Color.clear;
-                        }
-                        else
-                        {
-                            // Simple anti-aliasing
-                            float alpha = Math.Min(1, radius + 0.5f - d);
-                            pix[y * width + x] = new Color(col.r, col.g, col.b, col.a * alpha);
-                        }
-                    }
-                    else
-                    {
-                        pix[y * width + x] = col;
-                    }
-                }
-            }
-
-            tex.SetPixels(pix);
-            tex.Apply();
-            return tex;
-        }
-
-        private Texture2D MakeTex(int width, int height, Color col)
-        {
-            Color[] pix = new Color[width * height];
-            for (int i = 0; i < pix.Length; ++i) pix[i] = col;
-            Texture2D result = new(width, height);
-            result.SetPixels(pix);
-            result.Apply();
-            return result;
-        }
+        
+        public OptimizerSettings optimizer = new();
+        public UISettings ui = new();
+        public TailSettings tail = new();
+        public MemorySettings memory = new();
+        public CompatibilitySettings compatibility = new();
 
         public void OnGUI(UnityModManager.ModEntry modEntry)
         {
-            InitializeStyles();
+            UIUtils.InitializeStyles();
 
             GUILayout.BeginHorizontal();
 
@@ -226,8 +26,8 @@ namespace Iridium
             GUILayout.BeginVertical(GUILayout.Width(420));
 
             // Language Selection Card
-            GUILayout.BeginVertical(_cardStyle);
-            GUILayout.Label(Localization.Get("Language"), _headerStyle);
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.Label(Localization.Get("Language"), UIUtils.HeaderStyle);
             
             GUILayout.BeginHorizontal();
             var langs = Localization.AvailableLanguages;
@@ -236,7 +36,7 @@ namespace Iridium
                 bool isCurrent = language == lang;
                 if (isCurrent) GUI.color = new(0.66f, 0.76f, 1.0f);
                 string displayName = Localization.GetDisplayName(lang);
-                if (GUILayout.Button(displayName.ToUpper(), _buttonStyle, GUILayout.Width(100)))
+                if (GUILayout.Button(displayName.ToUpper(), UIUtils.ButtonStyle, GUILayout.Width(100)))
                 {
                     language = lang;
                 }
@@ -249,84 +49,110 @@ namespace Iridium
             GUILayout.Space(8);
 
             // CompressDecorations Card
-            GUILayout.BeginVertical(_cardStyle);
+            GUILayout.BeginVertical(UIUtils.CardStyle);
             
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("EnableOptimizer"), _headerStyle);
+            GUILayout.Label(Localization.Get("EnableOptimizer"), UIUtils.HeaderStyle);
             GUILayout.FlexibleSpace();
-            bool newEnableOptimizer = M3Switch(enableOptimizer, "");
-            if (newEnableOptimizer != enableOptimizer)
+            bool newEnableOptimizer = UIUtils.M3Switch(optimizer.enableOptimizer, "");
+            if (newEnableOptimizer != optimizer.enableOptimizer)
             {
-                enableOptimizer = newEnableOptimizer;
-                if (enableOptimizer && disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
+                optimizer.enableOptimizer = newEnableOptimizer;
+                if (optimizer.enableOptimizer && optimizer.disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
                 else QualitySettings.shadows = ShadowQuality.All;
             }
             GUILayout.EndHorizontal();
 
-            if (enableOptimizer)
+            if (optimizer.enableOptimizer)
             {
                 GUILayout.Space(8);
                 
                 if (Iridium.Patches.OptimizerPatches.savedVRAM_MB > 0.1f)
                 {
-                    DrawInfoBox("✨ " + Localization.Get("SavedMemoryMsg", Iridium.Patches.OptimizerPatches.savedVRAM_MB.ToString("F2")));
+                    UIUtils.DrawInfoBox("✨ " + Localization.Get("SavedMemoryMsg", Iridium.Patches.OptimizerPatches.savedVRAM_MB.ToString("F2")));
                     GUILayout.Space(8);
                 }
 
-                bool showSavedMemory = M3Switch(!dontShowSavedMemory, Localization.Get("ShowSavedMemory"));
-                if (showSavedMemory == dontShowSavedMemory)
+                bool showSavedMemory = UIUtils.M3Switch(!optimizer.dontShowSavedMemory, Localization.Get("ShowSavedMemory"));
+                if (showSavedMemory == optimizer.dontShowSavedMemory)
                 {
-                    dontShowSavedMemory = !showSavedMemory;
+                    optimizer.dontShowSavedMemory = !showSavedMemory;
                 }
 
-                bool compressImage = M3Switch(!dontCompress, Localization.Get("CompressImage"));
-                if (compressImage == dontCompress)
+                bool compressImage = UIUtils.M3Switch(!optimizer.dontCompress, Localization.Get("CompressImage"));
+                if (compressImage == optimizer.dontCompress)
                 {
-                    dontCompress = !compressImage;
+                    optimizer.dontCompress = !compressImage;
                 }
 
-                bool multipleOf4 = M3Switch(!dontResizeMultipleOf4, Localization.Get("MultipleOf4"));
-                if (multipleOf4 == dontResizeMultipleOf4)
+                bool multipleOf4 = UIUtils.M3Switch(!optimizer.dontResizeMultipleOf4, Localization.Get("MultipleOf4"));
+                if (multipleOf4 == optimizer.dontResizeMultipleOf4)
                 {
-                    dontResizeMultipleOf4 = !multipleOf4;
+                    optimizer.dontResizeMultipleOf4 = !multipleOf4;
                 }
                 
-                if (dontCompress) dontResizeMultipleOf4 = true;
+                if (optimizer.dontCompress) optimizer.dontResizeMultipleOf4 = true;
 
                 GUILayout.Space(8);
                 GUILayout.BeginHorizontal(GUILayout.Height(28));
-                GUILayout.Label(Localization.Get("DivideImageBy"), _labelStyle);
+                GUILayout.Label(Localization.Get("DivideImageBy"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
-                string divideByStr = GUILayout.TextField(divideBy.ToString("F1"), _textFieldStyle, GUILayout.Width(50));
-                if (double.TryParse(divideByStr, out double newDivideBy)) divideBy = newDivideBy;
+                string divideByStr = GUILayout.TextField(optimizer.divideBy.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                if (double.TryParse(divideByStr, out double newDivideBy)) optimizer.divideBy = newDivideBy;
                 GUILayout.EndHorizontal();
 
                 GUILayout.Space(4);
-                dontResizeCollider = M3Switch(dontResizeCollider, Localization.Get("DontResizeCollider"));
+                optimizer.dontResizeCollider = UIUtils.M3Switch(optimizer.dontResizeCollider, Localization.Get("DontResizeCollider"));
                 
-                bool newDisableShadows = M3Switch(disableShadows, Localization.Get("DisableShadows"));
-                if (newDisableShadows != disableShadows)
+                bool newDisableShadows = UIUtils.M3Switch(optimizer.disableShadows, Localization.Get("DisableShadows"));
+                if (newDisableShadows != optimizer.disableShadows)
                 {
-                    disableShadows = newDisableShadows;
-                    if (enableOptimizer && disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
+                    optimizer.disableShadows = newDisableShadows;
+                    if (optimizer.enableOptimizer && optimizer.disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
                     else QualitySettings.shadows = ShadowQuality.All;
                 }
 
-                optimizeDecorationUpdate = M3Switch(optimizeDecorationUpdate, Localization.Get("OptimizeDecorationUpdate"));
+                optimizer.optimizeDecorationUpdate = UIUtils.M3Switch(optimizer.optimizeDecorationUpdate, Localization.Get("OptimizeDecorationUpdate"));
+                optimizer.optimizeTileUpdate = UIUtils.M3Switch(optimizer.optimizeTileUpdate, Localization.Get("OptimizeTileUpdate"));
+                optimizer.fastLoading = UIUtils.M3Switch(optimizer.fastLoading, "极速加载 (减少冗余组件操作)");
 
                 // Error states
                 if (typeof(Notification).GetMethod("SetupNotification", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic) == null)
                 {
                     GUILayout.Space(4);
-                    DrawInfoBox("⚠ " + Localization.Get("MethodNotFound", "Notification.SetupNotification"), true);
-                    dontShowSavedMemory = true;
+                    UIUtils.DrawInfoBox("⚠ " + Localization.Get("MethodNotFound", "Notification.SetupNotification"), true);
+                    optimizer.dontShowSavedMemory = true;
                 }
                 if (typeof(scrVisualDecoration).GetProperty("spriteUnscaledSize", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public) == null)
                 {
                     GUILayout.Space(4);
-                    DrawInfoBox("⚠ " + Localization.Get("PropertyNotFound", "scrVisualDecoration.spriteUnscaledSize"), true);
-                    dontResizeCollider = true;
+                    UIUtils.DrawInfoBox("⚠ " + Localization.Get("PropertyNotFound", "scrVisualDecoration.spriteUnscaledSize"), true);
+                    optimizer.dontResizeCollider = true;
                 }
+            }
+            GUILayout.EndVertical();
+
+            GUILayout.Space(8);
+
+            // Memory Optimization Card
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("MemorySettings"), UIUtils.HeaderStyle);
+            GUILayout.FlexibleSpace();
+            memory.enableSmartGC = UIUtils.M3Switch(memory.enableSmartGC, "");
+            GUILayout.EndHorizontal();
+
+            if (memory.enableSmartGC)
+            {
+                GUILayout.Space(8);
+                GUILayout.BeginHorizontal(GUILayout.Height(28));
+                GUILayout.Label(Localization.Get("GCInterval"), UIUtils.LabelStyle);
+                GUILayout.FlexibleSpace();
+                string intervalStr = GUILayout.TextField(memory.gcInterval.ToString("F0"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                if (float.TryParse(intervalStr, out float newInterval)) memory.gcInterval = Mathf.Clamp(newInterval, 10f, 3600f);
+                GUILayout.EndHorizontal();
+
+                memory.gcInGame = UIUtils.M3Switch(memory.gcInGame, Localization.Get("GCInGame"));
             }
             GUILayout.EndVertical();
 
@@ -338,42 +164,42 @@ namespace Iridium
             GUILayout.BeginVertical(GUILayout.Width(420));
 
             // UI Adjustments Card
-            GUILayout.BeginVertical(_cardStyle);
-            GUILayout.Label(Localization.Get("UISettings"), _headerStyle);
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.Label(Localization.Get("UISettings"), UIUtils.HeaderStyle);
             GUILayout.Space(8);
-            bool newRemoveNews = M3Switch(removeNews, Localization.Get("RemoveNews"));
-            if (newRemoveNews != removeNews)
+            bool newRemoveNews = UIUtils.M3Switch(ui.removeNews, Localization.Get("RemoveNews"));
+            if (newRemoveNews != ui.removeNews)
             {
-                removeNews = newRemoveNews;
+                ui.removeNews = newRemoveNews;
                 Iridium.Patches.MiscPatches.RemoveNewsPatch.UpdateNews();
             }
-            bool newHideBeta = M3Switch(hideBetaWatermark, Localization.Get("HideBetaWatermark"));
-            if (newHideBeta != hideBetaWatermark)
+            bool newHideBeta = UIUtils.M3Switch(ui.hideBetaWatermark, Localization.Get("HideBetaWatermark"));
+            if (newHideBeta != ui.hideBetaWatermark)
             {
-                hideBetaWatermark = newHideBeta;
+                ui.hideBetaWatermark = newHideBeta;
                 Iridium.Patches.MiscPatches.RefreshBetaWatermark();
             }
-            forceDifficultyUI = M3Switch(forceDifficultyUI, Localization.Get("ForceDifficultyUI"));
+            ui.forceDifficultyUI = UIUtils.M3Switch(ui.forceDifficultyUI, Localization.Get("ForceDifficultyUI"));
 
-            bool newMoveAutoplay = M3Switch(moveAutoplayText, Localization.Get("MoveAutoplayText"));
-            if (newMoveAutoplay != moveAutoplayText)
+            bool newMoveAutoplay = UIUtils.M3Switch(ui.moveAutoplayText, Localization.Get("MoveAutoplayText"));
+            if (newMoveAutoplay != ui.moveAutoplayText)
             {
-                moveAutoplayText = newMoveAutoplay;
+                ui.moveAutoplayText = newMoveAutoplay;
                 Iridium.Patches.MiscPatches.RefreshAutoplayTextPosition();
             }
 
-            if (moveAutoplayText)
+            if (ui.moveAutoplayText)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("X:", GUILayout.Width(20));
-                autoplayTextX = GUILayout.HorizontalSlider(autoplayTextX, -Screen.width / 2f, Screen.width / 2f);
-                GUILayout.Label(autoplayTextX.ToString("F0"), GUILayout.Width(40));
+                ui.autoplayTextX = GUILayout.HorizontalSlider(ui.autoplayTextX, -Screen.width / 2f, Screen.width / 2f);
+                GUILayout.Label(ui.autoplayTextX.ToString("F0"), UIUtils.LabelStyle, GUILayout.Width(40));
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Y:", GUILayout.Width(20));
-                autoplayTextY = GUILayout.HorizontalSlider(autoplayTextY, -Screen.height / 2f, Screen.height / 2f);
-                GUILayout.Label(autoplayTextY.ToString("F0"), GUILayout.Width(40));
+                ui.autoplayTextY = GUILayout.HorizontalSlider(ui.autoplayTextY, -Screen.height / 2f, Screen.height / 2f);
+                GUILayout.Label(ui.autoplayTextY.ToString("F0"), UIUtils.LabelStyle, GUILayout.Width(40));
                 GUILayout.EndHorizontal();
 
                 if (GUI.changed)
@@ -383,51 +209,51 @@ namespace Iridium
             }
             
             GUILayout.Space(8);
-            enableCircleArc = M3Switch(enableCircleArc, Localization.Get("EnableCircleArc"));
-            if (enableCircleArc) DrawInfoBox("⚠ " + Localization.Get("RestartRequired"));
+            ui.enableCircleArc = UIUtils.M3Switch(ui.enableCircleArc, Localization.Get("EnableCircleArc"));
+            if (ui.enableCircleArc) UIUtils.DrawInfoBox("⚠ " + Localization.Get("RestartRequired"));
             
             GUILayout.EndVertical();
 
             GUILayout.Space(8);
 
             // Tail Settings Card
-            GUILayout.BeginVertical(_cardStyle);
+            GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("TailSettings"), _headerStyle);
+            GUILayout.Label(Localization.Get("TailSettings"), UIUtils.HeaderStyle);
             GUILayout.FlexibleSpace();
-            bool newEnableTail = M3Switch(enableTailTweak, "");
-            if (newEnableTail != enableTailTweak)
+            bool newEnableTail = UIUtils.M3Switch(tail.enableTailTweak, "");
+            if (newEnableTail != tail.enableTailTweak)
             {
-                enableTailTweak = newEnableTail;
-                if (!enableTailTweak) Iridium.Patches.MiscPatches.TailTweakPatch.ResetTails();
+                tail.enableTailTweak = newEnableTail;
+                if (!tail.enableTailTweak) Iridium.Patches.MiscPatches.TailTweakPatch.ResetTails();
             }
             GUILayout.EndHorizontal();
 
-            if (enableTailTweak)
+            if (tail.enableTailTweak)
             {
                 GUILayout.Space(8);
-                bool newFollowPitch = M3Switch(tailFollowPitch, Localization.Get("TailFollowPitch"));
-                if (newFollowPitch != tailFollowPitch)
+                bool newFollowPitch = UIUtils.M3Switch(tail.tailFollowPitch, Localization.Get("TailFollowPitch"));
+                if (newFollowPitch != tail.tailFollowPitch)
                 {
-                    tailFollowPitch = newFollowPitch;
-                    if (!tailFollowPitch) Iridium.Patches.MiscPatches.TailTweakPatch.ResetTails();
+                    tail.tailFollowPitch = newFollowPitch;
+                    if (!tail.tailFollowPitch) Iridium.Patches.MiscPatches.TailTweakPatch.ResetTails();
                 }
                 
-                if (!tailFollowPitch)
+                if (!tail.tailFollowPitch)
                 {
                     GUILayout.BeginHorizontal(GUILayout.Height(28));
-                    GUILayout.Label(Localization.Get("TailLength"), _labelStyle);
+                    GUILayout.Label(Localization.Get("TailLength"), UIUtils.LabelStyle);
                     GUILayout.FlexibleSpace();
-                    string lengthStr = GUILayout.TextField(tailLength.ToString("F1"), _textFieldStyle, GUILayout.Width(50));
-                    if (float.TryParse(lengthStr, out float newLength)) tailLength = newLength;
+                    string lengthStr = GUILayout.TextField(tail.tailLength.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                    if (float.TryParse(lengthStr, out float newLength)) tail.tailLength = newLength;
                     GUILayout.EndHorizontal();
                 }
 
                 GUILayout.BeginHorizontal(GUILayout.Height(28));
-                GUILayout.Label(Localization.Get("TailEmission"), _labelStyle);
+                GUILayout.Label(Localization.Get("TailEmission"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
-                string emissionStr = GUILayout.TextField(tailEmission.ToString("F1"), _textFieldStyle, GUILayout.Width(50));
-                if (float.TryParse(emissionStr, out float newEmission)) tailEmission = newEmission;
+                string emissionStr = GUILayout.TextField(tail.tailEmission.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                if (float.TryParse(emissionStr, out float newEmission)) tail.tailEmission = newEmission;
                 GUILayout.EndHorizontal();
             }
             GUILayout.EndVertical();
@@ -435,11 +261,11 @@ namespace Iridium
             GUILayout.Space(8);
 
             // Compatibility & Fixes Card
-            GUILayout.BeginVertical(_cardStyle);
-            GUILayout.Label(Localization.Get("CompatibilitySettings"), _headerStyle);
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.Label(Localization.Get("CompatibilitySettings"), UIUtils.HeaderStyle);
             GUILayout.Space(8);
-            enableLegacyPauseFix = M3Switch(enableLegacyPauseFix, Localization.Get("EnableLegacyPauseFix"));
-            enableNoFailTooEarly = M3Switch(enableNoFailTooEarly, Localization.Get("EnableNoFailTooEarly"));
+            compatibility.enableLegacyPauseFix = UIUtils.M3Switch(compatibility.enableLegacyPauseFix, Localization.Get("EnableLegacyPauseFix"));
+            compatibility.enableNoFailTooEarly = UIUtils.M3Switch(compatibility.enableNoFailTooEarly, Localization.Get("EnableNoFailTooEarly"));
             GUILayout.EndVertical();
 
             GUILayout.EndVertical(); // End Right Column
@@ -452,31 +278,9 @@ namespace Iridium
             }
         }
 
-
-        /// <summary>
-        /// Called when saving GUI / 保存设置时调用
-        /// </summary>
-        public void OnSaveGUI(UnityModManager.ModEntry modEntry)
-        {
-            Save(modEntry);
-        }
-
-        /// <summary>
-        /// Save settings / 保存设置
-        /// </summary>
         public override void Save(UnityModManager.ModEntry modEntry)
         {
             Save(this, modEntry);
-        }
-
-        /// <summary>
-        /// Load settings / 加载设置
-        /// </summary>
-        public static Settings Load(UnityModManager.ModEntry modEntry)
-        {
-            Settings settings = Load<Settings>(modEntry);
-            if (settings.divideBy <= 0.0) settings.divideBy = 1.0;
-            return settings;
         }
     }
 }

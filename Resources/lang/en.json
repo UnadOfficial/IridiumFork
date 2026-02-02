@@ -1,8 +1,8 @@
 {
   "displayName": "English",
   "Language": "Language",
-  "EnableOptimizer": "Enable Compress Decorations",
-  "OptimizerSettings": "Compress Decorations Settings",
+  "EnableOptimizer": "Enable Graphic Optimization",
+  "OptimizerSettings": "Graphic Optimization Settings",
   "ShowSavedMemory": "Show Saved Memory",
   "CompressImage": "Compress Image (Recommended)",
   "MultipleOf4": "Resize to Multiple of 4 (Better Compatibility)",
@@ -10,6 +10,7 @@
   "DontResizeCollider": "Don't Resize Decoration Colliders",
   "DisableShadows": "Disable Decoration Shadows",
   "OptimizeDecorationUpdate": "Optimize Decoration Updates",
+  "OptimizeTileUpdate": "Optimize Tile Updates",
   "SavedMemoryMsg": "Saved Memory: {0}MB",
   "SavedMemoryLog": "Optimized VRAM: {0} MB",
   "MethodNotFound": "{0} method not found!",
@@ -44,5 +45,11 @@
   "LoadedBinaryFile": "Loaded binary file: {0} ({1} bytes)",
   "FailedToLoadBinaryFile": "Failed to load binary file: {0}\n{1}",
   "ResourcesFolderNotFound": "Resources folder not found: {0}",
-  "FailedToGetFiles": "Failed to get files: {0}"
+  "FailedToGetFiles": "Failed to get files: {0}",
+  "MemorySettings": "Memory Optimization",
+  "EnableSmartGC": "Enable Smart GC(Experimental)",
+  "GCInterval": "GC Interval (sec)",
+  "GCInGame": "GC during gameplay",
+  "CleaningMemory": "Cleaning memory...",
+  "CleanedMemory": "Memory cleanup finished"
 }

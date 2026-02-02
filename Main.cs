@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Security;
 using HarmonyLib;
 using UnityEngine;
 using UnityModManagerNet;
@@ -12,17 +11,21 @@ namespace Iridium
         public static Harmony? Harmony { get; private set; }
         public static Settings Settings { get; private set; } = null!;
         public static UnityModManager.ModEntry.ModLogger? Logger;
+        private static int _mainThreadId;
+
+        public static bool IsMainThread => System.Threading.Thread.CurrentThread.ManagedThreadId == _mainThreadId;
 
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
+            _mainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
             Mod = modEntry;
             Logger = Mod.Logger;
-            Settings = Settings.Load(modEntry);
+            Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
             Localization.Load();
             
             modEntry.OnToggle = OnToggle;
             modEntry.OnGUI = Settings.OnGUI;
-            modEntry.OnSaveGUI = Settings.OnSaveGUI;
+            modEntry.OnSaveGUI = Settings.Save;
             
             Harmony = new Harmony(modEntry.Info.Id);
             
@@ -37,7 +40,7 @@ namespace Iridium
                 modEntry.Logger.Log(Localization.Get("ModEnabled"));
                 Harmony?.PatchAll(Assembly.GetExecutingAssembly());
                 
-                if (Settings.enableOptimizer)
+                if (Settings.optimizer.enableOptimizer)
                 {
                     Iridium.Patches.OptimizerPatches.ResetDecorOptimization(true);
                 }

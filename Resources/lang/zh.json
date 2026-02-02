@@ -1,8 +1,8 @@
 {
   "displayName": "简体中文",
   "Language": "语言",
-  "EnableOptimizer": "启用 压缩装饰",
-  "OptimizerSettings": "压缩装饰 设置",
+  "EnableOptimizer": "启用 图形优化",
+  "OptimizerSettings": "图形优化 设置",
   "ShowSavedMemory": "显示节省的内存",
   "CompressImage": "压缩图像 (推荐)",
   "MultipleOf4": "将尺寸调整为 4 的倍数 (提升兼容性)",
@@ -10,6 +10,7 @@
   "DontResizeCollider": "不对装饰物的碰撞箱进行缩放",
   "DisableShadows": "禁用装饰阴影",
   "OptimizeDecorationUpdate": "优化装饰物更新逻辑",
+  "OptimizeTileUpdate": "优化格子更新逻辑 (Tile)",
   "SavedMemoryMsg": "已节省内存: {0}MB",
   "SavedMemoryLog": "已优化显存占用: {0} MB",
   "MethodNotFound": "找不到 {0} 方法！",
@@ -44,5 +45,11 @@
   "LoadedBinaryFile": "已加载二进制文件: {0} ({1} 字节)",
   "FailedToLoadBinaryFile": "加载二进制文件失败: {0}\n{1}",
   "ResourcesFolderNotFound": "Resources 文件夹未找到: {0}",
-  "FailedToGetFiles": "获取文件失败: {0}"
+  "FailedToGetFiles": "获取文件失败: {0}",
+  "MemorySettings": "内存优化",
+  "EnableSmartGC": "启用 智能内存清理(实验性功能)",
+  "GCInterval": "清理间隔 (秒)",
+  "GCInGame": "在关卡内也进行清理",
+  "CleaningMemory": "正在清理内存...",
+  "CleanedMemory": "内存清理完成"
 }
