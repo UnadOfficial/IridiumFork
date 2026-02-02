@@ -153,6 +153,7 @@ namespace Iridium
                 GUILayout.EndHorizontal();
 
                 memory.gcInGame = UIUtils.M3Switch(memory.gcInGame, Localization.Get("GCInGame"));
+                memory.gcInLoadScene = UIUtils.M3Switch(memory.gcInLoadScene, Localization.Get("GCInLoadScene"));
             }
             GUILayout.EndVertical();
 
