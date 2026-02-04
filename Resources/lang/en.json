@@ -50,6 +50,7 @@
   "EnableSmartGC": "Enable Smart GC(Experimental)",
   "GCInterval": "GC Interval (sec)",
   "GCInGame": "GC during gameplay",
+  "GCInLoadScene": "GC when load scene",
   "CleaningMemory": "Cleaning memory...",
   "CleanedMemory": "Memory cleanup finished"
 }
