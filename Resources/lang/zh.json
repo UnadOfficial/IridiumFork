@@ -50,6 +50,7 @@
   "EnableSmartGC": "启用 智能内存清理(实验性功能)",
   "GCInterval": "清理间隔 (秒)",
   "GCInGame": "在关卡内也进行清理",
+  "GCInLoadScene": "加载场景时回收",
   "CleaningMemory": "正在清理内存...",
   "CleanedMemory": "内存清理完成"
 }
