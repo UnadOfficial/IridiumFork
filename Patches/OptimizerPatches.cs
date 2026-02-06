@@ -164,17 +164,23 @@ namespace Iridium.Patches
                 }
             }
         }
-
-        [HarmonyPatch(typeof(scnGame))]
+        
+        [HarmonyPatch(typeof(scnGame))] 
         public static class OptimizationResetPatches
         {
-            [HarmonyPatch("OnDestroy")]
-            [HarmonyPatch("LoadAndPlayLevel")]
-            [HarmonyPrefix]
-            public static void FullReset() => ResetDecorOptimization(true);
-
-            [HarmonyPatch("LoadLevel"), HarmonyPrefix]
-            public static void SoftReset() => ResetDecorOptimization(false);
+           [HarmonyPatch("OnDestroy")] 
+           [HarmonyPatch("LoadAndPlayLevel")]
+           [HarmonyPrefix]
+           public static void FullReset() => ResetDecorOptimization(true);
+        
+           [HarmonyPatch("LoadLevel"), HarmonyPrefix] 
+           public static void SoftReset() => ResetDecorOptimization(false);
+           
+           [HarmonyPatch("Awake"), HarmonyPostfix] 
+           public static void CleanupTrackCache()
+           {
+               TrackOptimizationPatches._floorTransformCache = new System.Runtime.CompilerServices.ConditionalWeakTable<scrFloor, Transform>();
+           }
         }
 
         [HarmonyPatch(typeof(scrCustomBackgroundSprite), "SetCustomBG")]
@@ -522,5 +528,8 @@ namespace Iridium.Patches
                 return true;
             }
         }
+        
+
+        
     }
 }
