@@ -11,8 +11,9 @@
   "DisableShadows": "Disable Decoration Shadows",
   "OptimizeDecorationUpdate": "Optimize Decoration Updates",
   "OptimizeTileUpdate": "Optimize Tile Updates",
+  "FastLoading": "Fast Loading (Reduce redundant component operations)",
   "SavedMemoryMsg": "Saved Memory: {0}MB",
-  "SavedMemoryLog": "Optimized VRAM: {0} MB",
+  "SavedMemoryLog": "Optimized RAM: {0} MB",
   "MethodNotFound": "{0} method not found!",
   "PropertyNotFound": "{0} property not found!",
   "ModLoaded": "Mod loaded (Language: {0})",
@@ -33,6 +34,7 @@
   "CompatibilitySettings": "Compatibility & Fixes",
   "EnableLegacyPauseFix": "Revert 2.9.4 CCW U-Turn Pause Fix",
   "EnableNoFailTooEarly": "Killer Decorations to Purple Judgements in NoFail",
+  "ForceAngleData": "Force use of angleData when loading Level",
   "ModNotInitialized": "Mod is not initialized",
   "TextFileNotFound": "Text file not found: {0}",
   "LoadedTextFile": "Loaded text file: {0}",
@@ -50,7 +52,7 @@
   "EnableSmartGC": "Enable Smart GC(Experimental)",
   "GCInterval": "GC Interval (sec)",
   "GCInGame": "GC during gameplay",
-  "GCInLoadScene": "GC when load scene",
+  "GCInLoadScene": "GC when loading scene",
   "CleaningMemory": "Cleaning memory...",
   "CleanedMemory": "Memory cleanup finished"
 }
