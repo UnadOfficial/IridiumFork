@@ -3,6 +3,8 @@ namespace Iridium.Config
     public class OptimizerSettings
     {
         public bool enableOptimizer = false;
+        public bool optimizeMoveTrack = true;
+        public bool optimizeRecolorTrack = true;
         public double divideBy = 1.0;
         public bool dontShowSavedMemory = false;
         public bool dontCompress = false;
@@ -46,5 +48,14 @@ namespace Iridium.Config
         public bool enableLegacyPauseFix = false;
         public bool enableNoFailTooEarly = false;
         public bool forceAngleData = false;
+        public LegacyBehaviorMode legacyFlashMode = LegacyBehaviorMode.Default;
+        public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
+    }
+
+    public enum LegacyBehaviorMode
+    {
+        Default,
+        AlwaysOff,
+        AlwaysOn
     }
 }

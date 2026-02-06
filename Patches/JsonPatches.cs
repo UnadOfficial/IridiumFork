@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using HarmonyLib;
 using ADOFAI;
+using Iridium.Config;
 
 namespace Iridium.Patches
 {
@@ -65,6 +66,21 @@ namespace Iridium.Patches
                 {
                     dict["angleData"] = ConvertPathToAngle(pathData);
                     dict.Remove("pathData");
+                }
+            }
+
+            public static void Postfix(LevelData __instance)
+            {
+                var comp = Main.Settings.compatibility;
+
+                if (comp.legacyFlashMode != LegacyBehaviorMode.Default)
+                {
+                    __instance.legacyFlash = comp.legacyFlashMode == LegacyBehaviorMode.AlwaysOn;
+                }
+
+                if (comp.legacyCamRelativeToMode != LegacyBehaviorMode.Default)
+                {
+                    __instance.legacyCamRelativeTo = comp.legacyCamRelativeToMode == LegacyBehaviorMode.AlwaysOn;
                 }
             }
         }

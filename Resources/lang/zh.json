@@ -54,5 +54,13 @@
   "GCInGame": "在关卡内也进行清理",
   "GCInLoadScene": "加载场景时回收",
   "CleaningMemory": "正在清理内存...",
-  "CleanedMemory": "内存清理完成"
+  "CleanedMemory": "内存清理完成",
+  "LegacyLevelBehavior": "旧版谱面行为",
+  "LegacyFlashMode": "旧版闪烁行为 (Legacy Flash)",
+  "LegacyCamRelativeToMode": "旧版摄像机相对行为 (Legacy Camera Relative)",
+  "ModeDefault": "默认",
+  "ModeAlwaysOff": "全部关闭",
+  "ModeAlwaysOn": "全部开启",
+  "OptimizeMoveTrack": "优化 移动轨道 (MoveTrack)(实验性)",
+  "OptimizeRecolorTrack": "优化 重新设置轨道颜色 (RecolorTrack)(实验性)"
 }
