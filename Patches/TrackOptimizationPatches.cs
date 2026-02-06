@@ -12,8 +12,8 @@ namespace Iridium.Patches
 {
     public static class TrackOptimizationPatches
     {
-        // .NET 4.8 不支持 ConditionalWeakTable.Clear()，通过重新实例化来清理缓存
-        private static ConditionalWeakTable<scrFloor, Transform> _floorTransformCache = new ConditionalWeakTable<scrFloor, Transform>();
+        // 使用弱引用表缓存，防止内存泄漏。由于 .NET 4.8 不支持 Clear()，通过重新实例化来重置缓存
+        internal static ConditionalWeakTable<scrFloor, Transform> _floorTransformCache = new ConditionalWeakTable<scrFloor, Transform>();
 
         private static Transform GetTransform(scrFloor floor)
         {
@@ -163,7 +163,8 @@ namespace Iridium.Patches
             }
         }
 
-        [HarmonyPatch(typeof(scnGame), "FlushUnusedMemory")]
+        
+        [HarmonyPatch(typeof(scnGame), "Awake")]
         public static class CleanupPatch
         {
             public static void Postfix()
