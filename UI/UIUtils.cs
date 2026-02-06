@@ -125,53 +125,99 @@ namespace Iridium.UI
             GUILayout.EndHorizontal();
             return value;
         }
+        
+        public static int M3SegmentedButton(int selectedIndex, string[] options)
+                {
+                    GUILayout.BeginHorizontal();
+                    for (int i = 0; i < options.Length; i++)
+                    {
+                        bool isSelected = selectedIndex == i;
+                        Color primary = new(0.66f, 0.76f, 1.0f);
+                        Color surfaceVariant = new(0.28f, 0.28f, 0.31f);
+                        
+                        GUI.color = isSelected ? primary : surfaceVariant;
+                        
+                        GUIStyle segmentStyle = new(ButtonStyle)
+                        {
+                            margin = new RectOffset(0, 0, 0, 0),
+                            normal = { 
+                                background = GetCachedRoundedTex(64, 64, 0, Color.white), 
+                                textColor = isSelected ? Color.black : primary 
+                            }
+                        };
+        
+                        // Round corners for ends
+                        float r = 14;
+                        if (i == 0) segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, Color.white, true, false, true, false);
+                        else if (i == options.Length - 1) segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, Color.white, false, true, false, true);
+        
+                        if (GUILayout.Button(options[i].ToUpper(), segmentStyle, GUILayout.ExpandWidth(true)))
+                        {
+                            selectedIndex = i;
+                        }
+                        GUI.color = Color.white;
+                    }
+                    GUILayout.EndHorizontal();
+                    return selectedIndex;
+                }
 
-        public static Texture2D GetCachedRoundedTex(int width, int height, float radius, Color col)
+        public static Texture2D GetCachedRoundedTex(int width, int height, float radius, Color col, bool tl = true, bool tr = true, bool bl = true, bool br = true)
         {
-            string key = $"{width}_{height}_{radius}_{col.r}_{col.g}_{col.b}_{col.a}";
+            string key = $"{width}_{height}_{radius}_{col.r}_{col.g}_{col.b}_{col.a}_{tl}{tr}{bl}{br}";
             if (_textureCache.TryGetValue(key, out Texture2D tex) && tex != null) return tex;
 
-            tex = MakeRoundedTex(width, height, radius, col);
+            tex = MakeRoundedTex(width, height, radius, col, tl, tr, bl, br);
             tex.hideFlags = HideFlags.HideAndDontSave;
             _textureCache[key] = tex;
             return tex;
         }
 
-        private static Texture2D MakeRoundedTex(int width, int height, float radius, Color col)
-        {
-            Texture2D tex = new(width, height);
-            Color[] pix = new Color[width * height];
-
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
+        private static Texture2D MakeRoundedTex(int width, int height, float radius, Color col, bool tl = true, bool tr = true, bool bl = true, bool br = true)
                 {
-                    float dx = Math.Min(x, width - 1 - x);
-                    float dy = Math.Min(y, height - 1 - y);
-
-                    if (dx < radius && dy < radius)
+                    Texture2D tex = new(width, height);
+                    Color[] pix = new Color[width * height];
+        
+                    for (int y = 0; y < height; y++)
                     {
-                        float d = (float)Math.Sqrt(Math.Pow(radius - dx, 2) + Math.Pow(radius - dy, 2));
-                        if (d > radius)
+                        for (int x = 0; x < width; x++)
                         {
-                            pix[y * width + x] = Color.clear;
-                        }
-                        else
-                        {
-                            float alpha = Math.Min(1, radius + 0.5f - d);
-                            pix[y * width + x] = new Color(col.r, col.g, col.b, col.a * alpha);
+                            float dx = -1, dy = -1;
+                            bool isCornerRegion = false;
+        
+                            // 检测当前像素是否处于需要处理圆角的四个角区域内
+                            // Top-Left
+                            if (tl && x < radius && y >= height - radius) { dx = radius - x; dy = radius - (height - 1 - y); isCornerRegion = true; }
+                            // Top-Right
+                            else if (tr && x >= width - radius && y >= height - radius) { dx = radius - (width - 1 - x); dy = radius - (height - 1 - y); isCornerRegion = true; }
+                            // Bottom-Left
+                            else if (bl && x < radius && y < radius) { dx = radius - x; dy = radius - y; isCornerRegion = true; }
+                            // Bottom-Right
+                            else if (br && x >= width - radius && y < radius) { dx = radius - (width - 1 - x); dy = radius - y; isCornerRegion = true; }
+        
+                            if (isCornerRegion)
+                            {
+                                float d = (float)Math.Sqrt(dx * dx + dy * dy);
+                                if (d > radius)
+                                {
+                                    pix[y * width + x] = Color.clear;
+                                }
+                                else
+                                {
+                                    // 保持原有的抗锯齿逻辑
+                                    float alpha = Math.Min(1, radius + 0.5f - d);
+                                    pix[y * width + x] = new Color(col.r, col.g, col.b, col.a * alpha);
+                                }
+                            }
+                            else
+                            {
+                                pix[y * width + x] = col;
+                            }
                         }
                     }
-                    else
-                    {
-                        pix[y * width + x] = col;
-                    }
+        
+                    tex.SetPixels(pix);
+                    tex.Apply();
+                    return tex;
                 }
-            }
-
-            tex.SetPixels(pix);
-            tex.Apply();
-            return tex;
-        }
     }
 }

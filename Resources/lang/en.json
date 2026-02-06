@@ -54,5 +54,13 @@
   "GCInGame": "GC during gameplay",
   "GCInLoadScene": "GC when loading scene",
   "CleaningMemory": "Cleaning memory...",
-  "CleanedMemory": "Memory cleanup finished"
+  "CleanedMemory": "Memory cleanup finished",
+  "LegacyLevelBehavior": "Legacy Level Behavior",
+  "LegacyFlashMode": "Legacy Flash Behavior",
+  "LegacyCamRelativeToMode": "Legacy Camera Relative Behavior",
+  "ModeDefault": "Default",
+  "ModeAlwaysOff": "Always Off",
+  "ModeAlwaysOn": "Always On",
+  "OptimizeMoveTrack": "Optimize MoveTrack Events",
+  "OptimizeRecolorTrack": "Optimize RecolorTrack Events"
 }
