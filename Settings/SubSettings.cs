@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Iridium.Config
 {
     public class OptimizerSettings
@@ -35,7 +37,7 @@ namespace Iridium.Config
     {
         public bool enableTailTweak = false;
         public float tailLength = 1f;
-        public float tailEmission = 1f;
+        public float tailEmission = 20f;
         public bool tailFollowPitch = false;
     }
 
@@ -54,6 +56,31 @@ namespace Iridium.Config
         public bool forceAngleData = false;
         public LegacyBehaviorMode legacyFlashMode = LegacyBehaviorMode.Default;
         public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
+    }
+
+    public class AppearanceSettings
+    {
+        public bool enableMenuSkin = false;
+        public string skinPath = ""; // Now represents the file path
+        public float backgroundOpacity = 1f;
+        public Color backgroundColor = Color.white;
+        public float backgroundBlur = 0f;
+        public float backgroundBrightness = 1f;
+        public float backgroundSaturation = 1f;
+        public float backgroundContrast = 1f;
+        public float backgroundHue = 0f;
+        public bool backgroundLoop = true;
+        public float backgroundPlaybackSpeed = 1f;
+        public bool backgroundAudio = false;
+        public float backgroundAudioVolume = 1f;
+        public bool useParallax = false;
+        public float parallaxStrength = 0.1f;
+
+        // Level Select Track Customization
+        public bool enableTrackCustomization = false;
+        public Color trackColor = Color.white;
+        public float trackOpacity = 1f;
+        public float trackBrightness = 1f;
     }
 
     public enum LegacyBehaviorMode

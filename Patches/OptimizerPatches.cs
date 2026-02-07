@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using ADOFAI;
 using HarmonyLib;
 using UnityEngine;
@@ -414,8 +415,27 @@ namespace Iridium.Patches
             private static FieldInfo? _startFrameField;
             private static FieldInfo? _cameraField;
 
-            [HarmonyPrefix]
-            public static bool Prefix(scnGame __instance)
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                Label label = new();
+                yield return new CodeInstruction(OpCodes.Ldarg_0);
+                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ScnGameUpdateOptimizationPatch), nameof(ShouldUpdate)));
+                yield return new CodeInstruction(OpCodes.Brtrue, label);
+                yield return new CodeInstruction(OpCodes.Ret);
+
+                bool first = true;
+                foreach (var instruction in instructions)
+                {
+                    if (first)
+                    {
+                        instruction.labels.Add(label);
+                        first = false;
+                    }
+                    yield return instruction;
+                }
+            }
+
+            public static bool ShouldUpdate(scnGame __instance)
             {
                 if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeScnGameUpdate)
                     return true;

@@ -12,6 +12,7 @@ namespace Iridium.UI
         private static GUIStyle? _textFieldStyle;
         private static GUIStyle? _infoBoxStyle;
         private static GUIStyle? _warningBoxStyle;
+        private static GUIStyle? _colorPickerLabelStyle;
         private static readonly System.Collections.Generic.Dictionary<string, Texture2D> _textureCache = [];
 
         public static GUIStyle CardStyle => _cardStyle ?? throw new InvalidOperationException("UI not initialized");
@@ -93,6 +94,48 @@ namespace Iridium.UI
                 fontSize = 12,
                 normal = { background = GetCachedRoundedTex(64, 64, 8, errorContainer), textColor = onErrorContainer }
             };
+
+            _colorPickerLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 11,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = onSurface }
+            };
+        }
+
+        public static Color ColorPicker(Color color)
+        {
+            GUILayout.BeginVertical();
+            
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("R", _colorPickerLabelStyle, GUILayout.Width(15));
+            color.r = GUILayout.HorizontalSlider(color.r, 0f, 1f, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("G", _colorPickerLabelStyle, GUILayout.Width(15));
+            color.g = GUILayout.HorizontalSlider(color.g, 0f, 1f, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("B", _colorPickerLabelStyle, GUILayout.Width(15));
+            color.b = GUILayout.HorizontalSlider(color.b, 0f, 1f, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("A", _colorPickerLabelStyle, GUILayout.Width(15));
+            color.a = GUILayout.HorizontalSlider(color.a, 0f, 1f, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+
+            // Preview color
+            Rect previewRect = GUILayoutUtility.GetRect(120, 12, GUILayout.ExpandWidth(true));
+            GUI.color = color;
+            GUI.DrawTexture(previewRect, GetCachedRoundedTex(64, 64, 4, Color.white));
+            GUI.color = Color.white;
+            
+            GUILayout.EndVertical();
+            
+            return color;
         }
 
         public static void DrawInfoBox(string text, bool isError = false)
@@ -186,51 +229,49 @@ namespace Iridium.UI
         }
 
         private static Texture2D MakeRoundedTex(int width, int height, float radius, Color col, bool tl = true, bool tr = true, bool bl = true, bool br = true)
+        {
+            Texture2D tex = new(width, height);
+            Color[] pix = new Color[width * height];
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
                 {
-                    Texture2D tex = new(width, height);
-                    Color[] pix = new Color[width * height];
-        
-                    for (int y = 0; y < height; y++)
+                    float dx = -1, dy = -1;
+                    bool isCornerRegion = false;
+
+                    // Top-Left
+                    if (tl && x < radius && y >= height - radius) { dx = radius - x; dy = radius - (height - 1 - y); isCornerRegion = true; }
+                    // Top-Right
+                    else if (tr && x >= width - radius && y >= height - radius) { dx = radius - (width - 1 - x); dy = radius - (height - 1 - y); isCornerRegion = true; }
+                    // Bottom-Left
+                    else if (bl && x < radius && y < radius) { dx = radius - x; dy = radius - y; isCornerRegion = true; }
+                    // Bottom-Right
+                    else if (br && x >= width - radius && y < radius) { dx = radius - (width - 1 - x); dy = radius - y; isCornerRegion = true; }
+
+                    if (isCornerRegion)
                     {
-                        for (int x = 0; x < width; x++)
+                        float d = (float)Math.Sqrt(dx * dx + dy * dy);
+                        if (d > radius)
                         {
-                            float dx = -1, dy = -1;
-                            bool isCornerRegion = false;
-        
-                            // 检测当前像素是否处于需要处理圆角的四个角区域内
-                            // Top-Left
-                            if (tl && x < radius && y >= height - radius) { dx = radius - x; dy = radius - (height - 1 - y); isCornerRegion = true; }
-                            // Top-Right
-                            else if (tr && x >= width - radius && y >= height - radius) { dx = radius - (width - 1 - x); dy = radius - (height - 1 - y); isCornerRegion = true; }
-                            // Bottom-Left
-                            else if (bl && x < radius && y < radius) { dx = radius - x; dy = radius - y; isCornerRegion = true; }
-                            // Bottom-Right
-                            else if (br && x >= width - radius && y < radius) { dx = radius - (width - 1 - x); dy = radius - y; isCornerRegion = true; }
-        
-                            if (isCornerRegion)
-                            {
-                                float d = (float)Math.Sqrt(dx * dx + dy * dy);
-                                if (d > radius)
-                                {
-                                    pix[y * width + x] = Color.clear;
-                                }
-                                else
-                                {
-                                    // 保持原有的抗锯齿逻辑
-                                    float alpha = Math.Min(1, radius + 0.5f - d);
-                                    pix[y * width + x] = new Color(col.r, col.g, col.b, col.a * alpha);
-                                }
-                            }
-                            else
-                            {
-                                pix[y * width + x] = col;
-                            }
+                            pix[y * width + x] = Color.clear;
+                        }
+                        else
+                        {
+                            float alpha = Math.Min(1, radius + 0.5f - d);
+                            pix[y * width + x] = new Color(col.r, col.g, col.b, col.a * alpha);
                         }
                     }
-        
-                    tex.SetPixels(pix);
-                    tex.Apply();
-                    return tex;
+                    else
+                    {
+                        pix[y * width + x] = col;
+                    }
                 }
+            }
+
+            tex.SetPixels(pix);
+            tex.Apply();
+            return tex;
+        }
     }
 }
