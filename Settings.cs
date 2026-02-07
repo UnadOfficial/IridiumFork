@@ -23,7 +23,7 @@ namespace Iridium
             GUILayout.BeginHorizontal();
 
             // --- Left Column ---
-            GUILayout.BeginVertical(GUILayout.Width(420));
+            GUILayout.BeginVertical(GUILayout.Width(380)); // Scaled from 420
 
             // Language Selection Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
@@ -34,19 +34,19 @@ namespace Iridium
             foreach (var lang in langs)
             {
                 bool isCurrent = language == lang;
-                if (isCurrent) GUI.color = new(0.66f, 0.76f, 1.0f);
+                if (isCurrent) GUI.color = new(0.81f, 0.88f, 1.0f);
                 string displayName = Localization.GetDisplayName(lang);
-                if (GUILayout.Button(displayName.ToUpper(), UIUtils.ButtonStyle, GUILayout.Width(100)))
+                if (GUILayout.Button(displayName.ToUpper(), UIUtils.ButtonStyle, GUILayout.Width(90)))
                 {
                     language = lang;
                 }
                 GUI.color = Color.white;
-                GUILayout.Space(6);
+                GUILayout.Space(5);
             }
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
-            GUILayout.Space(8);
+            GUILayout.Space(6);
 
             // CompressDecorations Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
@@ -65,12 +65,12 @@ namespace Iridium
 
             if (optimizer.enableOptimizer)
             {
-                GUILayout.Space(8);
+                GUILayout.Space(6);
                 
                 if (Iridium.Patches.OptimizerPatches.savedVRAM_MB > 0.1f)
                 {
                     UIUtils.DrawInfoBox("✨ " + Localization.Get("SavedMemoryMsg", Iridium.Patches.OptimizerPatches.savedVRAM_MB.ToString("F2")));
-                    GUILayout.Space(8);
+                    GUILayout.Space(6);
                 }
 
                 bool showSavedMemory = UIUtils.M3Switch(!optimizer.dontShowSavedMemory, Localization.Get("ShowSavedMemory"));
@@ -93,11 +93,11 @@ namespace Iridium
                 
                 if (optimizer.dontCompress) optimizer.dontResizeMultipleOf4 = true;
 
-                GUILayout.Space(8);
-                GUILayout.BeginHorizontal(GUILayout.Height(28));
+                GUILayout.Space(6);
+                GUILayout.BeginHorizontal(GUILayout.Height(24));
                 GUILayout.Label(Localization.Get("DivideImageBy"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
-                string divideByStr = GUILayout.TextField(optimizer.divideBy.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                string divideByStr = GUILayout.TextField(optimizer.divideBy.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(45));
                 if (double.TryParse(divideByStr, out double newDivideBy)) optimizer.divideBy = newDivideBy;
                 GUILayout.EndHorizontal();
 
@@ -134,7 +134,7 @@ namespace Iridium
             }
             GUILayout.EndVertical();
 
-            GUILayout.Space(8);
+            GUILayout.Space(6);
 
             // Memory Optimization Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
@@ -146,11 +146,11 @@ namespace Iridium
 
             if (memory.enableSmartGC)
             {
-                GUILayout.Space(8);
-                GUILayout.BeginHorizontal(GUILayout.Height(28));
+                GUILayout.Space(6);
+                GUILayout.BeginHorizontal(GUILayout.Height(24));
                 GUILayout.Label(Localization.Get("GCInterval"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
-                string intervalStr = GUILayout.TextField(memory.gcInterval.ToString("F0"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                string intervalStr = GUILayout.TextField(memory.gcInterval.ToString("F0"), UIUtils.TextFieldStyle, GUILayout.Width(45));
                 if (float.TryParse(intervalStr, out float newInterval)) memory.gcInterval = Mathf.Clamp(newInterval, 10f, 3600f);
                 GUILayout.EndHorizontal();
 
@@ -161,15 +161,15 @@ namespace Iridium
 
             GUILayout.EndVertical(); // End Left Column
 
-            GUILayout.Space(16);
+            GUILayout.Space(14);
 
             // --- Right Column ---
-            GUILayout.BeginVertical(GUILayout.Width(420));
+            GUILayout.BeginVertical(GUILayout.Width(380));
 
             // UI Adjustments Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.Label(Localization.Get("UISettings"), UIUtils.HeaderStyle);
-            GUILayout.Space(8);
+            GUILayout.Space(6);
             bool newRemoveNews = UIUtils.M3Switch(ui.removeNews, Localization.Get("RemoveNews"));
             if (newRemoveNews != ui.removeNews)
             {
@@ -194,15 +194,15 @@ namespace Iridium
             if (ui.moveAutoplayText)
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("X:", GUILayout.Width(20));
+                GUILayout.Label("X:", GUILayout.Width(18));
                 ui.autoplayTextX = GUILayout.HorizontalSlider(ui.autoplayTextX, -Screen.width / 2f, Screen.width / 2f);
-                GUILayout.Label(ui.autoplayTextX.ToString("F0"), UIUtils.LabelStyle, GUILayout.Width(40));
+                GUILayout.Label(ui.autoplayTextX.ToString("F0"), UIUtils.LabelStyle, GUILayout.Width(36));
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Y:", GUILayout.Width(20));
+                GUILayout.Label("Y:", GUILayout.Width(18));
                 ui.autoplayTextY = GUILayout.HorizontalSlider(ui.autoplayTextY, -Screen.height / 2f, Screen.height / 2f);
-                GUILayout.Label(ui.autoplayTextY.ToString("F0"), UIUtils.LabelStyle, GUILayout.Width(40));
+                GUILayout.Label(ui.autoplayTextY.ToString("F0"), UIUtils.LabelStyle, GUILayout.Width(36));
                 GUILayout.EndHorizontal();
 
                 if (GUI.changed)
@@ -211,13 +211,13 @@ namespace Iridium
                 }
             }
             
-            GUILayout.Space(8);
+            GUILayout.Space(6);
             ui.enableCircleArc = UIUtils.M3Switch(ui.enableCircleArc, Localization.Get("EnableCircleArc"));
             if (ui.enableCircleArc) UIUtils.DrawInfoBox("⚠ " + Localization.Get("RestartRequired"));
             
             GUILayout.EndVertical();
 
-            GUILayout.Space(8);
+            GUILayout.Space(6);
 
             // Tail Settings Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
@@ -234,7 +234,7 @@ namespace Iridium
 
             if (tail.enableTailTweak)
             {
-                GUILayout.Space(8);
+                GUILayout.Space(6);
                 bool newFollowPitch = UIUtils.M3Switch(tail.tailFollowPitch, Localization.Get("TailFollowPitch"));
                 if (newFollowPitch != tail.tailFollowPitch)
                 {
@@ -244,44 +244,43 @@ namespace Iridium
                 
                 if (!tail.tailFollowPitch)
                 {
-                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.BeginHorizontal(GUILayout.Height(24));
                     GUILayout.Label(Localization.Get("TailLength"), UIUtils.LabelStyle);
                     GUILayout.FlexibleSpace();
-                    string lengthStr = GUILayout.TextField(tail.tailLength.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                    string lengthStr = GUILayout.TextField(tail.tailLength.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(45));
                     if (float.TryParse(lengthStr, out float newLength)) tail.tailLength = newLength;
                     GUILayout.EndHorizontal();
                 }
 
-                GUILayout.BeginHorizontal(GUILayout.Height(28));
+                GUILayout.BeginHorizontal(GUILayout.Height(24));
                 GUILayout.Label(Localization.Get("TailEmission"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
-                string emissionStr = GUILayout.TextField(tail.tailEmission.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                string emissionStr = GUILayout.TextField(tail.tailEmission.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(45));
                 if (float.TryParse(emissionStr, out float newEmission)) tail.tailEmission = newEmission;
                 GUILayout.EndHorizontal();
             }
             GUILayout.EndVertical();
 
-            GUILayout.Space(8);
+            GUILayout.Space(6);
 
             // Compatibility & Fixes Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.Label(Localization.Get("CompatibilitySettings"), UIUtils.HeaderStyle);
-            GUILayout.Space(8);
+            GUILayout.Space(6);
             compatibility.enableLegacyPauseFix = UIUtils.M3Switch(compatibility.enableLegacyPauseFix, Localization.Get("EnableLegacyPauseFix"));
             compatibility.enableNoFailTooEarly = UIUtils.M3Switch(compatibility.enableNoFailTooEarly, Localization.Get("EnableNoFailTooEarly"));
             
-            GUILayout.Space(12);
-            GUILayout.Label(Localization.Get("LegacyLevelBehavior"), UIUtils.LabelStyle, GUILayout.Height(24));
+            GUILayout.Space(10);
+            GUILayout.Label(Localization.Get("LegacyLevelBehavior"), UIUtils.LabelStyle, GUILayout.Height(22));
             
-            // 将 forceAngleData 移出子容器，使其与上方的开关对齐
             compatibility.forceAngleData = UIUtils.M3Switch(compatibility.forceAngleData, Localization.Get("ForceAngleData"));
 
             GUILayout.Space(4);
             
             GUIStyle subContainerStyle = new()
             {
-                normal = { background = UIUtils.GetCachedRoundedTex(64, 64, 8, new Color(1, 1, 1, 0.04f)) }, 
-                padding = new RectOffset(12, 12, 12, 12),
+                normal = { background = UIUtils.GetCachedRoundedTex(64, 64, 6, new Color(1, 1, 1, 0.03f)) }, 
+                padding = new RectOffset(10, 10, 10, 10),
                 margin = new RectOffset(0, 0, 4, 4)
             };
             GUILayout.BeginVertical(subContainerStyle); // Sub-container
@@ -291,7 +290,7 @@ namespace Iridium
             compatibility.legacyFlashMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyFlashMode, 
                 [Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn")]);
             
-            GUILayout.Space(10);
+            GUILayout.Space(8);
             GUILayout.Label(Localization.Get("LegacyCamRelativeToMode"), UIUtils.LabelStyle);
             GUILayout.Space(2);
             compatibility.legacyCamRelativeToMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyCamRelativeToMode, 

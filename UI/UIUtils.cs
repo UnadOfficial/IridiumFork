@@ -24,11 +24,15 @@ namespace Iridium.UI
         {
             if (_cardStyle != null) return;
 
-            // Android 14 / Material 3 Dark Palette
-            Color surfaceContainer = new(0.13f, 0.13f, 0.15f);
-            Color primary = new(0.66f, 0.76f, 1.0f);
-            Color onSurface = new(0.88f, 0.88f, 0.9f);
-            Color surfaceContainerHigh = new(0.17f, 0.17f, 0.19f);
+            // Material 3 Dark Palette (More accurate)
+            Color surface = new(0.11f, 0.11f, 0.12f);
+            Color surfaceContainer = new(0.13f, 0.13f, 0.14f);
+            Color surfaceContainerHigh = new(0.16f, 0.16f, 0.17f);
+            Color primary = new(0.81f, 0.88f, 1.0f); // M3 Primary Fixed
+            Color onSurface = new(0.9f, 0.9f, 0.92f);
+            Color onSurfaceVariant = new(0.75f, 0.75f, 0.78f);
+            Color outlineVariant = new(0.27f, 0.27f, 0.29f);
+            
             Color errorContainer = new(0.35f, 0.1f, 0.1f);
             Color onErrorContainer = new(1.0f, 0.7f, 0.7f);
             Color infoContainer = new(0.1f, 0.2f, 0.35f);
@@ -36,40 +40,40 @@ namespace Iridium.UI
 
             _cardStyle = new GUIStyle(GUI.skin.box)
             {
-                padding = new RectOffset(12, 12, 12, 12),
-                margin = new RectOffset(0, 0, 6, 6),
-                normal = { background = GetCachedRoundedTex(128, 128, 12, surfaceContainer) }
+                padding = new RectOffset(10, 10, 10, 10),
+                margin = new RectOffset(0, 0, 5, 5),
+                normal = { background = GetCachedRoundedTex(128, 128, 12, surfaceContainer) } // M3 Extra Large radius (scaled)
             };
 
             _headerStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 16,
+                fontSize = 14, // Scaled from 16
                 fontStyle = FontStyle.Normal,
                 normal = { textColor = primary },
-                margin = new RectOffset(0, 0, 0, 8)
+                margin = new RectOffset(2, 0, 0, 6)
             };
 
             _labelStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 13,
+                fontSize = 11, // Scaled from 13
                 normal = { textColor = onSurface },
                 alignment = TextAnchor.MiddleLeft
             };
 
             _buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 12,
-                fixedHeight = 28,
-                padding = new RectOffset(12, 12, 0, 0),
-                normal = { background = GetCachedRoundedTex(64, 64, 8, surfaceContainerHigh), textColor = primary },
-                hover = { background = GetCachedRoundedTex(64, 64, 8, primary * 0.2f), textColor = Color.white },
-                active = { background = GetCachedRoundedTex(64, 64, 8, primary), textColor = Color.black }
+                fontSize = 10, // Scaled from 12
+                fixedHeight = 24, // Scaled from 28
+                padding = new RectOffset(10, 10, 0, 0),
+                normal = { background = GetCachedRoundedTex(64, 64, 6, surfaceContainerHigh), textColor = primary },
+                hover = { background = GetCachedRoundedTex(64, 64, 6, new Color(1,1,1,0.05f) + surfaceContainerHigh), textColor = Color.white },
+                active = { background = GetCachedRoundedTex(64, 64, 6, primary), textColor = Color.black }
             };
 
             _textFieldStyle = new GUIStyle(GUI.skin.textField)
             {
-                fontSize = 12,
-                fixedHeight = 24,
+                fontSize = 10,
+                fixedHeight = 22,
                 alignment = TextAnchor.MiddleCenter,
                 padding = new RectOffset(4, 4, 0, 0),
                 normal = { background = GetCachedRoundedTex(64, 64, 4, surfaceContainerHigh), textColor = onSurface },
@@ -78,20 +82,20 @@ namespace Iridium.UI
 
             _infoBoxStyle = new GUIStyle(GUI.skin.box)
             {
-                padding = new RectOffset(10, 10, 8, 8),
+                padding = new RectOffset(8, 8, 6, 6),
                 margin = new RectOffset(0, 0, 4, 4),
                 alignment = TextAnchor.MiddleLeft,
-                fontSize = 12,
-                normal = { background = GetCachedRoundedTex(64, 64, 8, infoContainer), textColor = onInfoContainer }
+                fontSize = 10,
+                normal = { background = GetCachedRoundedTex(64, 64, 6, infoContainer), textColor = onInfoContainer }
             };
 
             _warningBoxStyle = new GUIStyle(GUI.skin.box)
             {
-                padding = new RectOffset(10, 10, 8, 8),
+                padding = new RectOffset(8, 8, 6, 6),
                 margin = new RectOffset(0, 0, 4, 4),
                 alignment = TextAnchor.MiddleLeft,
-                fontSize = 12,
-                normal = { background = GetCachedRoundedTex(64, 64, 8, errorContainer), textColor = onErrorContainer }
+                fontSize = 10,
+                normal = { background = GetCachedRoundedTex(64, 64, 6, errorContainer), textColor = onErrorContainer }
             };
         }
 
@@ -102,22 +106,23 @@ namespace Iridium.UI
 
         public static bool M3Switch(bool value, string label)
         {
-            GUILayout.BeginHorizontal(GUILayout.Height(32));
+            GUILayout.BeginHorizontal(GUILayout.Height(28)); // Scaled from 32
             if (!string.IsNullOrEmpty(label)) GUILayout.Label(label, _labelStyle, GUILayout.ExpandWidth(true));
             
-            Color trackColor = value ? new(0.66f, 0.76f, 1.0f) : new(0.28f, 0.28f, 0.31f);
+            // M3 Switch Colors
+            Color trackColor = value ? new(0.81f, 0.88f, 1.0f) : new(0.27f, 0.27f, 0.29f);
             Color thumbColor = value ? new(0.0f, 0.2f, 0.4f) : new(0.55f, 0.55f, 0.58f);
 
-            Rect rect = GUILayoutUtility.GetRect(40, 24, GUILayout.Width(40), GUILayout.Height(24));
+            Rect rect = GUILayoutUtility.GetRect(34, 20, GUILayout.Width(34), GUILayout.Height(20)); // Scaled from 40x24
             
             GUI.color = trackColor;
-            GUI.DrawTexture(rect, GetCachedRoundedTex(64, 32, 16, Color.white));
+            GUI.DrawTexture(rect, GetCachedRoundedTex(64, 32, 10, Color.white));
             
-            float thumbSize = 18;
-            float thumbX = value ? rect.x + rect.width - thumbSize - 3 : rect.x + 3;
+            float thumbSize = value ? 14 : 12; // M3 thumb grows when active
+            float thumbX = value ? rect.x + rect.width - thumbSize - 3 : rect.x + 4;
             Rect thumbRect = new(thumbX, rect.y + (rect.height - thumbSize) / 2, thumbSize, thumbSize);
             GUI.color = thumbColor;
-            GUI.DrawTexture(thumbRect, GetCachedRoundedTex(32, 32, 16, Color.white));
+            GUI.DrawTexture(thumbRect, GetCachedRoundedTex(32, 32, thumbSize / 2f, Color.white));
             
             GUI.color = Color.white;
             if (GUI.Button(rect, "", GUIStyle.none)) value = !value;
@@ -132,37 +137,37 @@ namespace Iridium.UI
             for (int i = 0; i < options.Length; i++)
             {
                 bool isSelected = selectedIndex == i;
-                Color primary = new(0.66f, 0.76f, 1.0f);
+                Color primary = new(0.81f, 0.88f, 1.0f);
                 Color onSurfaceVariant = new(0.75f, 0.75f, 0.78f);
-                Color surfaceVariant = new(0.24f, 0.24f, 0.26f);
+                Color surfaceVariant = new(0.16f, 0.16f, 0.17f);
                 
                 GUIStyle segmentStyle = new(ButtonStyle)
                 {
-                    fixedHeight = 30,
+                    fixedHeight = 24, // Scaled from 30
                     margin = new RectOffset(0, 0, 0, 0),
-                    fontSize = 11,
+                    fontSize = 10,
                     alignment = TextAnchor.MiddleCenter,
                     normal = { 
                         background = GetCachedRoundedTex(64, 64, 0, isSelected ? primary : surfaceVariant), 
                         textColor = isSelected ? Color.black : onSurfaceVariant 
                     },
                     hover = {
-                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? primary : new Color(0.3f, 0.3f, 0.33f)),
+                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? primary : new Color(1, 1, 1, 0.05f) + surfaceVariant),
                         textColor = isSelected ? Color.black : Color.white
                     }
                 };
 
-                // Round corners for ends
-                float r = 15;
+                // Round corners for ends (M3 pill shape)
+                float r = 12;
                 if (i == 0) 
                 {
                     segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : surfaceVariant, true, false, true, false);
-                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : new Color(0.3f, 0.3f, 0.33f), true, false, true, false);
+                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : new Color(1, 1, 1, 0.05f) + surfaceVariant, true, false, true, false);
                 }
                 else if (i == options.Length - 1) 
                 {
                     segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : surfaceVariant, false, true, false, true);
-                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : new Color(0.3f, 0.3f, 0.33f), false, true, false, true);
+                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : new Color(1, 1, 1, 0.05f) + surfaceVariant, false, true, false, true);
                 }
 
                 if (GUILayout.Button(options[i], segmentStyle, GUILayout.ExpandWidth(true)))
