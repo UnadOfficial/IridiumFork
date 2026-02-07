@@ -242,7 +242,7 @@ namespace Iridium.Patches
                 _isCleaning = true;
                 _lastCleanTime = Time.realtimeSinceStartup;
 
-                Main.Logger.Log(Localization.Get("CleaningMemory"));
+                Main.Logger?.Log(Localization.Get("CleaningMemory"));
 
                 // 1. 异步卸载未使用的资源 (Unity 推荐方式)
                 AsyncOperation asyncUnload = Resources.UnloadUnusedAssets();
@@ -266,7 +266,7 @@ namespace Iridium.Patches
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false);
                 yield return null;
 
-                Main.Logger.Log(Localization.Get("CleanedMemory"));
+                Main.Logger?.Log(Localization.Get("CleanedMemory"));
                 _isCleaning = false;
             }
         }

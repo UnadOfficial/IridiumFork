@@ -3,17 +3,21 @@ namespace Iridium.Config
     public class OptimizerSettings
     {
         public bool enableOptimizer = false;
-        public bool optimizeMoveTrack = true;
-        public bool optimizeRecolorTrack = true;
+        public bool optimizeMoveTrack = false;
+        public bool optimizeRecolorTrack = false;
         public double divideBy = 1.0;
         public bool dontShowSavedMemory = false;
         public bool dontCompress = false;
         public bool dontResizeMultipleOf4 = false;
         public bool dontResizeCollider = false;
         public bool disableShadows = false;
-        public bool optimizeDecorationUpdate = true;
-        public bool optimizeTileUpdate = true;
-        public bool fastLoading = true;
+        public bool optimizeDecorationUpdate = false;
+        public bool optimizeTileUpdate = false;
+        public bool fastLoading = false;
+        public bool skipEventIfPaused = false;
+        public bool optimizeEventIcons = false;
+        public bool optimizeScnGameUpdate = false;
+        public bool optimizeMoveDecorations = false;
     }
 
     public class UISettings

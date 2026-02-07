@@ -62,5 +62,9 @@
   "ModeAlwaysOff": "全部关闭",
   "ModeAlwaysOn": "全部开启",
   "OptimizeMoveTrack": "优化 移动轨道 (MoveTrack)(实验性)",
-  "OptimizeRecolorTrack": "优化 重新设置轨道颜色 (RecolorTrack)(实验性)"
+  "OptimizeRecolorTrack": "优化 重新设置轨道颜色 (RecolorTrack)(实验性)",
+  "SkipEventIfPaused": "游戏未开始时忽略所有事件",
+  "OptimizeEventIcons": "优化关卡事件图标生成",
+  "OptimizeScnGameUpdate": "优化 游戏时 每一帧的计算逻辑",
+    "OptimizeMoveDecorations": "优化 移动装饰 (MoveDecorations) 逻辑"
 }
