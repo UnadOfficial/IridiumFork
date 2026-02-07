@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using ADOFAI;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityModManagerNet;
+using DG.Tweening;
 
 namespace Iridium.Patches
 {
@@ -37,11 +39,7 @@ namespace Iridium.Patches
         {
             public static Texture2D? CreateProcessedTexture(Texture2D source, int targetW, int targetH)
             {
-                // Ensure we are on main thread for RenderTexture operations
-                if (!Main.IsMainThread)
-                {
-                    return null;
-                }
+                if (!Main.IsMainThread) return null;
 
                 RenderTexture? rt = null;
                 try
@@ -60,10 +58,7 @@ namespace Iridium.Patches
                 }
                 finally
                 {
-                    if (rt != null)
-                    {
-                        RenderTexture.ReleaseTemporary(rt);
-                    }
+                    if (rt != null) RenderTexture.ReleaseTemporary(rt);
                 }
             }
 
@@ -72,11 +67,7 @@ namespace Iridium.Patches
             public static void Postfix(ref Texture2D? __result)
             {
                 if (!Main.Settings.optimizer.enableOptimizer || __result == null || GCS.internalLevelName != null) return;
-                
-                // Skip small textures (icons, etc)
                 if (__result.width <= 32 || __result.height <= 32) return;
-
-                // Safety: if we are not on main thread, we can't use RenderTexture/Blit
                 if (!Main.IsMainThread) return;
 
                 long oldSize = 0;
@@ -89,8 +80,6 @@ namespace Iridium.Patches
                 try
                 {
                     double scaleFactor = Main.Settings.optimizer.divideBy;
-                    
-                    // If scale is 1.0 and no compression, skip
                     if (scaleFactor <= 1.01 && Main.Settings.optimizer.dontCompress) return;
 
                     int newW = (int)Math.Round(__result.width / scaleFactor);
@@ -117,10 +106,8 @@ namespace Iridium.Patches
                         if (optimized != null)
                         {
                             decorRatios[texName] = new((float)__result.width / newW, (float)__result.height / newH, 1f);
-                            
                             if (!Main.Settings.optimizer.dontCompress)
                             {
-                                // Use highQuality = false for better stability and speed
                                 optimized.Compress(false);
                                 optimized.Apply(false, true);
                             }
@@ -128,9 +115,6 @@ namespace Iridium.Patches
                             {
                                 optimized.Apply(false, false);
                             }
-
-                            // Use DestroyImmediate to free memory RIGHT NOW
-                            // This prevents OOM during mass loading
                             UnityEngine.Object.DestroyImmediate(__result);
                             __result = optimized;
                             resized = true;
@@ -142,7 +126,6 @@ namespace Iridium.Patches
                         decorRatios[texName] = Vector3.one;
                         if (!Main.Settings.optimizer.dontCompress)
                         {
-                            // Already at target size, just compress
                             __result.Compress(false);
                             __result.Apply(false, true);
                         }
@@ -331,9 +314,6 @@ namespace Iridium.Patches
             public static void Postfix(scrVisualDecoration __instance)
             {
                 if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeDecorationUpdate) return;
-                
-                // 仅优化渲染器设置，不禁用组件
-                // 禁用组件（enabled = false）会导致初始化失败或游戏逻辑中断（导致崩溃）
                 var sr = __instance.spriteRenderer;
                 if (sr != null)
                 {
@@ -350,9 +330,6 @@ namespace Iridium.Patches
             public static void Postfix(scrFloor __instance)
             {
                 if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeTileUpdate) return;
-
-                // 仅优化渲染器设置，不禁用组件
-                // 格子的 enabled 状态对游戏核心逻辑（判定、路径）至关重要，绝不能禁用
                 var mr = __instance.GetComponent<MeshRenderer>();
                 if (mr != null)
                 {
@@ -369,8 +346,6 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static bool Prefix(scrVisualDecoration __instance)
             {
-                // 如果开启了快速加载且不在编辑器模式，直接跳过碰撞体更新逻辑
-                // 这样可以避免大量的 AddComponent/GetComponent 相关的物理计算
                 if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.fastLoading && scnEditor.instance == null)
                 {
                     if (__instance.boxCollider != null && __instance.boxCollider.enabled)
@@ -403,7 +378,419 @@ namespace Iridium.Patches
             }
         }
 
-        [HarmonyPatch(typeof(scnGame), "UpdateDecorationObjects")]
+        [HarmonyPatch(typeof(scnGame), "ApplyEventsToFloors", typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
+        public static class ApplyEventsToFloorsOptimizationPatch
+        {
+            [HarmonyPrefix]
+            public static bool Prefix()
+            {
+                if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.skipEventIfPaused && scrController.instance.paused)
+                {
+                    return false;
+                }
+                return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(scrFloor), "UpdateIconSprite")]
+        public static class UpdateIconSpriteOptimizationPatch
+        {
+            [HarmonyPrefix]
+            public static bool Prefix()
+            {
+                if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.optimizeEventIcons && !ADOBase.isLevelEditor && !Main.IsMainThread)
+                {
+                    return false;
+                }
+                return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(scnGame), "Update")]
+        public static class ScnGameUpdateOptimizationPatch
+        {
+            private static float _lastOrthoSize;
+            private static float _lastAspect;
+            private static FieldInfo? _startFrameField;
+            private static FieldInfo? _cameraField;
+
+            [HarmonyPrefix]
+            public static bool Prefix(scnGame __instance)
+            {
+                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeScnGameUpdate)
+                    return true;
+
+                _startFrameField ??= typeof(scnGame).GetField("startFrame", BindingFlags.Instance | BindingFlags.NonPublic);
+                int startFrame = (int)(_startFrameField?.GetValue(__instance) ?? 0);
+
+                if ((GCS.customLevelPaths != null || ADOBase.isInternalLevel) && !ADOBase.isLevelEditor && Time.frameCount - startFrame == 3)
+                    return true;
+
+                _cameraField ??= typeof(scnGame).GetField("camera", BindingFlags.Instance | BindingFlags.NonPublic);
+                Camera? cam = _cameraField?.GetValue(__instance) as Camera;
+                if (cam == null) return true;
+
+                float orthoSize = cam.orthographicSize;
+                float aspect = cam.aspect;
+
+                if (Mathf.Approximately(orthoSize, _lastOrthoSize) && Mathf.Approximately(aspect, _lastAspect))
+                {
+                    return false;
+                }
+
+                _lastOrthoSize = orthoSize;
+                _lastAspect = aspect;
+                return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(ffxMoveDecorationsPlus), "StartEffect")]
+    public static class MoveDecorationsOptimizationPatch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(ffxMoveDecorationsPlus __instance)
+        {
+            if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeMoveDecorations)
+                return true;
+
+            if (ADOBase.controller.visualQuality == VisualQuality.Low && ADOBase.isOfficialLevel && !ADOBase.levelIsMikoSkip)
+            {
+                return false;
+            }
+
+            if (!float.IsNaN(__instance.targetScale))
+            {
+                __instance.targetScaleV2 = new Vector2(__instance.targetScale, __instance.targetScale);
+            }
+
+            __instance.AdjustDurationForHardbake();
+            
+            HashSet<scrDecoration> processedDecs = new HashSet<scrDecoration>();
+            Vector2 endScale = new Vector2(__instance.targetScaleV2.x, __instance.targetScaleV2.y);
+            float duration = __instance.duration;
+            bool isZeroDuration = duration <= 0f;
+
+            foreach (string targetTag in __instance.targetTags)
+            {
+                if (!__instance.decManager.taggedDecorations.TryGetValue(targetTag, out var decList))
+                {
+                    continue;
+                }
+
+                foreach (scrDecoration dec in decList)
+                {
+                    if (!processedDecs.Add(dec))
+                    {
+                        continue;
+                    }
+
+                    Dictionary<TweenType, Tween> tweens = dec.eventTweens;
+                    bool isVisual = dec is scrVisualDecoration;
+                    bool isParticle = dec is scrParticleDecoration;
+                    scrVisualDecoration? visualDec = isVisual ? (scrVisualDecoration)dec : null;
+
+                    if ((bool)ADOBase.customLevel && __instance.movementTypeUsed && __instance.movementType != DecPlacementType.LastPosition)
+                    {
+                        dec.SetPlacementType(__instance.movementType);
+                    }
+
+                    if (!__instance.forceDontTweenMovement)
+                    {
+                        if (__instance.positionUsed)
+                        {
+                            Vector2 startPos = (__instance.movementType == DecPlacementType.LastPosition) ? dec.pivotPosVec : dec.startPos;
+                            if (!float.IsNaN(__instance.targetPos.x))
+                            {
+                                float targetX = startPos.x + __instance.targetPos.x;
+                                if (isZeroDuration)
+                                {
+                                    if (tweens.TryGetValue(TweenType.PositionX, out var t)) t.Kill(true);
+                                    dec.SetPositionX(targetX, dec.pivotOffsetVec);
+                                }
+                                else
+                                {
+                                    if (tweens.TryGetValue(TweenType.PositionX, out var t)) t.Kill(true);
+                                    Vector2 newPos = dec.pivotPosVec;
+                                    tweens[TweenType.PositionX] = DOTween.To(() => newPos.x, x => newPos.x = x, targetX, duration)
+                                        .SetEase(__instance.ease)
+                                        .OnUpdate(() => dec.SetPositionX(newPos.x, dec.pivotOffsetVec))
+                                        .OnComplete(() => dec.SetPositionX(targetX, dec.pivotOffsetVec))
+                                        .Done();
+                                }
+                            }
+
+                            if (!float.IsNaN(__instance.targetPos.y))
+                            {
+                                float targetY = startPos.y + __instance.targetPos.y;
+                                if (isZeroDuration)
+                                {
+                                    if (tweens.TryGetValue(TweenType.PositionY, out var t)) t.Kill(true);
+                                    dec.SetPositionY(targetY, dec.pivotOffsetVec);
+                                }
+                                else
+                                {
+                                    if (tweens.TryGetValue(TweenType.PositionY, out var t)) t.Kill(true);
+                                    Vector2 newPos = dec.pivotPosVec;
+                                    tweens[TweenType.PositionY] = DOTween.To(() => newPos.y, y => newPos.y = y, targetY, duration)
+                                        .SetEase(__instance.ease)
+                                        .OnUpdate(() => dec.SetPositionY(newPos.y, dec.pivotOffsetVec))
+                                        .OnComplete(() => dec.SetPositionY(targetY, dec.pivotOffsetVec))
+                                        .Done();
+                                }
+                            }
+                        }
+
+                        if (__instance.parallaxOffsetUsed)
+                        {
+                            if (!float.IsNaN(__instance.targetParallaxOffset.x))
+                            {
+                                if (isZeroDuration)
+                                {
+                                    if (tweens.TryGetValue(TweenType.ParallaxOffsetX, out var t)) t.Kill(true);
+                                    dec.SetParallaxOffsetX(__instance.targetParallaxOffset.x);
+                                }
+                                else
+                                {
+                                    if (tweens.TryGetValue(TweenType.ParallaxOffsetX, out var t)) t.Kill(true);
+                                    Vector2 newPos = dec.parallaxOffset;
+                                    tweens[TweenType.ParallaxOffsetX] = DOTween.To(() => newPos.x, x => newPos.x = x, __instance.targetParallaxOffset.x, duration)
+                                        .SetEase(__instance.ease)
+                                        .OnUpdate(() => dec.SetParallaxOffsetX(newPos.x))
+                                        .OnComplete(() => dec.SetParallaxOffsetX(__instance.targetParallaxOffset.x))
+                                        .Done();
+                                }
+                            }
+
+                            if (!float.IsNaN(__instance.targetParallaxOffset.y))
+                            {
+                                if (isZeroDuration)
+                                {
+                                    if (tweens.TryGetValue(TweenType.ParallaxOffsetY, out var t)) t.Kill(true);
+                                    dec.SetParallaxOffsetY(__instance.targetParallaxOffset.y);
+                                }
+                                else
+                                {
+                                    if (tweens.TryGetValue(TweenType.ParallaxOffsetY, out var t)) t.Kill(true);
+                                    Vector2 newPos = dec.parallaxOffset;
+                                    tweens[TweenType.ParallaxOffsetY] = DOTween.To(() => newPos.y, y => newPos.y = y, __instance.targetParallaxOffset.y, duration)
+                                        .SetEase(__instance.ease)
+                                        .OnUpdate(() => dec.SetParallaxOffsetY(newPos.y))
+                                        .OnComplete(() => dec.SetParallaxOffsetY(__instance.targetParallaxOffset.y))
+                                        .Done();
+                                }
+                            }
+                        }
+
+                        if (__instance.pivotUsed)
+                        {
+                            if (!float.IsNaN(__instance.targetPivot.x))
+                            {
+                                if (isZeroDuration)
+                                {
+                                    if (tweens.TryGetValue(TweenType.PivotX, out var t)) t.Kill(true);
+                                    dec.SetPivotX(__instance.targetPivot.x);
+                                }
+                                else
+                                {
+                                    if (tweens.TryGetValue(TweenType.PivotX, out var t)) t.Kill(true);
+                                    Vector2 newPivot = dec.pivotOffsetVec;
+                                    tweens[TweenType.PivotX] = DOTween.To(() => newPivot.x, x => newPivot.x = x, __instance.targetPivot.x, duration)
+                                        .SetEase(__instance.ease)
+                                        .OnUpdate(() => dec.SetPivotX(newPivot.x))
+                                        .OnComplete(() => dec.SetPivotX(__instance.targetPivot.x))
+                                        .Done();
+                                }
+                            }
+
+                            if (!float.IsNaN(__instance.targetPivot.y))
+                            {
+                                if (isZeroDuration)
+                                {
+                                    if (tweens.TryGetValue(TweenType.PivotY, out var t)) t.Kill(true);
+                                    dec.SetPivotY(__instance.targetPivot.y);
+                                }
+                                else
+                                {
+                                    if (tweens.TryGetValue(TweenType.PivotY, out var t)) t.Kill(true);
+                                    Vector2 newPivot = dec.pivotOffsetVec;
+                                    tweens[TweenType.PivotY] = DOTween.To(() => newPivot.y, y => newPivot.y = y, __instance.targetPivot.y, duration)
+                                        .SetEase(__instance.ease)
+                                        .OnUpdate(() => dec.SetPivotY(newPivot.y))
+                                        .OnComplete(() => dec.SetPivotY(__instance.targetPivot.y))
+                                        .Done();
+                                }
+                            }
+                        }
+
+                        if (__instance.rotationUsed)
+                        {
+                            if (isZeroDuration)
+                            {
+                                if (tweens.TryGetValue(TweenType.Rotation, out var t)) t.Kill(true);
+                                dec.SetRotation(__instance.targetRot);
+                            }
+                            else
+                            {
+                                if (tweens.TryGetValue(TweenType.Rotation, out var t)) t.Kill(true);
+                                float newRot = dec.rotAngle;
+                                tweens[TweenType.Rotation] = DOTween.To(() => newRot, r => newRot = r, __instance.targetRot, duration)
+                                    .SetEase(__instance.ease)
+                                    .OnUpdate(() => dec.SetRotation(newRot))
+                                    .OnComplete(() => dec.SetRotation(__instance.targetRot))
+                                    .Done();
+                            }
+                        }
+
+                        if (__instance.scaleUsed)
+                        {
+                            if (!float.IsNaN(endScale.x))
+                            {
+                                if (isZeroDuration)
+                                {
+                                    if (tweens.TryGetValue(TweenType.ScaleX, out var t)) t.Kill(true);
+                                    Vector2 currentScale = dec.scaleVec;
+                                    currentScale.x = endScale.x;
+                                    dec.SetScale(currentScale);
+                                }
+                                else
+                                {
+                                    if (tweens.TryGetValue(TweenType.ScaleX, out var t)) t.Kill(true);
+                                    tweens[TweenType.ScaleX] = DOTween.To(() => dec.scaleVec, v => dec.SetScale(v), endScale, duration)
+                                        .SetEase(__instance.ease)
+                                        .SetOptions(AxisConstraint.X)
+                                        .Done();
+                                }
+                            }
+
+                            if (!float.IsNaN(endScale.y))
+                            {
+                                if (isZeroDuration)
+                                {
+                                    if (tweens.TryGetValue(TweenType.ScaleY, out var t)) t.Kill(true);
+                                    Vector2 currentScale = dec.scaleVec;
+                                    currentScale.y = endScale.y;
+                                    dec.SetScale(currentScale);
+                                }
+                                else
+                                {
+                                    if (tweens.TryGetValue(TweenType.ScaleY, out var t)) t.Kill(true);
+                                    tweens[TweenType.ScaleY] = DOTween.To(() => dec.scaleVec, v => dec.SetScale(v), endScale, duration)
+                                        .SetEase(__instance.ease)
+                                        .SetOptions(AxisConstraint.Y)
+                                        .Done();
+                                }
+                            }
+                        }
+                    }
+
+                    if (__instance.colorUsed)
+                    {
+                        if (isZeroDuration)
+                        {
+                            if (tweens.TryGetValue(TweenType.Color, out var t)) t.Kill(true);
+                            dec.SetColor(__instance.targetColor);
+                        }
+                        else
+                        {
+                            if (tweens.TryGetValue(TweenType.Color, out var t)) t.Kill(true);
+                            Color newColor = dec.color;
+                            tweens[TweenType.Color] = DOTween.To(() => newColor, c => newColor = c, __instance.targetColor, duration)
+                                .SetEase(__instance.ease)
+                                .OnUpdate(() => dec.SetColor(newColor))
+                                .OnComplete(() => dec.SetColor(__instance.targetColor))
+                                .Done();
+                        }
+                    }
+
+                    if (__instance.opacityUsed)
+                    {
+                        if (isZeroDuration)
+                        {
+                            if (tweens.TryGetValue(TweenType.Opacity, out var t)) t.Kill(true);
+                            dec.SetOpacity(__instance.targetOpacity);
+                        }
+                        else
+                        {
+                            if (tweens.TryGetValue(TweenType.Opacity, out var t)) t.Kill(true);
+                            float newOpacity = dec.opacity;
+                            tweens[TweenType.Opacity] = DOTween.To(() => newOpacity, a => newOpacity = a, __instance.targetOpacity, duration)
+                                .SetEase(__instance.ease)
+                                .OnUpdate(() => dec.SetOpacity(newOpacity))
+                                .OnComplete(() => dec.SetOpacity(__instance.targetOpacity))
+                                .Done();
+                        }
+                    }
+
+                    if (__instance.parallaxUsed)
+                    {
+                        if (isZeroDuration)
+                        {
+                            if (tweens.TryGetValue(TweenType.Parallax, out var t)) t.Kill(true);
+                            dec.parallax.multiplier = __instance.targetParallax / 100f;
+                        }
+                        else
+                        {
+                            if (tweens.TryGetValue(TweenType.Parallax, out var t)) t.Kill(true);
+                            Vector2 newParallax = dec.parallax.multiplier;
+                            tweens[TweenType.Parallax] = DOTween.To(() => newParallax, p => dec.parallax.multiplier = p, __instance.targetParallax / 100f, duration)
+                                .SetEase(__instance.ease)
+                                .Done();
+                        }
+                    }
+
+                    if (__instance.visibleUsed)
+                    {
+                        dec.SetVisible(__instance.visible && !dec.forceHide);
+                    }
+
+                    if (__instance.depthUsed)
+                    {
+                        dec.SetDepth(__instance.targetDepth);
+                    }
+
+                    if (isParticle && __instance.imageFilenameUsed)
+                    {
+                        bool hasImage = !string.IsNullOrEmpty(__instance.targetImageFilename);
+                        var customSprites = scrDecorationManager.instance.imageHolder.customSprites;
+                        ((scrParticleDecoration)dec).SetSprite(hasImage && customSprites.TryGetValue(__instance.targetImageFilename, out var s) ? s : null);
+                    }
+
+                    if (isVisual && visualDec != null)
+                    {
+                        if (__instance.imageFilenameUsed)
+                        {
+                            var customSprites = scrDecorationManager.instance.imageHolder.customSprites;
+                            customSprites.TryGetValue(__instance.targetImageFilename ?? string.Empty, out var s);
+                            visualDec.SetSprite(s, TextureManager.ImageOptions.None);
+                        }
+
+                        if (__instance.maskingTypeUsed)
+                        {
+                            visualDec.SetMaskingType(__instance.targetMaskingType);
+                        }
+
+                        if (__instance.maskingTargetUsed)
+                        {
+                            visualDec.SetMaskingTarget(__instance.targetmaskingTarget);
+                        }
+
+                        if (__instance.useMaskingDepthUsed)
+                        {
+                            visualDec.SetMaskingDepth(__instance.targetUseMaskingDepth);
+                        }
+
+                        if (__instance.maskingFrontDepthUsed || __instance.maskingBackDepthUsed)
+                        {
+                            visualDec.SetMaskingDepth(__instance.maskingFrontDepthUsed ? new int?(__instance.targetMaskingFrontDepth) : null, __instance.maskingBackDepthUsed ? new int?(__instance.targetMaskingBackDepth) : null);
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(scnGame), "UpdateDecorationObjects")]
         public static class VRAMNotificationPatch
         {
             public static bool isFinished = false;
@@ -445,91 +832,39 @@ namespace Iridium.Patches
             private void OnGUI()
             {
                 if (_timer <= 0f) return;
-
-                if (_style == null || _background == null)
-                {
-                    InitializeStyle();
-                }
+                if (_style == null || _background == null) InitializeStyle();
 
                 float alpha = 1f;
-                if (_timer > DisplayDuration + FadeDuration)
-                {
-                    alpha = (FadeDuration + DisplayDuration + FadeDuration - _timer) / FadeDuration;
-                }
-                else if (_timer < FadeDuration)
-                {
-                    alpha = _timer / FadeDuration;
-                }
+                if (_timer > DisplayDuration + FadeDuration) alpha = (FadeDuration + DisplayDuration + FadeDuration - _timer) / FadeDuration;
+                else if (_timer < FadeDuration) alpha = _timer / FadeDuration;
 
                 GUI.color = new Color(1f, 1f, 1f, alpha);
-                
-                // Position: Top-left, Size: 0.75 of a typical toast
-                // M3 style: Rounded corners, Surface Container colors
                 float width = 240f * 0.75f;
                 float height = 50f * 0.75f;
                 Rect rect = new(20, 20, width, height);
-                
                 GUI.Box(rect, "✨ " + _message, _style);
                 GUI.color = Color.white;
             }
 
             private void Update()
             {
-                if (_timer > 0f)
-                {
-                    _timer -= Time.deltaTime;
-                }
+                if (_timer > 0f) _timer -= Time.deltaTime;
             }
 
             private void InitializeStyle()
             {
-                Color infoContainer = new(0.1f, 0.2f, 0.35f);      // Info/Secondary Container
-                Color onInfoContainer = new(0.7f, 0.85f, 1.0f);    // On Info Container
-                
-                _background = MakeRoundedTex(128, 128, 16, infoContainer);
                 _style = new GUIStyle(GUI.skin.box)
                 {
                     alignment = TextAnchor.MiddleCenter,
-                    fontSize = Mathf.RoundToInt(14 * 0.75f),
-                    normal = { background = _background, textColor = onInfoContainer },
-                    padding = new RectOffset(8, 8, 4, 4)
+                    fontSize = 11,
+                    fontStyle = FontStyle.Bold
                 };
-            }
-
-            private Texture2D MakeRoundedTex(int width, int height, int radius, Color col)
-            {
-                Color[] pix = new Color[width * height];
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        float dx = x < radius ? radius - x : (x >= width - radius ? x - (width - radius - 1) : 0);
-                        float dy = y < radius ? radius - y : (y >= height - radius ? y - (height - radius - 1) : 0);
-                        pix[y * width + x] = (dx * dx + dy * dy <= radius * radius) ? col : Color.clear;
-                    }
-                }
-                Texture2D result = new(width, height);
-                result.SetPixels(pix);
-                result.Apply();
-                return result;
+                _style.normal.textColor = Color.white;
+                _background = new Texture2D(1, 1);
+                _background.SetPixel(0, 0, new Color(0.12f, 0.12f, 0.14f, 0.85f));
+                _background.Apply();
+                _style.normal.background = _background;
             }
         }
-
-        [HarmonyPatch(typeof(RDString), "Get")]
-        public static class VRAMTranslationPatch
-        {
-            public static bool Prefix(string key, ref string __result)
-            {
-                if (key == "optimize.savedMem")
-                {
-                    __result = Localization.Get("SavedMemoryMsg", savedVRAM_MB.ToString("F2"));
-                    return false;
-                }
-                return true;
-            }
-        }
-        
-
-        
     }
 }

@@ -62,5 +62,9 @@
   "ModeAlwaysOff": "Always Off",
   "ModeAlwaysOn": "Always On",
   "OptimizeMoveTrack": "Optimize MoveTrack Events",
-  "OptimizeRecolorTrack": "Optimize RecolorTrack Events"
+  "OptimizeRecolorTrack": "Optimize RecolorTrack Events",
+  "SkipEventIfPaused": "Ignore all events when game not started",
+  "OptimizeEventIcons": "Optimize Level Event Icon Generation",
+  "OptimizeScnGameUpdate": "Optimize Game's Update logic",
+    "OptimizeMoveDecorations": "Optimize MoveDecorations Logic"
 }
