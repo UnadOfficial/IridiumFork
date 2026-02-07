@@ -272,25 +272,28 @@ namespace Iridium
             
             GUILayout.Space(12);
             GUILayout.Label(Localization.Get("LegacyLevelBehavior"), UIUtils.LabelStyle, GUILayout.Height(24));
+            
+            // 将 forceAngleData 移出子容器，使其与上方的开关对齐
+            compatibility.forceAngleData = UIUtils.M3Switch(compatibility.forceAngleData, Localization.Get("ForceAngleData"));
+
             GUILayout.Space(4);
             
             GUIStyle subContainerStyle = new()
             {
-                normal = { background = UIUtils.GetCachedRoundedTex(64, 64, 8, new Color(1, 1, 1, 0.05f)) }, 
-                padding = new RectOffset(10, 10, 10, 10),
+                normal = { background = UIUtils.GetCachedRoundedTex(64, 64, 8, new Color(1, 1, 1, 0.04f)) }, 
+                padding = new RectOffset(12, 12, 12, 12),
                 margin = new RectOffset(0, 0, 4, 4)
             };
             GUILayout.BeginVertical(subContainerStyle); // Sub-container
             
-            compatibility.forceAngleData = UIUtils.M3Switch(compatibility.forceAngleData, Localization.Get("ForceAngleData"));
-            
-            GUILayout.Space(4);
             GUILayout.Label(Localization.Get("LegacyFlashMode"), UIUtils.LabelStyle);
+            GUILayout.Space(2);
             compatibility.legacyFlashMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyFlashMode, 
                 [Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn")]);
             
-            GUILayout.Space(8);
+            GUILayout.Space(10);
             GUILayout.Label(Localization.Get("LegacyCamRelativeToMode"), UIUtils.LabelStyle);
+            GUILayout.Space(2);
             compatibility.legacyCamRelativeToMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyCamRelativeToMode, 
                 [Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn")]);
             
