@@ -10,7 +10,7 @@ namespace Iridium
         public static UnityModManager.ModEntry? Mod { get; private set; }
         public static Harmony? Harmony { get; private set; }
         public static Settings Settings { get; private set; } = null!;
-        public static UnityModManager.ModEntry.ModLogger? Logger;
+        public static Logger? Logger;
         private static int _mainThreadId;
 
         public static bool IsMainThread => System.Threading.Thread.CurrentThread.ManagedThreadId == _mainThreadId;
@@ -19,7 +19,7 @@ namespace Iridium
         {
             _mainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
             Mod = modEntry;
-            Logger = Mod.Logger;
+            Logger = new Logger(Mod.Logger);
             Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
             Localization.Load();
             
@@ -29,7 +29,7 @@ namespace Iridium
             
             Harmony = new Harmony(modEntry.Info.Id);
             
-            modEntry.Logger.Log(Localization.Get("ModLoaded", Settings.language));
+            Logger?.Log(Localization.Get("ModLoaded", Settings.language));
             return true;
         }
 
@@ -37,7 +37,7 @@ namespace Iridium
         {
             if (value)
             {
-                modEntry.Logger.Log(Localization.Get("ModEnabled"));
+                Logger?.Log(Localization.Get("ModEnabled"));
                 Harmony?.PatchAll(Assembly.GetExecutingAssembly());
                 
                 if (Settings.optimizer.enableOptimizer)
@@ -47,7 +47,7 @@ namespace Iridium
             }
             else
             {
-                modEntry.Logger.Log(Localization.Get("ModDisabled"));
+                Logger?.Log(Localization.Get("ModDisabled"));
                 Harmony?.UnpatchAll(modEntry.Info.Id);
             }
             return true;

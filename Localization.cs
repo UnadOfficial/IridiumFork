@@ -61,19 +61,19 @@ namespace Iridium
                                     languageDisplayNames[langId] = langId;
                                 }
 
-                                Main.Mod?.Logger.Log($"Loaded language: {langId} ({languageDisplayNames[langId]}) - {dict.Count} keys");
+                                Main.Logger.Log($"Loaded language: {langId} ({languageDisplayNames[langId]}) - {dict.Count} keys");
                             }
                         }
                         catch (Exception ex)
                         {
-                            Main.Mod?.Logger.Error($"Failed to load language file {file}: {ex.Message}");
+                            Main.Logger.Error($"Failed to load language file {file}: {ex.Message}");
                         }
                     }
                 }
 
                 if (languages.Count == 0)
                 {
-                    Main.Mod?.Logger.Warning("No language files found, using empty 'en' fallback.");
+                    Main.Logger.Warning("No language files found, using empty 'en' fallback.");
                     languages["en"] = [];
                     languageDisplayNames["en"] = "English";
                     _availableLanguages.Add("en");
@@ -81,7 +81,7 @@ namespace Iridium
             }
             catch (Exception ex)
             {
-                Main.Mod?.Logger.Error($"Critical error in Localization.Load: {ex.Message}");
+                Main.Logger.Error($"Critical error in Localization.Load: {ex.Message}");
                 if (languages.Count == 0) languages["en"] = [];
             }
             finally
@@ -135,7 +135,7 @@ namespace Iridium
             }
             catch (Exception ex)
             {
-                Main.Mod?.Logger.Error($"Localization.Get format error for key {key}: {ex.Message}");
+                Main.Logger.Error($"Localization.Get format error for key {key}: {ex.Message}");
                 return key;
             }
         }
