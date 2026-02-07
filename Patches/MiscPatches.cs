@@ -140,58 +140,74 @@ namespace Iridium.Patches
             [HarmonyTranspiler]
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
+                // 在方法开始时注入，确保一定会被执行
+                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TailTweakPatch), nameof(UpdateTail)));
                 foreach (var instruction in instructions)
                 {
                     yield return instruction;
                 }
-                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TailTweakPatch), nameof(UpdateTail)));
             }
 
             public static void UpdateTail()
             {
-                if (!Main.Settings.tail.enableTailTweak || scrController.instance?.planetarySystem is null)
+                if (!Main.Settings.tail.enableTailTweak || scrController.instance is null)
                 {
                     return;
                 }
-                foreach (var planet in scrController.instance.planetarySystem.availablePlanets)
+
+                // 使用 allPlanets 获取所有星球实例
+                var planetarySystem = scrController.instance.planetarySystem;
+                if (planetarySystem?.allPlanets == null) return;
+
+                foreach (var planet in planetarySystem.allPlanets)
                 {
                     if (planet?.planetRenderer?.tailParticles is null) continue;
 
-                    if (!_psCache.TryGetValue(planet, out var ps))
+                    if (!_psCache.TryGetValue(planet, out var ps) || ps == null)
                     {
                         ps = planet.planetRenderer.tailParticles.GetComponent<ParticleSystem>();
-                        if (ps is not null) _psCache.Add(planet, ps);
+                        if (ps != null)
+                        {
+                            _psCache.Remove(planet);
+                            _psCache.Add(planet, ps);
+                        }
                     }
 
-                    if (ps is null) continue;
+                    if (ps == null) continue;
+
                     var main = ps.main;
                     var emission = ps.emission;
+
+                    float speed = 1f;
                     if (Main.Settings.tail.tailFollowPitch)
-                        main.simulationSpeed = scrConductor.instance.song.pitch * (scnEditor.instance != null ? scnEditor.instance.playbackSpeed : 1f);
+                    {
+                        speed = scrConductor.instance.song.pitch * (scnEditor.instance != null ? scnEditor.instance.playbackSpeed : 1f);
+                    }
                     else
-                        main.simulationSpeed = Main.Settings.tail.tailLength;
+                    {
+                        speed = Main.Settings.tail.tailLength;
+                    }
+
+                    main.simulationSpeed = speed;
                     emission.rateOverTime = Main.Settings.tail.tailEmission;
                 }
             }
 
             public static void ResetTails()
             {
-                if (scrController.instance?.planetarySystem is null) return;
-                foreach (var planet in scrController.instance.planetarySystem.availablePlanets)
+                if (scrController.instance?.planetarySystem?.allPlanets == null) return;
+                
+                foreach (var planet in scrController.instance.planetarySystem.allPlanets)
                 {
                     if (planet?.planetRenderer?.tailParticles is null) continue;
 
-                    if (!_psCache.TryGetValue(planet, out var ps))
-                    {
-                        ps = planet.planetRenderer.tailParticles.GetComponent<ParticleSystem>();
-                        if (ps is not null) _psCache.Add(planet, ps);
-                    }
+                    var ps = planet.planetRenderer.tailParticles.GetComponent<ParticleSystem>();
+                    if (ps == null) continue;
 
-                    if (ps is null) continue;
                     var main = ps.main;
                     var emission = ps.emission;
                     main.simulationSpeed = 1f;
-                    emission.rateOverTime = 20f; // Default ADOFAI emission rate is usually around here
+                    emission.rateOverTime = 20f;
                 }
             }
         }

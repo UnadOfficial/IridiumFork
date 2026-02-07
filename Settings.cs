@@ -3,6 +3,8 @@ using UnityModManagerNet;
 using UnityEngine;
 using Iridium.UI;
 using Iridium.Config;
+using System.IO;
+using System.Linq;
 
 namespace Iridium
 {
@@ -15,10 +17,153 @@ namespace Iridium
         public TailSettings tail = new();
         public MemorySettings memory = new();
         public CompatibilitySettings compatibility = new();
+        public AppearanceSettings appearance = new();
+
+        private bool _showFolderBrowser;
+        private string _browserCurrentPath = "";
+        private Vector2 _browserScroll;
+        private string[] _browserSubFolders = [];
+        private string[] _browserFiles = [];
+        private string _selectedFile = "";
+        private readonly string[] _supportedExtensions = { ".png", ".jpg", ".jpeg", ".mp4", ".mov", ".webm" };
+
+        private void OpenFileBrowser()
+        {
+            _showFolderBrowser = true;
+            string initialPath = appearance.skinPath;
+            if (string.IsNullOrEmpty(initialPath) || (!File.Exists(initialPath) && !Directory.Exists(initialPath)))
+            {
+                initialPath = Main.Mod?.Path ?? Directory.GetCurrentDirectory();
+            }
+            
+            if (File.Exists(initialPath))
+            {
+                _browserCurrentPath = Path.GetDirectoryName(initialPath) ?? initialPath;
+                _selectedFile = initialPath;
+            }
+            else
+            {
+                _browserCurrentPath = initialPath;
+                _selectedFile = "";
+            }
+            
+            RefreshBrowserFolders();
+        }
+
+        private void RefreshBrowserFolders()
+        {
+            try
+            {
+                if (Directory.Exists(_browserCurrentPath))
+                {
+                    _browserSubFolders = Directory.GetDirectories(_browserCurrentPath);
+                    _browserFiles = Directory.GetFiles(_browserCurrentPath)
+                        .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
+                        .ToArray();
+                }
+                else
+                {
+                    _browserSubFolders = [];
+                    _browserFiles = [];
+                }
+            }
+            catch (Exception ex)
+            {
+                Main.Logger?.Error($"Failed to get directory contents: {ex.Message}");
+                _browserSubFolders = [];
+                _browserFiles = [];
+            }
+        }
+
+        private void DrawFolderBrowser()
+        {
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.Label(Localization.Get("SelectSkinFolder"), UIUtils.HeaderStyle);
+            
+            GUILayout.Label($"{Localization.Get("CurrentPath")}:", UIUtils.LabelStyle);
+            GUILayout.TextArea(_browserCurrentPath, UIUtils.TextFieldStyle);
+
+            GUILayout.Space(4);
+
+            _browserScroll = GUILayout.BeginScrollView(_browserScroll, GUILayout.Height(300));
+            
+            // Back button
+            try 
+            {
+                var parent = Directory.GetParent(_browserCurrentPath);
+                if (parent != null)
+                {
+                    if (GUILayout.Button($"📁 [..] {Localization.Get("Back")}", UIUtils.ButtonStyle))
+                    {
+                        _browserCurrentPath = parent.FullName;
+                        RefreshBrowserFolders();
+                    }
+                }
+            }
+            catch {}
+
+            // Draw Folders
+            foreach (var folder in _browserSubFolders)
+            {
+                string folderName = Path.GetFileName(folder);
+                if (GUILayout.Button($"📁 {folderName}", UIUtils.ButtonStyle))
+                {
+                    _browserCurrentPath = folder;
+                    RefreshBrowserFolders();
+                }
+            }
+
+            // Draw Files
+            foreach (var file in _browserFiles)
+            {
+                string fileName = Path.GetFileName(file);
+                bool isSelected = _selectedFile == file;
+                
+                if (isSelected) GUI.color = new Color(0.66f, 0.76f, 1.0f);
+                if (GUILayout.Button($"📄 {fileName}", UIUtils.ButtonStyle))
+                {
+                    _selectedFile = file;
+                }
+                GUI.color = Color.white;
+            }
+            GUILayout.EndScrollView();
+
+            GUILayout.Space(8);
+            
+            if (!string.IsNullOrEmpty(_selectedFile))
+            {
+                GUILayout.Label($"{Path.GetFileName(_selectedFile)}", UIUtils.LabelStyle);
+                GUILayout.Space(4);
+            }
+
+            GUILayout.BeginHorizontal();
+            GUI.enabled = !string.IsNullOrEmpty(_selectedFile);
+            if (GUILayout.Button(Localization.Get("Select"), UIUtils.ButtonStyle, GUILayout.Height(32)))
+            {
+                appearance.skinPath = _selectedFile;
+                _showFolderBrowser = false;
+                Iridium.Patches.AppearancePatches.UpdateSkin();
+            }
+            GUI.enabled = true;
+            GUILayout.Space(12);
+            if (GUILayout.Button(Localization.Get("Cancel"), UIUtils.ButtonStyle, GUILayout.Height(32)))
+            {
+                _showFolderBrowser = false;
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.EndVertical();
+        }
 
         public void OnGUI(UnityModManager.ModEntry modEntry)
         {
             UIUtils.InitializeStyles();
+
+            if (_showFolderBrowser)
+            {
+                DrawFolderBrowser();
+                return;
+            }
 
             GUILayout.BeginHorizontal();
 
@@ -303,6 +448,121 @@ namespace Iridium
             
             GUILayout.EndVertical();
             
+            GUILayout.EndVertical();
+
+            GUILayout.Space(8);
+
+            // Appearance Card
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("AppearanceSettings"), UIUtils.HeaderStyle);
+            GUILayout.FlexibleSpace();
+            appearance.enableMenuSkin = UIUtils.M3Switch(appearance.enableMenuSkin, "");
+            GUILayout.EndHorizontal();
+
+            if (appearance.enableMenuSkin)
+            {
+                GUILayout.Space(8);
+                
+                GUILayout.BeginHorizontal(GUILayout.Height(28));
+                GUILayout.Label(Localization.Get("SkinPath"), UIUtils.LabelStyle);
+                GUILayout.FlexibleSpace();
+                appearance.skinPath = GUILayout.TextField(appearance.skinPath, UIUtils.TextFieldStyle, GUILayout.Width(160));
+                GUILayout.Space(4);
+                if (GUILayout.Button(Localization.Get("Browse"), UIUtils.ButtonStyle, GUILayout.Width(60)))
+                {
+                    OpenFileBrowser();
+                }
+                GUILayout.EndHorizontal();
+
+                bool isVideo = !string.IsNullOrEmpty(appearance.skinPath) && 
+                              _supportedExtensions.Take(3).All(e => !appearance.skinPath.ToLower().EndsWith(e)) && // Not image
+                              _supportedExtensions.Skip(3).Any(e => appearance.skinPath.ToLower().EndsWith(e)); // Is video
+                
+                GUILayout.Space(8);
+                GUILayout.Label(Localization.Get("BackgroundAdjustments"), UIUtils.LabelStyle);
+                
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Localization.Get("Opacity"), GUILayout.Width(80));
+                appearance.backgroundOpacity = GUILayout.HorizontalSlider(appearance.backgroundOpacity, 0f, 1f);
+                GUILayout.Label(appearance.backgroundOpacity.ToString("P0"), UIUtils.LabelStyle, GUILayout.Width(40));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Localization.Get("Brightness"), GUILayout.Width(80));
+                appearance.backgroundBrightness = GUILayout.HorizontalSlider(appearance.backgroundBrightness, 0f, 5f);
+                GUILayout.Label(appearance.backgroundBrightness.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Localization.Get("Contrast"), GUILayout.Width(80));
+                appearance.backgroundContrast = GUILayout.HorizontalSlider(appearance.backgroundContrast, 0f, 5f);
+                GUILayout.Label(appearance.backgroundContrast.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Localization.Get("Saturation"), GUILayout.Width(80));
+                appearance.backgroundSaturation = GUILayout.HorizontalSlider(appearance.backgroundSaturation, 0f, 5f);
+                GUILayout.Label(appearance.backgroundSaturation.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Localization.Get("Hue"), GUILayout.Width(80));
+                appearance.backgroundHue = GUILayout.HorizontalSlider(appearance.backgroundHue, -180f, 180f);
+                GUILayout.Label(appearance.backgroundHue.ToString("F0") + "°", UIUtils.LabelStyle, GUILayout.Width(40));
+                GUILayout.EndHorizontal();
+
+                if (isVideo)
+                {
+                    GUILayout.Space(4);
+                    appearance.backgroundLoop = UIUtils.M3Switch(appearance.backgroundLoop, Localization.Get("LoopVideo"));
+                    appearance.backgroundAudio = UIUtils.M3Switch(appearance.backgroundAudio, Localization.Get("PlayVideoAudio"));
+                    
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(Localization.Get("PlaybackSpeed"), GUILayout.Width(80));
+                    appearance.backgroundPlaybackSpeed = GUILayout.HorizontalSlider(appearance.backgroundPlaybackSpeed, 0.1f, 3f);
+                    GUILayout.Label(appearance.backgroundPlaybackSpeed.ToString("F1") + "x", UIUtils.LabelStyle, GUILayout.Width(40));
+                    GUILayout.EndHorizontal();
+                }
+
+                GUILayout.Space(4);
+                appearance.useParallax = UIUtils.M3Switch(appearance.useParallax, Localization.Get("UseParallax"));
+                if (appearance.useParallax)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(Localization.Get("ParallaxStrength"), GUILayout.Width(80));
+                    appearance.parallaxStrength = GUILayout.HorizontalSlider(appearance.parallaxStrength, 0f, 1f);
+                    GUILayout.Label(appearance.parallaxStrength.ToString("F2"), UIUtils.LabelStyle, GUILayout.Width(40));
+                    GUILayout.EndHorizontal();
+                }
+
+                GUILayout.Space(8);
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Localization.Get("TrackCustomization"), UIUtils.LabelStyle);
+                GUILayout.FlexibleSpace();
+                appearance.enableTrackCustomization = UIUtils.M3Switch(appearance.enableTrackCustomization, "");
+                GUILayout.EndHorizontal();
+
+                if (appearance.enableTrackCustomization)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(Localization.Get("Color"), GUILayout.Width(80));
+                    appearance.trackColor = Iridium.UI.UIUtils.ColorPicker(appearance.trackColor);
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(Localization.Get("Opacity"), GUILayout.Width(80));
+                    appearance.trackOpacity = GUILayout.HorizontalSlider(appearance.trackOpacity, 0f, 1f);
+                    GUILayout.Label(appearance.trackOpacity.ToString("P0"), UIUtils.LabelStyle, GUILayout.Width(40));
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(Localization.Get("Brightness"), GUILayout.Width(80));
+                    appearance.trackBrightness = GUILayout.HorizontalSlider(appearance.trackBrightness, 0f, 5f);
+                    GUILayout.Label(appearance.trackBrightness.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
+                    GUILayout.EndHorizontal();
+                }
+            }
             GUILayout.EndVertical();
 
             GUILayout.EndVertical(); // End Right Column
