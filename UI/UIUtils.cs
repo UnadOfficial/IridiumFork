@@ -127,39 +127,52 @@ namespace Iridium.UI
         }
         
         public static int M3SegmentedButton(int selectedIndex, string[] options)
+        {
+            GUILayout.BeginHorizontal();
+            for (int i = 0; i < options.Length; i++)
+            {
+                bool isSelected = selectedIndex == i;
+                Color primary = new(0.66f, 0.76f, 1.0f);
+                Color onSurfaceVariant = new(0.75f, 0.75f, 0.78f);
+                Color surfaceVariant = new(0.24f, 0.24f, 0.26f);
+                
+                GUIStyle segmentStyle = new(ButtonStyle)
                 {
-                    GUILayout.BeginHorizontal();
-                    for (int i = 0; i < options.Length; i++)
-                    {
-                        bool isSelected = selectedIndex == i;
-                        Color primary = new(0.66f, 0.76f, 1.0f);
-                        Color surfaceVariant = new(0.28f, 0.28f, 0.31f);
-                        
-                        GUI.color = isSelected ? primary : surfaceVariant;
-                        
-                        GUIStyle segmentStyle = new(ButtonStyle)
-                        {
-                            margin = new RectOffset(0, 0, 0, 0),
-                            normal = { 
-                                background = GetCachedRoundedTex(64, 64, 0, Color.white), 
-                                textColor = isSelected ? Color.black : primary 
-                            }
-                        };
-        
-                        // Round corners for ends
-                        float r = 14;
-                        if (i == 0) segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, Color.white, true, false, true, false);
-                        else if (i == options.Length - 1) segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, Color.white, false, true, false, true);
-        
-                        if (GUILayout.Button(options[i].ToUpper(), segmentStyle, GUILayout.ExpandWidth(true)))
-                        {
-                            selectedIndex = i;
-                        }
-                        GUI.color = Color.white;
+                    fixedHeight = 30,
+                    margin = new RectOffset(0, 0, 0, 0),
+                    fontSize = 11,
+                    alignment = TextAnchor.MiddleCenter,
+                    normal = { 
+                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? primary : surfaceVariant), 
+                        textColor = isSelected ? Color.black : onSurfaceVariant 
+                    },
+                    hover = {
+                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? primary : new Color(0.3f, 0.3f, 0.33f)),
+                        textColor = isSelected ? Color.black : Color.white
                     }
-                    GUILayout.EndHorizontal();
-                    return selectedIndex;
+                };
+
+                // Round corners for ends
+                float r = 15;
+                if (i == 0) 
+                {
+                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : surfaceVariant, true, false, true, false);
+                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : new Color(0.3f, 0.3f, 0.33f), true, false, true, false);
                 }
+                else if (i == options.Length - 1) 
+                {
+                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : surfaceVariant, false, true, false, true);
+                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : new Color(0.3f, 0.3f, 0.33f), false, true, false, true);
+                }
+
+                if (GUILayout.Button(options[i], segmentStyle, GUILayout.ExpandWidth(true)))
+                {
+                    selectedIndex = i;
+                }
+            }
+            GUILayout.EndHorizontal();
+            return selectedIndex;
+        }
 
         public static Texture2D GetCachedRoundedTex(int width, int height, float radius, Color col, bool tl = true, bool tr = true, bool bl = true, bool br = true)
         {
