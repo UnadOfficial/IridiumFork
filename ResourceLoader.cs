@@ -20,19 +20,19 @@ namespace Iridium
             string filePath = Path.Combine(ResourcesPath, fileName);
             if (!File.Exists(filePath))
             {
-                Main.Mod?.Logger.Error(Localization.Get("TextFileNotFound", filePath));
+                Main.Logger.Error(Localization.Get("TextFileNotFound", filePath));
                 return string.Empty;
             }
 
             try
             {
                 string content = File.ReadAllText(filePath);
-                Main.Mod?.Logger.Log(Localization.Get("LoadedTextFile", fileName));
+                Main.Logger.Log(Localization.Get("LoadedTextFile", fileName));
                 return content;
             }
             catch (Exception ex)
             {
-                Main.Mod?.Logger.Error(Localization.Get("FailedToLoadTextFile", fileName, ex.Message));
+                Main.Logger.Error(Localization.Get("FailedToLoadTextFile", fileName, ex.Message));
                 return string.Empty;
             }
         }
@@ -42,7 +42,7 @@ namespace Iridium
             string filePath = Path.Combine(ResourcesPath, fileName);
             if (!File.Exists(filePath))
             {
-                Main.Mod?.Logger.Error(Localization.Get("ImageFileNotFound", filePath));
+                Main.Logger.Error(Localization.Get("ImageFileNotFound", filePath));
                 return null;
             }
 
@@ -52,15 +52,15 @@ namespace Iridium
                 Texture2D texture = new(2, 2);
                 if (texture.LoadImage(fileData))
                 {
-                    Main.Mod?.Logger.Log(Localization.Get("LoadedTexture", fileName, texture.width, texture.height));
+                    Main.Logger.Log(Localization.Get("LoadedTexture", fileName, texture.width, texture.height));
                     return texture;
                 }
-                Main.Mod?.Logger.Error(Localization.Get("FailedToLoadImageData", fileName));
+                Main.Logger.Error(Localization.Get("FailedToLoadImageData", fileName));
                 return null;
             }
             catch (Exception ex)
             {
-                Main.Mod?.Logger.Error(Localization.Get("FailedToLoadTexture", fileName, ex.Message));
+                Main.Logger.Error(Localization.Get("FailedToLoadTexture", fileName, ex.Message));
                 return null;
             }
         }
@@ -70,19 +70,19 @@ namespace Iridium
             string filePath = Path.Combine(ResourcesPath, fileName);
             if (!File.Exists(filePath))
             {
-                Main.Mod?.Logger.Error(Localization.Get("BinaryFileNotFound", filePath));
+                Main.Logger.Error(Localization.Get("BinaryFileNotFound", filePath));
                 return [];
             }
 
             try
             {
                 byte[] data = File.ReadAllBytes(filePath);
-                Main.Mod?.Logger.Log(Localization.Get("LoadedBinaryFile", fileName, data.Length));
+                Main.Logger.Log(Localization.Get("LoadedBinaryFile", fileName, data.Length));
                 return data;
             }
             catch (Exception ex)
             {
-                Main.Mod?.Logger.Error(Localization.Get("FailedToLoadBinaryFile", fileName, ex.Message));
+                Main.Logger.Error(Localization.Get("FailedToLoadBinaryFile", fileName, ex.Message));
                 return [];
             }
         }
@@ -95,14 +95,14 @@ namespace Iridium
             {
                 if (!Directory.Exists(ResourcesPath))
                 {
-                    Main.Mod?.Logger.Warning(Localization.Get("ResourcesFolderNotFound", ResourcesPath));
+                    Main.Logger.Warning(Localization.Get("ResourcesFolderNotFound", ResourcesPath));
                     return [];
                 }
                 return Directory.GetFiles(ResourcesPath, searchPattern, searchOption);
             }
             catch (Exception ex)
             {
-                Main.Mod?.Logger.Error(Localization.Get("FailedToGetFiles", ex.Message));
+                Main.Logger.Error(Localization.Get("FailedToGetFiles", ex.Message));
                 return [];
             }
         }
