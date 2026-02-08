@@ -22,6 +22,8 @@ namespace Iridium
             Logger = new Logger(Mod.Logger);
             Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
             Localization.Load();
+            Iridium.Config.PlaylistManager.Initialize();
+            Iridium.MigrationPopup.Create();
             
             modEntry.OnToggle = OnToggle;
             modEntry.OnGUI = Settings.OnGUI;

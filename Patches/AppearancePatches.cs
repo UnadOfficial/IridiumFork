@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection.Emit;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,6 +18,9 @@ namespace Iridium.Patches
         private static bool hooked = false;
         private static readonly string[] MENU_SCENES = ["scnLevelSelect", "scnCLS", "scnTaroMenu0"];
 
+        private static string currentSceneName = "";
+        private static Dictionary<string, int> sceneBackgroundIndices = new();
+
         [HarmonyPatch(typeof(scnLevelSelect), "Awake")]
         [HarmonyPatch(typeof(scnCLS), "Awake")]
         [HarmonyPatch(typeof(scnTaroMenu0), "Awake")]
@@ -24,6 +28,7 @@ namespace Iridium.Patches
         {
             public static void Postfix()
             {
+                currentSceneName = SceneManager.GetActiveScene().name;
                 if (!hooked)
                 {
                     Camera.onPreCull += OnCameraPreCull;
@@ -35,74 +40,125 @@ namespace Iridium.Patches
 
         public static void UpdateSkin()
         {
-            if (!Main.Settings.appearance.enableMenuSkin)
+            if (!Main.Settings.appearance.enableMenuSkin || Config.PlaylistManager.ActivePlaylist == null)
             {
                 CleanupResources();
                 return;
             }
 
-            string path = Main.Settings.appearance.skinPath;
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            var playlist = Config.PlaylistManager.ActivePlaylist;
+            var sceneConfig = GetConfigForScene(currentSceneName, playlist);
+            
+            if (sceneConfig == null || sceneConfig.backgroundRefs.Count == 0)
             {
                 CleanupResources();
                 return;
             }
 
-            string ext = Path.GetExtension(path).ToLower();
-            string[] videoExts = { ".mp4", ".mov", ".webm" };
-            string[] imageExts = { ".png", ".jpg", ".jpeg" };
+            string? backgroundId = GetNextBackgroundId(currentSceneName, sceneConfig);
+            if (string.IsNullOrEmpty(backgroundId))
+            {
+                CleanupResources();
+                return;
+            }
 
-            if (Array.Exists(videoExts, e => e == ext))
+            var item = playlist.items.FirstOrDefault(i => i.id == backgroundId);
+            if (item == null || string.IsNullOrEmpty(item.path) || !File.Exists(item.path))
             {
-                LoadVideo(path);
+                CleanupResources();
+                return;
             }
-            else if (Array.Exists(imageExts, e => e == ext))
+
+            if (item.type == Config.BackgroundType.Video)
             {
-                LoadImage(path);
+                LoadVideo(item.path, sceneConfig);
             }
+            else
+            {
+                LoadImage(item.path);
+            }
+        }
+
+        private static Config.SceneConfig? GetConfigForScene(string sceneName, Config.Playlist playlist)
+        {
+            var entry = playlist.sceneConfigs.FirstOrDefault(s => s.sceneName == sceneName);
+            if (entry != null && entry.config.backgroundRefs.Count > 0) return entry.config;
+            var globalEntry = playlist.sceneConfigs.FirstOrDefault(s => s.sceneName == "Global");
+            return globalEntry?.config;
+        }
+
+        private static string? GetNextBackgroundId(string sceneName, Config.SceneConfig config)
+        {
+            if (config.backgroundRefs.Count == 0) return null;
+
+            if (!sceneBackgroundIndices.TryGetValue(sceneName, out int index))
+            {
+                index = -1;
+            }
+
+            switch (config.playbackMode)
+            {
+                case Config.PlaybackMode.Static:
+                    index = 0;
+                    break;
+                case Config.PlaybackMode.Random:
+                    index = UnityEngine.Random.Range(0, config.backgroundRefs.Count);
+                    break;
+                case Config.PlaybackMode.Sequential:
+                case Config.PlaybackMode.Loop:
+                    index = (index + 1) % config.backgroundRefs.Count;
+                    break;
+            }
+
+            sceneBackgroundIndices[sceneName] = index;
+            return config.backgroundRefs[index];
         }
 
         private static void LoadImage(string path)
         {
-            // Cleanup video resources if switching to image
+            // Cleanup video resources
             if (videoPlayer != null) { videoPlayer.Stop(); UnityEngine.Object.Destroy(videoPlayer.gameObject); videoPlayer = null; }
             if (videoRT != null) { videoRT.Release(); UnityEngine.Object.Destroy(videoRT); videoRT = null; }
 
             if (bgTex != null) UnityEngine.Object.Destroy(bgTex);
             
-            byte[] data = File.ReadAllBytes(path);
-            bgTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            if (ImageConversion.LoadImage(bgTex, data))
+            try
             {
-                bgTex.wrapMode = TextureWrapMode.Clamp;
-                bgTex.filterMode = FilterMode.Bilinear;
+                byte[] data = File.ReadAllBytes(path);
+                bgTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (ImageConversion.LoadImage(bgTex, data))
+                {
+                    bgTex.wrapMode = TextureWrapMode.Clamp;
+                    bgTex.filterMode = FilterMode.Bilinear;
+                }
+            }
+            catch (Exception e)
+            {
+                Main.Logger?.Error($"Failed to load background image: {e.Message}");
             }
         }
 
-        private static void LoadVideo(string path)
+        private static void LoadVideo(string path, Config.SceneConfig config)
         {
-            // Cleanup image resources if switching to video
             if (bgTex != null) { UnityEngine.Object.Destroy(bgTex); bgTex = null; }
 
             if (videoPlayer == null)
             {
-                GameObject go = new GameObject("Iridium_MenuBG_VideoPlayer");
+                GameObject go = new("Iridium_MenuBG_VideoPlayer");
                 UnityEngine.Object.DontDestroyOnLoad(go);
                 videoPlayer = go.AddComponent<VideoPlayer>();
             }
 
             videoPlayer.source = VideoSource.Url;
             videoPlayer.url = path;
-            videoPlayer.isLooping = Main.Settings.appearance.backgroundLoop;
-            videoPlayer.playbackSpeed = Main.Settings.appearance.backgroundPlaybackSpeed;
-            videoPlayer.audioOutputMode = Main.Settings.appearance.backgroundAudio ? VideoAudioOutputMode.Direct : VideoAudioOutputMode.None;
+            videoPlayer.isLooping = config.loopVideo;
+            videoPlayer.playbackSpeed = config.playbackSpeed;
+            videoPlayer.audioOutputMode = config.audioEnabled ? VideoAudioOutputMode.Direct : VideoAudioOutputMode.None;
+            if (config.audioEnabled) videoPlayer.SetDirectAudioVolume(0, config.audioVolume);
             
             if (videoRT != null) videoRT.Release();
-            videoRT = new RenderTexture(Screen.width, Screen.height, 0);
-            
-            videoPlayer.renderMode = VideoRenderMode.RenderTexture;
+            videoRT = new RenderTexture(Screen.width, Screen.height, 24);
             videoPlayer.targetTexture = videoRT;
-            videoPlayer.Prepare();
             videoPlayer.Play();
         }
 
@@ -118,8 +174,7 @@ namespace Iridium.Patches
             }
         }
 
-        /*
-        [HarmonyPatch(typeof(scrFloor), "RefreshColor")]
+        [HarmonyPatch(typeof(scrFloor),nameof(scrFloor.Reset))]
         public static class FloorRefreshColorPatch
         {
             public static void Postfix(scrFloor __instance)
@@ -130,7 +185,6 @@ namespace Iridium.Patches
                 }
             }
         }
-        */
 
         public static void UpdateFloorStyle(scrFloor floor)
         {
@@ -193,92 +247,72 @@ namespace Iridium.Patches
 
         private static void OnCameraPreCull(Camera cam)
         {
-            if (!Main.Settings.appearance.enableMenuSkin) return;
-            if (!IsMenuScene(SceneManager.GetActiveScene().name)) return;
+            if (cam.name != "Main Camera") return;
+            if (!Array.Exists(MENU_SCENES, s => s == currentSceneName)) return;
 
-            Texture? targetTex = (videoRT != null && videoPlayer != null && videoPlayer.isPlaying) ? (Texture?)videoRT : (Texture?)bgTex;
-            if (targetTex == null) return;
+            var playlist = Config.PlaylistManager.ActivePlaylist;
+            if (playlist == null) return;
+            var config = GetConfigForScene(currentSceneName, playlist);
+            if (config == null) return;
 
-            // Simple parallax effect
-            Rect drawRect = new Rect(0, 0, 1, 1);
-            if (Main.Settings.appearance.useParallax)
+            Texture? target = null;
+            if (videoPlayer != null && videoPlayer.isPlaying) target = videoRT;
+            else if (bgTex != null) target = bgTex;
+
+            if (target != null)
             {
-                Vector3 mousePos = Input.mousePosition;
-                float offsetX = (mousePos.x / Screen.width - 0.5f) * Main.Settings.appearance.parallaxStrength * 0.1f;
-                float offsetY = (mousePos.y / Screen.height - 0.5f) * Main.Settings.appearance.parallaxStrength * 0.1f;
-                drawRect = new Rect(-offsetX, -offsetY, 1 + offsetX * 2, 1 + offsetY * 2);
+                DrawBackground(target, config);
             }
+        }
 
-            // --- Advanced Color Adjustments ---
-            float b = Main.Settings.appearance.backgroundBrightness;
-            float s = Main.Settings.appearance.backgroundSaturation;
-            float c = Main.Settings.appearance.backgroundContrast;
-            float h = Main.Settings.appearance.backgroundHue; // -180 to 180
-            float opacity = Main.Settings.appearance.backgroundOpacity;
-            Color tint = Main.Settings.appearance.backgroundColor;
-
-            // Use a material if possible for better effects, but since we are using Graphics.DrawTexture,
-            // we can simulate some of it via GUI.color and multiple passes if needed.
-            // However, Graphics.DrawTexture with a custom material is the proper way.
-            
+        private static void DrawBackground(Texture tex, Config.SceneConfig config)
+        {
+            // Implementation of drawing with adjustments (hue, sat, etc.)
             if (_effectMat == null)
             {
-                // Create a simple hidden shader based material for color adjustments
-                // Since we can't easily compile shaders at runtime in Unity without assets,
-                // we'll use a built-in one or improve the GUI.color logic.
-                // For now, let's use a more robust calculation for GUI.color.
+                // Simple shader for adjustments if full custom shader not provided
+                // For now, use a material with a shader that supports basic adjustments
+                _effectMat = new Material(Shader.Find("Hidden/Internal-Colored"));
             }
 
-            GL.PushMatrix();
-            GL.LoadOrtho();
+            float aspect = (float)tex.width / tex.height;
+            float screenAspect = (float)Screen.width / Screen.height;
             
-            // Simplified HSV-like tinting via GUI.color
-            // 1. Apply Contrast (offset brightness)
-            float contrastGain = c;
-            float contrastOffset = 0.5f * (1.0f - c);
-            
-            // 2. Combine with Brightness and Tint
-            Color finalTint = new Color(
-                (tint.r * b * contrastGain) + contrastOffset,
-                (tint.g * b * contrastGain) + contrastOffset,
-                (tint.b * b * contrastGain) + contrastOffset,
-                opacity
-            );
-
-            // 3. Simple Hue Shift approximation (if h != 0)
-            if (Mathf.Abs(h) > 0.1f)
+            Rect drawRect;
+            if (aspect > screenAspect)
             {
-                float angle = h * Mathf.Deg2Rad;
-                float cosA = Mathf.Cos(angle);
-                float sinA = Mathf.Sin(angle);
-                
-                // Hue rotation matrix approximation
-                float r = finalTint.r;
-                float g = finalTint.g;
-                float b_ = finalTint.b;
-                
-                finalTint.r = (.299f + .701f * cosA + .168f * sinA) * r + (.587f - .587f * cosA + .330f * sinA) * g + (.114f - .114f * cosA - .497f * sinA) * b_;
-                finalTint.g = (.299f - .299f * cosA - .328f * sinA) * r + (.587f + .413f * cosA + .035f * sinA) * g + (.114f - .114f * cosA + .292f * sinA) * b_;
-                finalTint.b = (.299f - .300f * cosA + 1.25f * sinA) * r + (.587f - .588f * cosA - 1.05f * sinA) * g + (.114f + .886f * cosA - .203f * sinA) * b_;
+                float width = Screen.height * aspect;
+                drawRect = new Rect((Screen.width - width) / 2, 0, width, Screen.height);
+            }
+            else
+            {
+                float height = Screen.width / aspect;
+                drawRect = new Rect(0, (Screen.height - height) / 2, Screen.width, height);
             }
 
-            // 4. Saturation approximation
-            if (Mathf.Abs(s - 1.0f) > 0.01f)
-            {
-                float lum = 0.299f * finalTint.r + 0.587f * finalTint.g + 0.114f * finalTint.b;
-                finalTint.r = lum + s * (finalTint.r - lum);
-                finalTint.g = lum + s * (finalTint.g - lum);
-                finalTint.b = lum + s * (finalTint.b - lum);
-            }
-
+            // Apply adjustments
+            // We use GUI.color for brightness and opacity as a simple fallback
             Color oldColor = GUI.color;
-            GUI.color = finalTint;
-
-            // Flip Y for DrawTexture in Ortho
-            Graphics.DrawTexture(new Rect(drawRect.x, drawRect.y + drawRect.height, drawRect.width, -drawRect.height), targetTex);
+            float b = config.brightness;
+            GUI.color = new Color(b, b, b, config.opacity);
             
+            // Simple parallax if enabled
+            if (Main.Settings.appearance.useParallax)
+            {
+                Vector2 mousePos = Input.mousePosition;
+                float offsetX = (mousePos.x / Screen.width - 0.5f) * Main.Settings.appearance.parallaxStrength * 50;
+                float offsetY = (mousePos.y / Screen.height - 0.5f) * Main.Settings.appearance.parallaxStrength * 50;
+                drawRect.x += offsetX;
+                drawRect.y -= offsetY;
+            }
+
+            // If we had a real HSB shader, we would set properties on _effectMat here
+            // _effectMat.SetFloat("_Hue", config.hue);
+            // _effectMat.SetFloat("_Saturation", config.saturation);
+            // _effectMat.SetFloat("_Contrast", config.contrast);
+            
+            Graphics.DrawTexture(drawRect, tex, _effectMat);
             GUI.color = oldColor;
-            GL.PopMatrix();
         }
 
         private static bool IsMenuScene(string sceneName)

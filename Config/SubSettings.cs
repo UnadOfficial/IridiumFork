@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Iridium.Config
 {
@@ -61,7 +63,14 @@ namespace Iridium.Config
     public class AppearanceSettings
     {
         public bool enableMenuSkin = false;
-        public string skinPath = ""; // Now represents the file path
+        
+        // Playlist Management
+        public string activePlaylistId = "";
+        public List<string> playlistOrder = new();
+        public bool needsMigration = false;
+
+        // Legacy Settings (Keep for migration)
+        public string skinPath = ""; 
         public float backgroundOpacity = 1f;
         public Color backgroundColor = Color.white;
         public float backgroundBlur = 0f;
