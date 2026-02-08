@@ -15,10 +15,11 @@ namespace Iridium.Patches
         private static RenderTexture? videoRT;
         private static VideoPlayer? videoPlayer;
         private static bool hooked = false;
-        private static Camera? targetCam;
         private static readonly string[] MENU_SCENES = ["scnLevelSelect", "scnCLS", "scnTaroMenu0"];
 
         [HarmonyPatch(typeof(scnLevelSelect), "Awake")]
+        [HarmonyPatch(typeof(scnCLS), "Awake")]
+        [HarmonyPatch(typeof(scnTaroMenu0), "Awake")]
         public static class MenuSkinHookPatch
         {
             public static void Postfix()
@@ -105,39 +106,88 @@ namespace Iridium.Patches
             videoPlayer.Play();
         }
 
-        [HarmonyPatch(typeof(scnLevelSelect), "Update")]
-        public static class LevelSelectTrackPatch
+        [HarmonyPatch(typeof(scrFloor), "Start")]
+        public static class FloorStartPatch
         {
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            public static void Postfix(scrFloor __instance)
             {
-                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(LevelSelectTrackPatch), nameof(UpdateTrackStyle)));
-                foreach (var instruction in instructions)
+                if (IsMenuScene(SceneManager.GetActiveScene().name))
                 {
-                    yield return instruction;
+                    UpdateFloorStyle(__instance);
                 }
             }
+        }
 
-            public static void UpdateTrackStyle()
+        /*
+        [HarmonyPatch(typeof(scrFloor), "RefreshColor")]
+        public static class FloorRefreshColorPatch
+        {
+            public static void Postfix(scrFloor __instance)
+            {
+                if (IsMenuScene(SceneManager.GetActiveScene().name))
+                {
+                    UpdateFloorStyle(__instance);
+                }
+            }
+        }
+        */
+
+        public static void UpdateFloorStyle(scrFloor floor)
+        {
+            if (!Main.Settings.appearance.enableTrackCustomization) return;
+
+            Color c = Main.Settings.appearance.trackColor;
+            float b = Main.Settings.appearance.trackBrightness;
+            float a = Main.Settings.appearance.trackOpacity;
+            Color finalColor = new Color(c.r * b, c.g * b, c.b * b, a);
+
+            var spriteRenderer = floor.GetComponent<SpriteRenderer>();
+            if (spriteRenderer is not null)
+            {
+                spriteRenderer.color = finalColor;
+            }
+
+            var renderers = floor.GetComponentsInChildren<Renderer>(true);
+            foreach (var r in renderers)
+            {
+                // 排除辉光，避免闪烁
+                if (r.name.Contains("Glow")) continue;
+
+                if (r is SpriteRenderer sr) sr.color = finalColor;
+                else r.material.color = finalColor;
+            }
+        }
+
+        // 保持对编辑器特定轨道的处理，但改用更高效的方式
+        [HarmonyPatch(typeof(scnLevelSelect), "Update")]
+        [HarmonyPatch(typeof(scnCLS), "Update")]
+        [HarmonyPatch(typeof(scnTaroMenu0), "Update")]
+        public static class EditorFloorUpdatePatch
+        {
+            public static void Postfix()
             {
                 if (!Main.Settings.appearance.enableTrackCustomization) return;
 
-                // Find the track in level select. Usually it's under a certain name or component
-                // In ADOFAI level select, tracks are often mesh renderers or sprite renderers
-                // We'll search for them once per update or use a more efficient way if possible
-                var tracks = GameObject.FindObjectsOfType<MeshRenderer>();
-                foreach (var renderer in tracks)
+                Color c = Main.Settings.appearance.trackColor;
+                float b = Main.Settings.appearance.trackBrightness;
+                float a = Main.Settings.appearance.trackOpacity;
+                Color finalColor = new Color(c.r * b, c.g * b, c.b * b, a);
+
+                if (scnLevelSelect.instance != null && scnLevelSelect.instance.editorFloor != null)
                 {
-                    if (renderer.name.Contains("Track") || renderer.gameObject.layer == LayerMask.NameToLayer("UI"))
-                    {
-                        // Applying adjustments
-                        Color c = Main.Settings.appearance.trackColor;
-                        float b = Main.Settings.appearance.trackBrightness;
-                        float a = Main.Settings.appearance.trackOpacity;
-                        
-                        Color finalColor = new Color(c.r * b, c.g * b, c.b * b, a);
-                        renderer.material.color = finalColor;
-                    }
+                    UpdateFloorRenderers(scnLevelSelect.instance.editorFloor, finalColor);
                 }
+            }
+        }
+
+        private static void UpdateFloorRenderers(GameObject floorGo, Color color)
+        {
+            var renderers = floorGo.GetComponentsInChildren<Renderer>(true);
+            foreach (var r in renderers)
+            {
+                if (r.name.Contains("Glow")) continue;
+                if (r is SpriteRenderer sr) sr.color = color;
+                else r.material.color = color;
             }
         }
 
@@ -231,8 +281,6 @@ namespace Iridium.Patches
             GL.PopMatrix();
         }
 
-        private static Material? _effectMat;
-
         private static bool IsMenuScene(string sceneName)
         {
             foreach (string s in MENU_SCENES) if (s == sceneName) return true;
@@ -245,5 +293,7 @@ namespace Iridium.Patches
             if (videoPlayer != null) { videoPlayer.Stop(); UnityEngine.Object.Destroy(videoPlayer.gameObject); videoPlayer = null; }
             if (videoRT != null) { videoRT.Release(); UnityEngine.Object.Destroy(videoRT); videoRT = null; }
         }
+
+        private static Material? _effectMat;
     }
 }
