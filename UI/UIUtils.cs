@@ -71,10 +71,12 @@ namespace Iridium.UI
             {
                 fontSize = 12,
                 fixedHeight = 24,
-                alignment = TextAnchor.MiddleCenter,
-                padding = new RectOffset(4, 4, 0, 0),
-                normal = { background = GetCachedRoundedTex(64, 64, 4, surfaceContainerHigh), textColor = onSurface },
-                focused = { background = GetCachedRoundedTex(64, 64, 4, surfaceContainerHigh), textColor = Color.white }
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(8, 8, 0, 0),
+                // 提高非 Hover 状态下的亮度，并增加微弱的边框感（通过颜色对比）
+                normal = { background = GetCachedRoundedTex(64, 64, 4, new Color(0.25f, 0.25f, 0.28f)), textColor = onSurface },
+                hover = { background = GetCachedRoundedTex(64, 64, 4, new Color(0.35f, 0.35f, 0.4f)), textColor = Color.white },
+                focused = { background = GetCachedRoundedTex(64, 64, 4, new Color(0.4f, 0.4f, 0.45f)), textColor = Color.white }
             };
 
             _infoBoxStyle = new GUIStyle(GUI.skin.box)

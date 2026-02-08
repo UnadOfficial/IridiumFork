@@ -3,6 +3,7 @@ using UnityModManagerNet;
 using UnityEngine;
 using Iridium.UI;
 using Iridium.Config;
+using Iridium.Patches;
 using System.IO;
 using System.Linq;
 
@@ -27,18 +28,13 @@ namespace Iridium
         private string _selectedFile = "";
         private readonly string[] _supportedExtensions = { ".png", ".jpg", ".jpeg", ".mp4", ".mov", ".webm" };
 
-        // UI State for Playlist Management
-        private int _selectedPlaylistIdx = 0;
-        private int _selectedSceneIdx = 0;
-        private string _newPlaylistName = "New Playlist";
-        private Vector2 _playlistScroll;
-        private Vector2 _bgListScroll;
-        private string[] _sceneNames = { "Global", "scnLevelSelect", "scnCLS", "scnTaroMenu0" };
+        private SkinConfig _targetSkinConfig;
 
-        private void OpenFileBrowser()
+        private void OpenFileBrowser(SkinConfig target)
         {
+            _targetSkinConfig = target;
             _showFolderBrowser = true;
-            string initialPath = appearance.skinPath;
+            string initialPath = target.path;
             if (string.IsNullOrEmpty(initialPath) || (!File.Exists(initialPath) && !Directory.Exists(initialPath)))
             {
                 initialPath = Main.Mod?.Path ?? Directory.GetCurrentDirectory();
@@ -148,9 +144,11 @@ namespace Iridium
             GUI.enabled = !string.IsNullOrEmpty(_selectedFile);
             if (GUILayout.Button(Localization.Get("Select"), UIUtils.ButtonStyle, GUILayout.Height(32)))
             {
-                appearance.skinPath = _selectedFile;
+                if (_targetSkinConfig != null)
+                {
+                    _targetSkinConfig.path = _selectedFile;
+                }
                 _showFolderBrowser = false;
-                Iridium.Patches.AppearancePatches.UpdateSkin();
             }
             GUI.enabled = true;
             GUILayout.Space(12);
@@ -250,7 +248,7 @@ namespace Iridium
                 GUILayout.BeginHorizontal(GUILayout.Height(28));
                 GUILayout.Label(Localization.Get("DivideImageBy"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
-                string divideByStr = GUILayout.TextField(optimizer.divideBy.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                string divideByStr = GUILayout.TextField(optimizer.divideBy.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
                 if (double.TryParse(divideByStr, out double newDivideBy)) optimizer.divideBy = newDivideBy;
                 GUILayout.EndHorizontal();
 
@@ -307,7 +305,7 @@ namespace Iridium
                 GUILayout.BeginHorizontal(GUILayout.Height(28));
                 GUILayout.Label(Localization.Get("GCInterval"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
-                string intervalStr = GUILayout.TextField(memory.gcInterval.ToString("F0"), UIUtils.TextFieldStyle, GUILayout.Width(50));
+                string intervalStr = GUILayout.TextField(memory.gcInterval.ToString("F0"), 4, UIUtils.TextFieldStyle, GUILayout.Width(50));
                 if (float.TryParse(intervalStr, out float newInterval)) memory.gcInterval = Mathf.Clamp(newInterval, 10f, 3600f);
                 GUILayout.EndHorizontal();
 
@@ -402,19 +400,19 @@ namespace Iridium
                 if (!tail.tailFollowPitch)
                 {
                     GUILayout.BeginHorizontal(GUILayout.Height(28));
-                    GUILayout.Label(Localization.Get("TailLength"), UIUtils.LabelStyle);
-                    GUILayout.FlexibleSpace();
-                    string lengthStr = GUILayout.TextField(tail.tailLength.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(50));
-                    if (float.TryParse(lengthStr, out float newLength)) tail.tailLength = newLength;
-                    GUILayout.EndHorizontal();
-                }
-
-                GUILayout.BeginHorizontal(GUILayout.Height(28));
-                GUILayout.Label(Localization.Get("TailEmission"), UIUtils.LabelStyle);
+                GUILayout.Label(Localization.Get("TailLength"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
-                string emissionStr = GUILayout.TextField(tail.tailEmission.ToString("F1"), UIUtils.TextFieldStyle, GUILayout.Width(50));
-                if (float.TryParse(emissionStr, out float newEmission)) tail.tailEmission = newEmission;
+                string lengthStr = GUILayout.TextField(tail.tailLength.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
+                if (float.TryParse(lengthStr, out float newLength)) tail.tailLength = newLength;
                 GUILayout.EndHorizontal();
+            }
+
+            GUILayout.BeginHorizontal(GUILayout.Height(28));
+            GUILayout.Label(Localization.Get("TailEmission"), UIUtils.LabelStyle);
+            GUILayout.FlexibleSpace();
+            string emissionStr = GUILayout.TextField(tail.tailEmission.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
+            if (float.TryParse(emissionStr, out float newEmission)) tail.tailEmission = newEmission;
+            GUILayout.EndHorizontal();
             }
             GUILayout.EndVertical();
 
@@ -470,209 +468,51 @@ namespace Iridium
 
             if (appearance.enableMenuSkin)
             {
-                if (appearance.needsMigration)
-                {
-                    GUILayout.Space(8);
-                    GUILayout.BeginHorizontal(GUI.skin.box);
-                    GUILayout.Label("⚠ " + Localization.Get("MigrationPending"), UIUtils.LabelStyle);
-                    GUILayout.FlexibleSpace();
-                    if (GUILayout.Button(Localization.Get("Migrate"), UIUtils.ButtonStyle, GUILayout.Width(80)))
-                    {
-                        Config.PlaylistManager.MigrateLegacySettings();
-                    }
-                    GUILayout.EndHorizontal();
-                }
-
                 GUILayout.Space(8);
-                
-                // Playlist Management Section
-                GUILayout.Label(Localization.Get("PlaylistSettings"), UIUtils.LabelStyle);
-                
-                GUILayout.BeginHorizontal();
-                _newPlaylistName = GUILayout.TextField(_newPlaylistName, UIUtils.TextFieldStyle, GUILayout.Width(150));
-                if (GUILayout.Button(Localization.Get("NewPlaylist"), UIUtils.ButtonStyle, GUILayout.Width(100)))
-                {
-                    Config.PlaylistManager.CreateNewPlaylist(_newPlaylistName);
-                }
-                GUILayout.EndHorizontal();
 
-                GUILayout.Space(4);
-                
-                // Migration Pending Reminder
-                if (appearance.needsMigration)
+                GUILayout.Label(Localization.Get("SkinMode"), UIUtils.LabelStyle);
+                appearance.mode = (SkinMode)UIUtils.M3SegmentedButton((int)appearance.mode,
+                    [Localization.Get("ModeSingleGlobal"), Localization.Get("ModePerScene"), Localization.Get("ModeSlideshow")]);
+
+                GUILayout.Space(12);
+
+                if (appearance.mode == SkinMode.SingleGlobal)
                 {
-                    GUILayout.BeginHorizontal(UIUtils.CardStyle);
-                    GUILayout.Label("⚠ " + Localization.Get("MigrationPending"), UIUtils.LabelStyle);
-                    if (GUILayout.Button(Localization.Get("Migrate") + "..", UIUtils.ButtonStyle, GUILayout.Width(100)))
-                    {
-                        Config.PlaylistManager.MigrateLegacySettings();
-                    }
-                    GUILayout.EndHorizontal();
+                    DrawSkinConfigUI(appearance.globalSkin, Localization.Get("GlobalSkin"));
+                }
+                else if (appearance.mode == SkinMode.PerScene)
+                {
+                    DrawSkinConfigUI(appearance.mainUISkin, Localization.Get("MainUISkin"));
                     GUILayout.Space(8);
+                    DrawSkinConfigUI(appearance.clsSkin, Localization.Get("CLSSkin"));
+                    GUILayout.Space(8);
+                    DrawSkinConfigUI(appearance.dlcUISkin, Localization.Get("DLCUISkin"));
                 }
-
-                // Playlist Management Section
-                GUILayout.Label(Localization.Get("PlaylistSettings"), UIUtils.HeaderStyle);
-                
-                GUILayout.BeginHorizontal();
-                _newPlaylistName = GUILayout.TextField(_newPlaylistName, UIUtils.TextFieldStyle, GUILayout.Width(200));
-                if (GUILayout.Button(Localization.Get("NewPlaylist"), UIUtils.ButtonStyle, GUILayout.Width(120)))
+                else if (appearance.mode == SkinMode.Slideshow)
                 {
-                    Config.PlaylistManager.CreateNewPlaylist(_newPlaylistName);
-                    _newPlaylistName = "New Playlist";
-                    _selectedPlaylistIdx = Config.PlaylistManager.Playlists.Count - 1;
-                }
-                GUILayout.EndHorizontal();
-                
-                GUILayout.Space(8);
-                
-                var playlists = Config.PlaylistManager.Playlists;
-                if (playlists.Count > 0)
-                {
-                    string[] playlistNames = playlists.Select(p => p.name).ToArray();
-                    _selectedPlaylistIdx = Mathf.Clamp(_selectedPlaylistIdx, 0, playlists.Count - 1);
+                    appearance.EnsureSlideshowSize();
                     
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(Localization.Get("ActivePlaylist") + ":", UIUtils.LabelStyle, GUILayout.Width(100));
-                    int newIdx = GUILayout.SelectionGrid(_selectedPlaylistIdx, playlistNames, Math.Min(3, playlistNames.Length), UIUtils.ButtonStyle);
-                    if (newIdx != _selectedPlaylistIdx)
-                    {
-                        _selectedPlaylistIdx = newIdx;
-                        Config.PlaylistManager.SetActivePlaylist(playlists[_selectedPlaylistIdx].id);
-                        Iridium.Patches.AppearancePatches.UpdateSkin();
-                    }
+                    GUILayout.Label(Localization.Get("SlideDuration"), GUILayout.Width(120));
+                    appearance.slideDuration = GUILayout.HorizontalSlider(appearance.slideDuration, 1f, 600f);
+                    GUILayout.Label(appearance.slideDuration.ToString("F0") + "s", UIUtils.LabelStyle, GUILayout.Width(40));
                     GUILayout.EndHorizontal();
 
-                    var activePlaylist = Config.PlaylistManager.ActivePlaylist;
-                    if (activePlaylist != null)
-                    {
-                        GUILayout.Space(8);
-                        // Background List in active playlist
-                        GUILayout.Label(Localization.Get("Backgrounds"), UIUtils.LabelStyle);
-                        _bgListScroll = GUILayout.BeginScrollView(_bgListScroll, GUILayout.Height(150), GUILayout.ExpandWidth(true));
-                        for (int i = 0; i < activePlaylist.items.Count; i++)
-                        {
-                            var item = activePlaylist.items[i];
-                            GUILayout.BeginHorizontal(GUI.skin.box);
-                            GUILayout.Label(item.name, UIUtils.LabelStyle);
-                            GUILayout.FlexibleSpace();
-                            if (GUILayout.Button("X", UIUtils.ButtonStyle, GUILayout.Width(25)))
-                            {
-                                activePlaylist.items.RemoveAt(i);
-                                Config.PlaylistManager.SavePlaylist(activePlaylist);
-                                break;
-                            }
-                            GUILayout.EndHorizontal();
-                        }
-                        GUILayout.EndScrollView();
-
-                        if (GUILayout.Button(Localization.Get("AddBackground"), UIUtils.ButtonStyle))
-                        {
-                            OpenFileBrowser(); // This sets _selectedFile
-                        }
-                        
-                        // Handle file selection from browser
-                        if (!string.IsNullOrEmpty(_selectedFile))
-                        {
-                            var newItem = new Config.BackgroundItem
-                            {
-                                name = Path.GetFileNameWithoutExtension(_selectedFile),
-                                path = _selectedFile,
-                                type = _selectedFile.ToLower().EndsWith(".mp4") || _selectedFile.ToLower().EndsWith(".mov") || _selectedFile.ToLower().EndsWith(".webm") 
-                                       ? Config.BackgroundType.Video : Config.BackgroundType.Image
-                            };
-                            activePlaylist.items.Add(newItem);
-                            Config.PlaylistManager.SavePlaylist(activePlaylist);
-                            _selectedFile = "";
-                        }
-
-                        GUILayout.Space(12);
-                        // Scene Independent Configs
-                        GUILayout.Label(Localization.Get("SceneConfigs"), UIUtils.HeaderStyle);
-                        _selectedSceneIdx = GUILayout.Toolbar(_selectedSceneIdx, _sceneNames.Select(s => s == "Global" ? Localization.Get("GlobalConfig") : s).ToArray());
-                        
-                        string sceneName = _sceneNames[_selectedSceneIdx];
-                        var sceneEntry = activePlaylist.sceneConfigs.FirstOrDefault(s => s.sceneName == sceneName);
-                        if (sceneEntry != null)
-                        {
-                            var config = sceneEntry.config;
-                            
-                            GUILayout.BeginVertical(GUI.skin.box);
-                            
-                            GUILayout.BeginHorizontal();
-                            GUILayout.Label(Localization.Get("PlaybackMode"), UIUtils.LabelStyle, GUILayout.Width(100));
-                            config.playbackMode = (Config.PlaybackMode)GUILayout.SelectionGrid((int)config.playbackMode, 
-                                new string[] { Localization.Get("Sequential"), Localization.Get("Random"), Localization.Get("Loop"), Localization.Get("Static") }, 4, UIUtils.ButtonStyle);
-                            GUILayout.EndHorizontal();
-
-                            // Background Refs for this scene
-                            GUILayout.Space(8);
-                            GUILayout.Label(Localization.Get("Backgrounds") + " (Refs):", UIUtils.LabelStyle);
-                            foreach (var bg in activePlaylist.items)
-                            {
-                                bool isRefed = config.backgroundRefs.Contains(bg.id);
-                                bool newRefed = GUILayout.Toggle(isRefed, " " + bg.name, GUILayout.Height(24));
-                                if (newRefed != isRefed)
-                                {
-                                    if (newRefed) config.backgroundRefs.Add(bg.id);
-                                    else config.backgroundRefs.Remove(bg.id);
-                                    Config.PlaylistManager.SavePlaylist(activePlaylist);
-                                }
-                            }
-
-                            GUILayout.Space(8);
-                            GUILayout.Label(Localization.Get("BackgroundAdjustments"), UIUtils.LabelStyle);
-                            
-                            GUILayout.BeginHorizontal();
-                            GUILayout.Label(Localization.Get("Opacity"), GUILayout.Width(80));
-                            config.opacity = GUILayout.HorizontalSlider(config.opacity, 0f, 1f);
-                            GUILayout.Label(config.opacity.ToString("P0"), UIUtils.LabelStyle, GUILayout.Width(40));
-                            GUILayout.EndHorizontal();
-
-                            GUILayout.BeginHorizontal();
-                            GUILayout.Label(Localization.Get("Brightness"), GUILayout.Width(80));
-                            config.brightness = GUILayout.HorizontalSlider(config.brightness, 0f, 5f);
-                            GUILayout.Label(config.brightness.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
-                            GUILayout.EndHorizontal();
-                            
-                            // Video specific settings if any background is video
-                            if (activePlaylist.items.Any(i => i.type == Config.BackgroundType.Video))
-                            {
-                                GUILayout.Space(4);
-                                config.loopVideo = UIUtils.M3Switch(config.loopVideo, Localization.Get("LoopVideo"));
-                                config.audioEnabled = UIUtils.M3Switch(config.audioEnabled, Localization.Get("PlayVideoAudio"));
-                                
-                                GUILayout.BeginHorizontal();
-                                GUILayout.Label(Localization.Get("PlaybackSpeed"), GUILayout.Width(80));
-                                config.playbackSpeed = GUILayout.HorizontalSlider(config.playbackSpeed, 0.1f, 3f);
-                                GUILayout.Label(config.playbackSpeed.ToString("F1") + "x", UIUtils.LabelStyle, GUILayout.Width(40));
-                                GUILayout.EndHorizontal();
-                            }
-                            
-                            GUILayout.EndVertical();
-                        }
-                        
-                        GUILayout.Space(16);
-                        if (GUILayout.Button(Localization.Get("DeletePlaylist"), UIUtils.ButtonStyle, GUILayout.Height(32)))
-                        {
-                            Config.PlaylistManager.DeletePlaylist(activePlaylist.id);
-                            _selectedPlaylistIdx = 0;
-                        }
-                    }
-                }
-
-                GUILayout.Space(8);
-                appearance.useParallax = UIUtils.M3Switch(appearance.useParallax, Localization.Get("UseParallax"));
-                if (appearance.useParallax)
-                {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(Localization.Get("ParallaxStrength"), GUILayout.Width(80));
-                    appearance.parallaxStrength = GUILayout.HorizontalSlider(appearance.parallaxStrength, 0f, 1f);
-                    GUILayout.Label(appearance.parallaxStrength.ToString("F2"), UIUtils.LabelStyle, GUILayout.Width(40));
+                    GUILayout.Label(Localization.Get("SlideshowCount"), GUILayout.Width(120));
+                    string countStr = GUILayout.TextField(appearance.slideshowCount.ToString(), 2, UIUtils.TextFieldStyle, GUILayout.Width(50));
+                    if (int.TryParse(countStr, out int newCount)) appearance.slideshowCount = Mathf.Clamp(newCount, 1, 20);
                     GUILayout.EndHorizontal();
+
+                    GUILayout.Space(8);
+                    for (int i = 0; i < appearance.slideshowCount; i++)
+                    {
+                        DrawSkinConfigUI(appearance.slideshowSkins[i], $"{Localization.Get("Slide")} {i + 1}");
+                        if (i < appearance.slideshowCount - 1) GUILayout.Space(8);
+                    }
                 }
 
-                GUILayout.Space(8);
+                GUILayout.Space(12);
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(Localization.Get("TrackCustomization"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
@@ -708,7 +548,106 @@ namespace Iridium
             if (GUI.changed)
             {            
                 Save(modEntry);
+                AppearancePatches.ApplyTrackCustomization();
             }
+        }
+
+        private void DrawSkinConfigUI(SkinConfig config, string label)
+        {
+            if (config == null) return;
+            
+            GUIStyle subContainerStyle = new()
+            {
+                normal = { background = UIUtils.GetCachedRoundedTex(64, 64, 8, new Color(1, 1, 1, 0.04f)) },
+                padding = new RectOffset(12, 12, 12, 12),
+                margin = new RectOffset(0, 0, 4, 4)
+            };
+
+            GUILayout.BeginVertical(subContainerStyle);
+            GUILayout.Label(label, UIUtils.LabelStyle);
+            GUILayout.Space(4);
+
+            GUILayout.BeginHorizontal(GUILayout.Height(28));
+            // 限制路径输入框宽度，防止过长，并设置最大字符长度
+            config.path = GUILayout.TextField(config.path, 1024, UIUtils.TextFieldStyle, GUILayout.Width(300));
+            GUILayout.Space(4);
+            if (GUILayout.Button(Localization.Get("Browse"), UIUtils.ButtonStyle, GUILayout.Width(60)))
+            {
+                OpenFileBrowser(config);
+            }
+            GUILayout.EndHorizontal();
+
+            if (string.IsNullOrEmpty(config.path))
+            {
+                GUILayout.EndVertical();
+                return;
+            }
+
+            bool isVideo = _supportedExtensions.Skip(3).Any(e => config.path.ToLower().EndsWith(e));
+
+            GUILayout.Space(8);
+            
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("Scale"), GUILayout.Width(80));
+            config.scale = GUILayout.HorizontalSlider(config.scale, 0.1f, 5f);
+            GUILayout.Label(config.scale.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("OffsetX"), GUILayout.Width(80));
+            config.offsetX = GUILayout.HorizontalSlider(config.offsetX, -1f, 1f);
+            GUILayout.Label(config.offsetX.ToString("F2"), UIUtils.LabelStyle, GUILayout.Width(40));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("OffsetY"), GUILayout.Width(80));
+            config.offsetY = GUILayout.HorizontalSlider(config.offsetY, -1f, 1f);
+            GUILayout.Label(config.offsetY.ToString("F2"), UIUtils.LabelStyle, GUILayout.Width(40));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("Opacity"), GUILayout.Width(80));
+            config.opacity = GUILayout.HorizontalSlider(config.opacity, 0f, 1f);
+            GUILayout.Label(config.opacity.ToString("P0"), UIUtils.LabelStyle, GUILayout.Width(40));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("Brightness"), GUILayout.Width(80));
+            config.brightness = GUILayout.HorizontalSlider(config.brightness, 0f, 5f);
+            GUILayout.Label(config.brightness.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("Contrast"), GUILayout.Width(80));
+            config.contrast = GUILayout.HorizontalSlider(config.contrast, 0f, 5f);
+            GUILayout.Label(config.contrast.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("Saturation"), GUILayout.Width(80));
+            config.saturation = GUILayout.HorizontalSlider(config.saturation, 0f, 5f);
+            GUILayout.Label(config.saturation.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("Hue"), GUILayout.Width(80));
+            config.hue = GUILayout.HorizontalSlider(config.hue, -180f, 180f);
+            GUILayout.Label(config.hue.ToString("F0") + "°", UIUtils.LabelStyle, GUILayout.Width(40));
+            GUILayout.EndHorizontal();
+
+            if (isVideo)
+            {
+                GUILayout.Space(4);
+                config.loop = UIUtils.M3Switch(config.loop, Localization.Get("LoopVideo"));
+                
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Localization.Get("PlaybackSpeed"), GUILayout.Width(80));
+                config.playbackSpeed = GUILayout.HorizontalSlider(config.playbackSpeed, 0.1f, 3f);
+                GUILayout.Label(config.playbackSpeed.ToString("F1") + "x", UIUtils.LabelStyle, GUILayout.Width(40));
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.EndVertical();
         }
 
         public override void Save(UnityModManager.ModEntry modEntry)

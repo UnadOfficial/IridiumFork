@@ -22,17 +22,21 @@ namespace Iridium
             Logger = new Logger(Mod.Logger);
             Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
             Localization.Load();
-            Iridium.Config.PlaylistManager.Initialize();
-            Iridium.MigrationPopup.Create();
             
             modEntry.OnToggle = OnToggle;
             modEntry.OnGUI = Settings.OnGUI;
             modEntry.OnSaveGUI = Settings.Save;
+            modEntry.OnUpdate = OnUpdate;
             
             Harmony = new Harmony(modEntry.Info.Id);
             
             Logger?.Log(Localization.Get("ModLoaded", Settings.language));
             return true;
+        }
+
+        private static void OnUpdate(UnityModManager.ModEntry modEntry, float dt)
+        {
+            Iridium.Patches.AppearancePatches.OnUpdate(dt);
         }
 
         private static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
@@ -51,6 +55,7 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModDisabled"));
                 Harmony?.UnpatchAll(modEntry.Info.Id);
+                Iridium.Patches.AppearancePatches.Disable();
             }
             return true;
         }
