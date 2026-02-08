@@ -1,6 +1,4 @@
 using UnityEngine;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace Iridium.Config
 {
@@ -60,42 +58,70 @@ namespace Iridium.Config
         public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
     }
 
+    public enum LegacyBehaviorMode
+    {
+        Default,
+        AlwaysOff,
+        AlwaysOn
+    }
+
+    public enum SkinMode
+    {
+        SingleGlobal,
+        PerScene,
+        Slideshow
+    }
+
+    public class SkinConfig
+    {
+        public string path = "";
+        public float scale = 1f;
+        public float offsetX = 0f;
+        public float offsetY = 0f;
+        public float opacity = 1f;
+        public float brightness = 1f;
+        public float saturation = 1f;
+        public float contrast = 1f;
+        public float hue = 0f;
+        public bool loop = true;
+        public float playbackSpeed = 1f;
+    }
+
     public class AppearanceSettings
     {
         public bool enableMenuSkin = false;
+        public SkinMode mode = SkinMode.SingleGlobal;
         
-        // Playlist Management
-        public string activePlaylistId = "";
-        public List<string> playlistOrder = new();
-        public bool needsMigration = false;
+        public SkinConfig globalSkin = new();
+        public SkinConfig mainUISkin = new();
+        public SkinConfig clsSkin = new();
+        public SkinConfig dlcUISkin = new();
 
-        // Legacy Settings (Keep for migration)
-        public string skinPath = ""; 
-        public float backgroundOpacity = 1f;
-        public Color backgroundColor = Color.white;
-        public float backgroundBlur = 0f;
-        public float backgroundBrightness = 1f;
-        public float backgroundSaturation = 1f;
-        public float backgroundContrast = 1f;
-        public float backgroundHue = 0f;
-        public bool backgroundLoop = true;
-        public float backgroundPlaybackSpeed = 1f;
-        public bool backgroundAudio = false;
-        public float backgroundAudioVolume = 1f;
-        public bool useParallax = false;
-        public float parallaxStrength = 0.1f;
+        public int slideshowCount = 1;
+        public float slideDuration = 10f;
+        public SkinConfig[] slideshowSkins = [new SkinConfig()];
 
         // Level Select Track Customization
         public bool enableTrackCustomization = false;
         public Color trackColor = Color.white;
         public float trackOpacity = 1f;
         public float trackBrightness = 1f;
-    }
 
-    public enum LegacyBehaviorMode
-    {
-        Default,
-        AlwaysOff,
-        AlwaysOn
+        public void EnsureSlideshowSize()
+        {
+            if (slideshowCount < 1) slideshowCount = 1;
+            if (slideshowSkins == null || slideshowSkins.Length != slideshowCount)
+            {
+                SkinConfig[] newSkins = new SkinConfig[slideshowCount];
+                for (int i = 0; i < slideshowCount; i++)
+                {
+                    if (slideshowSkins != null && i < slideshowSkins.Length)
+                        newSkins[i] = slideshowSkins[i];
+                    else
+                        newSkins[i] = new SkinConfig();
+                }
+                slideshowSkins = newSkins;
+            }
+        }
     }
 }

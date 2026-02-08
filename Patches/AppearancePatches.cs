@@ -7,230 +7,501 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Video;
 using HarmonyLib;
+using Iridium.Config;
 
 namespace Iridium.Patches
 {
     public static class AppearancePatches
     {
-        private static Texture2D? bgTex;
-        private static RenderTexture? videoRT;
-        private static VideoPlayer? videoPlayer;
+        private static Camera? targetCam;
         private static bool hooked = false;
-        private static readonly string[] MENU_SCENES = ["scnLevelSelect", "scnCLS", "scnTaroMenu0"];
+        private static string lastScene = "";
+        
+        // Single/PerScene Resources
+        private static Texture2D? singleTex;
+        private static RenderTexture? singleRT;
+        private static VideoPlayer? singlePlayer;
+        private static SkinConfig? currentConfig;
 
-        private static string currentSceneName = "";
-        private static Dictionary<string, int> sceneBackgroundIndices = new();
+        // Slideshow Resources
+        private static int slideshowIndex = 0;
+        private static float slideshowTimer = 0f;
+        private static Texture2D? slideshowTex;
+        private static RenderTexture? slideshowRT;
+        private static VideoPlayer? slideshowPlayer;
 
-        [HarmonyPatch(typeof(scnLevelSelect), "Awake")]
-        [HarmonyPatch(typeof(scnCLS), "Awake")]
-        [HarmonyPatch(typeof(scnTaroMenu0), "Awake")]
-        public static class MenuSkinHookPatch
+        private static Material? effectMat;
+        private static HashSet<scrFloor> menuFloors = new HashSet<scrFloor>();
+        private static Dictionary<scrFloor, Renderer[]> floorRendererCache = new Dictionary<scrFloor, Renderer[]>();
+        private static Dictionary<UnityEngine.Object, float> originalAlphaCache = new Dictionary<UnityEngine.Object, float>();
+        private static readonly string[] MENU_SCENES = { "scnLevelSelect", "scnCLS", "scnTaroMenu0" };
+
+        public static void OnUpdate(float dt)
         {
-            public static void Postfix()
+            if (Main.Settings.appearance.enableMenuSkin)
             {
-                currentSceneName = SceneManager.GetActiveScene().name;
-                if (!hooked)
+                Main.Settings.appearance.EnsureSlideshowSize();
+                string sceneName = SceneManager.GetActiveScene().name;
+
+                if (sceneName != lastScene)
                 {
-                    Camera.onPreCull += OnCameraPreCull;
-                    hooked = true;
+                    menuFloors.Clear();
+                    floorRendererCache.Clear();
+                    originalAlphaCache.Clear();
+                    lastScene = sceneName;
                 }
-                UpdateSkin();
+
+                if (IsMenuScene(sceneName))
+                {
+                    // Find the best camera to hook into
+                    Camera? main = Camera.main;
+                    // If we find a camera named "Background Camera", it's usually better for backgrounds
+                    Camera[] allCameras = Camera.allCameras;
+                    foreach (var c in allCameras)
+                    {
+                        if (c.name == "Background Camera" && c.isActiveAndEnabled)
+                        {
+                            main = c;
+                            break;
+                        }
+                    }
+
+                    if (main != null)
+                    {
+                        if (hooked && main != targetCam)
+                        {
+                            Main.Logger?.Log($"AppearancePatches: Target camera changed from {targetCam?.name} to {main.name}, re-hooking...");
+                            Disable();
+                        }
+
+                        if (!hooked)
+                        {
+                            Main.Logger?.Log($"AppearancePatches: Hooking to camera {main.name} in scene {sceneName}");
+                            targetCam = main;
+                            if (Main.Settings.appearance.mode == SkinMode.Slideshow)
+                            {
+                                InitSlideshow();
+                            }
+                            else
+                            {
+                                StartSingleSkin(sceneName);
+                            }
+                            Camera.onPreCull += OnCameraPreCull;
+                            hooked = true;
+                        }
+
+                        if (Main.Settings.appearance.mode == SkinMode.Slideshow)
+                        {
+                            UpdateSlideshow(dt);
+                        }
+                    }
+                }
+                else if (hooked)
+                {
+                    Main.Logger?.Log($"AppearancePatches: Disabled because scene {sceneName} is not a menu scene");
+                    Disable();
+                }
+            }
+            else if (hooked)
+            {
+                Main.Logger?.Log("AppearancePatches: Disabled because enableMenuSkin is false");
+                Disable();
+            }
+
+            // Always allow track customization updates if enabled
+            if (Main.Settings.appearance.enableTrackCustomization)
+            {
+                ApplyTrackCustomization();
             }
         }
 
-        public static void UpdateSkin()
+        private static void StartSingleSkin(string scene)
         {
-            if (!Main.Settings.appearance.enableMenuSkin || Config.PlaylistManager.ActivePlaylist == null)
+            CleanupSingle();
+            currentConfig = GetCurrentSkinConfig(scene);
+            if (currentConfig == null)
             {
-                CleanupResources();
+                Main.Logger?.Log($"AppearancePatches: No config found for scene {scene}");
+                return;
+            }
+            if (string.IsNullOrEmpty(currentConfig.path))
+            {
+                Main.Logger?.Log($"AppearancePatches: Path is empty for scene {scene}");
+                return;
+            }
+            if (!File.Exists(currentConfig.path))
+            {
+                Main.Logger?.Log($"AppearancePatches: File not found at {currentConfig.path}");
                 return;
             }
 
-            var playlist = Config.PlaylistManager.ActivePlaylist;
-            var sceneConfig = GetConfigForScene(currentSceneName, playlist);
+            Main.Logger?.Log($"AppearancePatches: Loading skin from {currentConfig.path}");
+            LoadSkin(currentConfig.path, ref singleTex, ref singleRT, ref singlePlayer, "Iridium_SingleSkin_Player");
+        }
+
+        private static void InitSlideshow()
+        {
+            CleanupSlideshow();
+            slideshowIndex = 0;
+            slideshowTimer = 0f;
             
-            if (sceneConfig == null || sceneConfig.backgroundRefs.Count == 0)
-            {
-                CleanupResources();
-                return;
-            }
+            var cfg = Main.Settings.appearance.slideshowSkins[slideshowIndex];
+            if (cfg == null || string.IsNullOrEmpty(cfg.path) || !File.Exists(cfg.path)) return;
 
-            string? backgroundId = GetNextBackgroundId(currentSceneName, sceneConfig);
-            if (string.IsNullOrEmpty(backgroundId))
-            {
-                CleanupResources();
-                return;
-            }
-
-            var item = playlist.items.FirstOrDefault(i => i.id == backgroundId);
-            if (item == null || string.IsNullOrEmpty(item.path) || !File.Exists(item.path))
-            {
-                CleanupResources();
-                return;
-            }
-
-            if (item.type == Config.BackgroundType.Video)
-            {
-                LoadVideo(item.path, sceneConfig);
-            }
-            else
-            {
-                LoadImage(item.path);
-            }
+            LoadSkin(cfg.path, ref slideshowTex, ref slideshowRT, ref slideshowPlayer, "Iridium_Slideshow_Player");
         }
 
-        private static Config.SceneConfig? GetConfigForScene(string sceneName, Config.Playlist playlist)
+        private static void UpdateSlideshow(float dt)
         {
-            var entry = playlist.sceneConfigs.FirstOrDefault(s => s.sceneName == sceneName);
-            if (entry != null && entry.config.backgroundRefs.Count > 0) return entry.config;
-            var globalEntry = playlist.sceneConfigs.FirstOrDefault(s => s.sceneName == "Global");
-            return globalEntry?.config;
+            if (Main.Settings.appearance.slideshowCount <= 0) return;
+
+            slideshowTimer += dt;
+            if (slideshowTimer < Main.Settings.appearance.slideDuration) return;
+
+            slideshowTimer = 0f;
+            slideshowIndex = (slideshowIndex + 1) % Main.Settings.appearance.slideshowCount;
+
+            var cfg = Main.Settings.appearance.slideshowSkins[slideshowIndex];
+            if (cfg == null || string.IsNullOrEmpty(cfg.path) || !File.Exists(cfg.path)) return;
+
+            LoadSkin(cfg.path, ref slideshowTex, ref slideshowRT, ref slideshowPlayer, "Iridium_Slideshow_Player");
         }
 
-        private static string? GetNextBackgroundId(string sceneName, Config.SceneConfig config)
+        private static void LoadSkin(string path, ref Texture2D? tex, ref RenderTexture? rt, ref VideoPlayer? player, string playerName)
         {
-            if (config.backgroundRefs.Count == 0) return null;
-
-            if (!sceneBackgroundIndices.TryGetValue(sceneName, out int index))
-            {
-                index = -1;
-            }
-
-            switch (config.playbackMode)
-            {
-                case Config.PlaybackMode.Static:
-                    index = 0;
-                    break;
-                case Config.PlaybackMode.Random:
-                    index = UnityEngine.Random.Range(0, config.backgroundRefs.Count);
-                    break;
-                case Config.PlaybackMode.Sequential:
-                case Config.PlaybackMode.Loop:
-                    index = (index + 1) % config.backgroundRefs.Count;
-                    break;
-            }
-
-            sceneBackgroundIndices[sceneName] = index;
-            return config.backgroundRefs[index];
-        }
-
-        private static void LoadImage(string path)
-        {
-            // Cleanup video resources
-            if (videoPlayer != null) { videoPlayer.Stop(); UnityEngine.Object.Destroy(videoPlayer.gameObject); videoPlayer = null; }
-            if (videoRT != null) { videoRT.Release(); UnityEngine.Object.Destroy(videoRT); videoRT = null; }
-
-            if (bgTex != null) UnityEngine.Object.Destroy(bgTex);
-            
             try
             {
-                byte[] data = File.ReadAllBytes(path);
-                bgTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                if (ImageConversion.LoadImage(bgTex, data))
+                string ext = Path.GetExtension(path).ToLower();
+                bool isVideo = ext == ".mp4" || ext == ".mov" || ext == ".webm";
+                Main.Logger?.Log($"AppearancePatches: Loading {path} (isVideo: {isVideo})");
+
+                if (isVideo)
                 {
-                    bgTex.wrapMode = TextureWrapMode.Clamp;
-                    bgTex.filterMode = FilterMode.Bilinear;
+                    if (tex != null) { UnityEngine.Object.Destroy(tex); tex = null; }
+                    if (player == null)
+                    {
+                        GameObject go = new GameObject(playerName);
+                        UnityEngine.Object.DontDestroyOnLoad(go);
+                        player = go.AddComponent<VideoPlayer>();
+                    }
+                    player.source = VideoSource.Url;
+                    player.url = path;
+                    player.isLooping = true;
+                    player.audioOutputMode = VideoAudioOutputMode.None;
+                    
+                    // Set playback speed if available
+                    if (currentConfig != null) player.playbackSpeed = currentConfig.playbackSpeed;
+                    else if (Main.Settings.appearance.mode == SkinMode.Slideshow)
+                    {
+                        var cfg = Main.Settings.appearance.slideshowSkins[slideshowIndex];
+                        if (cfg != null) player.playbackSpeed = cfg.playbackSpeed;
+                    }
+                    
+                    if (rt != null) rt.Release();
+                    rt = new RenderTexture(Screen.width, Screen.height, 0);
+                    player.renderMode = VideoRenderMode.RenderTexture;
+                    player.targetTexture = rt;
+                    player.errorReceived += (v, msg) => Main.Logger?.Log($"AppearancePatches: Video Error: {msg}");
+                    player.Prepare();
+                    player.Play();
+                    Main.Logger?.Log("AppearancePatches: Video player started");
+                }
+                else
+                {
+                    if (player != null) { player.Stop(); UnityEngine.Object.Destroy(player.gameObject); player = null; }
+                    if (rt != null) { rt.Release(); UnityEngine.Object.Destroy(rt); rt = null; }
+                    
+                    if (tex != null) UnityEngine.Object.Destroy(tex);
+                    byte[] data = File.ReadAllBytes(path);
+                    tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                    if (ImageConversion.LoadImage(tex, data))
+                    {
+                        tex.wrapMode = TextureWrapMode.Clamp;
+                        tex.filterMode = FilterMode.Bilinear;
+                        Main.Logger?.Log($"AppearancePatches: Image loaded ({tex.width}x{tex.height})");
+                    }
+                    else
+                    {
+                        Main.Logger?.Log("AppearancePatches: Failed to load image data");
+                    }
                 }
             }
             catch (Exception e)
             {
-                Main.Logger?.Error($"Failed to load background image: {e.Message}");
+                Main.Logger?.Log($"AppearancePatches: Error loading skin: {e}");
             }
         }
 
-        private static void LoadVideo(string path, Config.SceneConfig config)
+        private static void OnCameraPreCull(Camera cam)
         {
-            if (bgTex != null) { UnityEngine.Object.Destroy(bgTex); bgTex = null; }
+            if (cam != targetCam) return;
 
-            if (videoPlayer == null)
-            {
-                GameObject go = new("Iridium_MenuBG_VideoPlayer");
-                UnityEngine.Object.DontDestroyOnLoad(go);
-                videoPlayer = go.AddComponent<VideoPlayer>();
+            Texture? tex = null;
+            SkinConfig? cfg = null;
+
+            if (Main.Settings.appearance.mode == SkinMode.Slideshow)
+            { 
+                tex = (slideshowRT != null && slideshowPlayer != null && slideshowPlayer.isPlaying) ? (Texture?)slideshowRT : (Texture?)slideshowTex;
+                if (slideshowIndex < Main.Settings.appearance.slideshowSkins.Length)
+                    cfg = Main.Settings.appearance.slideshowSkins[slideshowIndex];
+            }
+            else
+            { 
+                tex = (singleRT != null && singlePlayer != null && singlePlayer.isPlaying) ? (Texture?)singleRT : (Texture?)singleTex;
+                cfg = currentConfig;
             }
 
-            videoPlayer.source = VideoSource.Url;
-            videoPlayer.url = path;
-            videoPlayer.isLooping = config.loopVideo;
-            videoPlayer.playbackSpeed = config.playbackSpeed;
-            videoPlayer.audioOutputMode = config.audioEnabled ? VideoAudioOutputMode.Direct : VideoAudioOutputMode.None;
-            if (config.audioEnabled) videoPlayer.SetDirectAudioVolume(0, config.audioVolume);
+            if (tex == null || cfg == null) return;
+
+            if (effectMat == null)
+            {
+                effectMat = new Material(Shader.Find("Unlit/Transparent"));
+            }
+
+            effectMat.mainTexture = tex;
+            Color finalTint = CalculateFinalTint(cfg);
             
-            if (videoRT != null) videoRT.Release();
-            videoRT = new RenderTexture(Screen.width, Screen.height, 24);
-            videoPlayer.targetTexture = videoRT;
-            videoPlayer.Play();
+            GL.PushMatrix();
+            GL.LoadOrtho();
+            effectMat.SetPass(0);
+            
+            float scale = Mathf.Max(cfg.scale, 0.01f);
+            float x = (1f - scale) * 0.5f + cfg.offsetX;
+            float y = (1f - scale) * 0.5f - cfg.offsetY;
+
+            GL.Begin(GL.QUADS);
+            GL.Color(finalTint);
+            GL.TexCoord2(0, 0); GL.Vertex3(x, y, 0);
+            GL.TexCoord2(0, 1); GL.Vertex3(x, y + scale, 0);
+            GL.TexCoord2(1, 1); GL.Vertex3(x + scale, y + scale, 0);
+            GL.TexCoord2(1, 0); GL.Vertex3(x + scale, y, 0);
+            GL.End();
+            
+            GL.PopMatrix();
         }
 
+        private static Color CalculateFinalTint(SkinConfig cfg)
+        {
+            float b = cfg.brightness;
+            float s = cfg.saturation;
+            float c = cfg.contrast;
+            float h = cfg.hue;
+            float opacity = cfg.opacity;
+            
+            float contrastGain = c;
+            float contrastOffset = 0.5f * (1.0f - c);
+            
+            Color finalTint = new Color(
+                (b * contrastGain) + contrastOffset,
+                (b * contrastGain) + contrastOffset,
+                (b * contrastGain) + contrastOffset,
+                opacity
+            );
+
+            if (Mathf.Abs(h) > 0.1f)
+            {
+                float angle = h * Mathf.Deg2Rad;
+                float cosA = Mathf.Cos(angle);
+                float sinA = Mathf.Sin(angle);
+                float r = finalTint.r, g = finalTint.g, b_ = finalTint.b;
+                finalTint.r = (.299f + .701f * cosA + .168f * sinA) * r + (.587f - .587f * cosA + .330f * sinA) * g + (.114f - .114f * cosA - .497f * sinA) * b_;
+                finalTint.g = (.299f - .299f * cosA - .328f * sinA) * r + (.587f + .413f * cosA + .035f * sinA) * g + (.114f - .114f * cosA + .292f * sinA) * b_;
+                finalTint.b = (.299f - .300f * cosA + 1.25f * sinA) * r + (.587f - .588f * cosA - 1.05f * sinA) * g + (.114f + .886f * cosA - .203f * sinA) * b_;
+            }
+
+            if (Mathf.Abs(s - 1.0f) > 0.01f)
+            {
+                float lum = 0.299f * finalTint.r + 0.587f * finalTint.g + 0.114f * finalTint.b;
+                finalTint.r = lum + s * (finalTint.r - lum);
+                finalTint.g = lum + s * (finalTint.g - lum);
+                finalTint.b = lum + s * (finalTint.b - lum);
+            }
+
+            return finalTint;
+        }
+
+        private static SkinConfig? GetCurrentSkinConfig(string scene)
+        {
+            switch (Main.Settings.appearance.mode)
+            {
+                case SkinMode.SingleGlobal: return Main.Settings.appearance.globalSkin;
+                case SkinMode.PerScene:
+                    if (scene == "scnLevelSelect") return Main.Settings.appearance.mainUISkin;
+                    if (scene == "scnCLS") return Main.Settings.appearance.clsSkin;
+                    if (scene == "scnTaroMenu0") return Main.Settings.appearance.dlcUISkin;
+                    break;
+            }
+            return null;
+        }
+
+        private static bool IsMenuScene(string sceneName)
+        {
+            foreach (string s in MENU_SCENES) if (s == sceneName) return true;
+            return false;
+        }
+
+        public static void Disable()
+        {
+            Camera.onPreCull -= OnCameraPreCull;
+            CleanupSingle();
+            CleanupSlideshow();
+            targetCam = null;
+            hooked = false;
+        }
+
+        private static void CleanupSingle()
+        {
+            if (singleTex != null) { UnityEngine.Object.Destroy(singleTex); singleTex = null; }
+            if (singlePlayer != null) { singlePlayer.Stop(); UnityEngine.Object.Destroy(singlePlayer.gameObject); singlePlayer = null; }
+            if (singleRT != null) { singleRT.Release(); UnityEngine.Object.Destroy(singleRT); singleRT = null; }
+            currentConfig = null;
+        }
+
+        private static void CleanupSlideshow()
+        {
+            if (slideshowTex != null) { UnityEngine.Object.Destroy(slideshowTex); slideshowTex = null; }
+            if (slideshowPlayer != null) { slideshowPlayer.Stop(); UnityEngine.Object.Destroy(slideshowPlayer.gameObject); slideshowPlayer = null; }
+            if (slideshowRT != null) { slideshowRT.Release(); UnityEngine.Object.Destroy(slideshowRT); slideshowRT = null; }
+            slideshowTimer = 0f;
+        }
+
+        // Keep Track Customization Patches
         [HarmonyPatch(typeof(scrFloor), "Start")]
         public static class FloorStartPatch
         {
             public static void Postfix(scrFloor __instance)
             {
-                if (IsMenuScene(SceneManager.GetActiveScene().name))
+                if (IsMenuScene(SceneManager.GetActiveScene().name)) 
                 {
+                    menuFloors.Add(__instance);
                     UpdateFloorStyle(__instance);
                 }
             }
         }
 
-        [HarmonyPatch(typeof(scrFloor),nameof(scrFloor.Reset))]
+        [HarmonyPatch(typeof(scrFloor), nameof(scrFloor.Reset))]
         public static class FloorRefreshColorPatch
         {
             public static void Postfix(scrFloor __instance)
             {
-                if (IsMenuScene(SceneManager.GetActiveScene().name))
-                {
-                    UpdateFloorStyle(__instance);
-                }
+                if (IsMenuScene(SceneManager.GetActiveScene().name)) UpdateFloorStyle(__instance);
             }
         }
 
         public static void UpdateFloorStyle(scrFloor floor)
         {
             if (!Main.Settings.appearance.enableTrackCustomization) return;
+            if (floor == null) return;
 
             Color c = Main.Settings.appearance.trackColor;
             float b = Main.Settings.appearance.trackBrightness;
             float a = Main.Settings.appearance.trackOpacity;
-            Color finalColor = new Color(c.r * b, c.g * b, c.b * b, a);
-
-            var spriteRenderer = floor.GetComponent<SpriteRenderer>();
-            if (spriteRenderer is not null)
+            
+            // Helper to get or cache original alpha
+            float GetTargetAlpha(UnityEngine.Object obj, float currentAlpha)
             {
-                spriteRenderer.color = finalColor;
+                if (!originalAlphaCache.TryGetValue(obj, out float originalAlpha))
+                {
+                    originalAlpha = currentAlpha;
+                    originalAlphaCache[obj] = originalAlpha;
+                }
+                return Mathf.Min(originalAlpha, a);
             }
 
-            var renderers = floor.GetComponentsInChildren<Renderer>(true);
+            // 1. Main SpriteRenderer
+            SpriteRenderer mainSr = floor.GetComponent<SpriteRenderer>();
+            if (mainSr != null)
+            {
+                float targetA = GetTargetAlpha(mainSr, mainSr.color.a);
+                mainSr.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
+            }
+
+            // 2. Children Renderers
+            if (!floorRendererCache.TryGetValue(floor, out var renderers))
+            {
+                renderers = floor.GetComponentsInChildren<Renderer>(true);
+                floorRendererCache[floor] = renderers;
+            }
+
             foreach (var r in renderers)
             {
-                // 排除辉光，避免闪烁
-                if (r.name.Contains("Glow")) continue;
+                if (r == null) continue;
+                
+                if (r is SpriteRenderer sr)
+                {
+                    float targetA = GetTargetAlpha(sr, sr.color.a);
+                    sr.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
+                }
+                else
+                {
+                    try
+                    {
+                        if (r.material != null)
+                        {
+                            float targetA = GetTargetAlpha(r.material, r.material.color.a);
+                            r.material.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
+                        }
+                    }
+                    catch { /* Some renderers might not support material.color */ }
+                }
+            }
 
-                if (r is SpriteRenderer sr) sr.color = finalColor;
-                else r.material.color = finalColor;
+            // 3. Specific scrFloor fields
+            if (floor.legacyFloorSpriteRenderer != null)
+            {
+                var sr = floor.legacyFloorSpriteRenderer;
+                float targetA = GetTargetAlpha(sr, sr.color.a);
+                sr.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
+            }
+
+            if (floor.floorRenderer != null && floor.floorRenderer is FloorSpriteRenderer fsr && fsr.renderer != null && fsr.renderer is SpriteRenderer fsrSr)
+            {
+                float targetA = GetTargetAlpha(fsrSr, fsrSr.color.a);
+                fsrSr.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
             }
         }
 
-        // 保持对编辑器特定轨道的处理，但改用更高效的方式
         [HarmonyPatch(typeof(scnLevelSelect), "Update")]
         [HarmonyPatch(typeof(scnCLS), "Update")]
         [HarmonyPatch(typeof(scnTaroMenu0), "Update")]
         public static class EditorFloorUpdatePatch
         {
-            public static void Postfix()
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                if (!Main.Settings.appearance.enableTrackCustomization) return;
+                var codes = instructions.ToList();
+                for (int i = 0; i < codes.Count; i++)
+                {
+                    if (codes[i].opcode == OpCodes.Ret)
+                    {
+                        yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(AppearancePatches), nameof(ApplyTrackCustomization)));
+                    }
+                    yield return codes[i];
+                }
+            }
+        }
 
+        public static void ApplyTrackCustomization()
+        {
+            if (!Main.Settings.appearance.enableTrackCustomization) return;
+
+            // Ported logic: Find all floors in the scene to ensure everything is covered
+            scrFloor[] allFloors = UnityEngine.Object.FindObjectsOfType<scrFloor>();
+            foreach (var floor in allFloors)
+            {
+                if (floor != null)
+                {
+                    UpdateFloorStyle(floor);
+                }
+            }
+
+            // Specific handling for level select editor floor
+            if (scnLevelSelect.instance != null && scnLevelSelect.instance.editorFloor != null)
+            {
                 Color c = Main.Settings.appearance.trackColor;
                 float b = Main.Settings.appearance.trackBrightness;
                 float a = Main.Settings.appearance.trackOpacity;
                 Color finalColor = new Color(c.r * b, c.g * b, c.b * b, a);
-
-                if (scnLevelSelect.instance != null && scnLevelSelect.instance.editorFloor != null)
-                {
-                    UpdateFloorRenderers(scnLevelSelect.instance.editorFloor, finalColor);
-                }
+                UpdateFloorRenderers(scnLevelSelect.instance.editorFloor, finalColor);
             }
         }
 
@@ -244,90 +515,5 @@ namespace Iridium.Patches
                 else r.material.color = color;
             }
         }
-
-        private static void OnCameraPreCull(Camera cam)
-        {
-            if (cam.name != "Main Camera") return;
-            if (!Array.Exists(MENU_SCENES, s => s == currentSceneName)) return;
-
-            var playlist = Config.PlaylistManager.ActivePlaylist;
-            if (playlist == null) return;
-            var config = GetConfigForScene(currentSceneName, playlist);
-            if (config == null) return;
-
-            Texture? target = null;
-            if (videoPlayer != null && videoPlayer.isPlaying) target = videoRT;
-            else if (bgTex != null) target = bgTex;
-
-            if (target != null)
-            {
-                DrawBackground(target, config);
-            }
-        }
-
-        private static void DrawBackground(Texture tex, Config.SceneConfig config)
-        {
-            // Implementation of drawing with adjustments (hue, sat, etc.)
-            if (_effectMat == null)
-            {
-                // Simple shader for adjustments if full custom shader not provided
-                // For now, use a material with a shader that supports basic adjustments
-                _effectMat = new Material(Shader.Find("Hidden/Internal-Colored"));
-            }
-
-            float aspect = (float)tex.width / tex.height;
-            float screenAspect = (float)Screen.width / Screen.height;
-            
-            Rect drawRect;
-            if (aspect > screenAspect)
-            {
-                float width = Screen.height * aspect;
-                drawRect = new Rect((Screen.width - width) / 2, 0, width, Screen.height);
-            }
-            else
-            {
-                float height = Screen.width / aspect;
-                drawRect = new Rect(0, (Screen.height - height) / 2, Screen.width, height);
-            }
-
-            // Apply adjustments
-            // We use GUI.color for brightness and opacity as a simple fallback
-            Color oldColor = GUI.color;
-            float b = config.brightness;
-            GUI.color = new Color(b, b, b, config.opacity);
-            
-            // Simple parallax if enabled
-            if (Main.Settings.appearance.useParallax)
-            {
-                Vector2 mousePos = Input.mousePosition;
-                float offsetX = (mousePos.x / Screen.width - 0.5f) * Main.Settings.appearance.parallaxStrength * 50;
-                float offsetY = (mousePos.y / Screen.height - 0.5f) * Main.Settings.appearance.parallaxStrength * 50;
-                drawRect.x += offsetX;
-                drawRect.y -= offsetY;
-            }
-
-            // If we had a real HSB shader, we would set properties on _effectMat here
-            // _effectMat.SetFloat("_Hue", config.hue);
-            // _effectMat.SetFloat("_Saturation", config.saturation);
-            // _effectMat.SetFloat("_Contrast", config.contrast);
-            
-            Graphics.DrawTexture(drawRect, tex, _effectMat);
-            GUI.color = oldColor;
-        }
-
-        private static bool IsMenuScene(string sceneName)
-        {
-            foreach (string s in MENU_SCENES) if (s == sceneName) return true;
-            return false;
-        }
-
-        private static void CleanupResources()
-        {
-            if (bgTex != null) { UnityEngine.Object.Destroy(bgTex); bgTex = null; }
-            if (videoPlayer != null) { videoPlayer.Stop(); UnityEngine.Object.Destroy(videoPlayer.gameObject); videoPlayer = null; }
-            if (videoRT != null) { videoRT.Release(); UnityEngine.Object.Destroy(videoRT); videoRT = null; }
-        }
-
-        private static Material? _effectMat;
     }
 }
