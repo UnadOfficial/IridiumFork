@@ -101,5 +101,8 @@
   "Slide": "Slide",
   "Scale": "Scale",
   "OffsetX": "Offset X",
-  "OffsetY": "Offset Y"
+  "OffsetY": "Offset Y",
+  "FirstRunTitle": "Tips",
+  "FirstRunMessage": "Iridium is an optimization mod, but it still has unstable situations. If there are problems with the game, please consider disabling it first.",
+  "Understand": "Understand"
 }

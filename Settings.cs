@@ -12,6 +12,7 @@ namespace Iridium
     public class Settings : UnityModManager.ModSettings
     {
         public string language = "en";
+        public bool firstRun = true;
         
         public OptimizerSettings optimizer = new();
         public UISettings ui = new();
@@ -544,6 +545,16 @@ namespace Iridium
             GUILayout.EndVertical(); // End Right Column
 
             GUILayout.EndHorizontal();
+
+            GUILayout.Space(16);
+            
+            // Version Info
+            GUIStyle versionStyle = new(UIUtils.LabelStyle)
+            {
+                alignment = TextAnchor.MiddleRight,
+                normal = { textColor = new Color(0.5f, 0.5f, 0.5f, 0.5f) }
+            };
+            GUILayout.Label($"Iridium {VersionManager.GetFullVersionString()}", versionStyle);
 
             if (GUI.changed)
             {            
