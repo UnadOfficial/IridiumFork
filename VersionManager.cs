@@ -4,6 +4,7 @@ namespace Iridium
 {
     public enum VersionType
     {
+		Hotfix,
         Release,
         Beta,
         Prerelease
@@ -11,7 +12,7 @@ namespace Iridium
 
     public static class VersionManager
     {
-        public const VersionType Type = VersionType.Release;
+        public const VersionType Type = VersionType.Beta;
         public const int MinorVersion = 1;
 
         public static string GetFullVersionString()

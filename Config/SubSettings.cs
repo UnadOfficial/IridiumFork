@@ -103,6 +103,9 @@ namespace Iridium.Config
 
         // Level Select Track Customization
         public bool enableTrackCustomization = false;
+        public bool trackColorR = true;
+        public bool trackColorG = true;
+        public bool trackColorB = true;
         public Color trackColor = Color.white;
         public float trackOpacity = 1f;
         public float trackBrightness = 1f;

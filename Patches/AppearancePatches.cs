@@ -36,6 +36,12 @@ namespace Iridium.Patches
         private static Dictionary<UnityEngine.Object, float> originalAlphaCache = new Dictionary<UnityEngine.Object, float>();
         private static readonly string[] MENU_SCENES = { "scnLevelSelect", "scnCLS", "scnTaroMenu0" };
 
+        private static bool IsInExclusionScene()
+        {
+            string sceneName = SceneManager.GetActiveScene().name;
+            return sceneName.Contains("scnEditor") || sceneName.Contains("scnLevelEditor");
+        }
+
         public static void OnUpdate(float dt)
         {
             if (Main.Settings.appearance.enableMenuSkin)
@@ -51,7 +57,7 @@ namespace Iridium.Patches
                     lastScene = sceneName;
                 }
 
-                if (IsMenuScene(sceneName))
+                if (IsMenuScene(sceneName) && !InExclusionScene())
                 {
                     // Find the best camera to hook into
                     Camera? main = Camera.main;
@@ -98,7 +104,7 @@ namespace Iridium.Patches
                 }
                 else if (hooked)
                 {
-                    Main.Logger?.Log($"AppearancePatches: Disabled because scene {sceneName} is not a menu scene");
+                    Main.Logger?.Log($"AppearancePatches: Disabled because scene {sceneName} is not a menu scene or is excluded");
                     Disable();
                 }
             }
@@ -109,10 +115,16 @@ namespace Iridium.Patches
             }
 
             // Always allow track customization updates if enabled
-            if (Main.Settings.appearance.enableTrackCustomization)
+            if (Main.Settings.appearance.enableTrackCustomization && IsMenuScene(SceneManager.GetActiveScene().name) && !InExclusionScene())
             {
                 ApplyTrackCustomization();
             }
+        }
+
+        private static bool InExclusionScene()
+        {
+            string sceneName = SceneManager.GetActiveScene().name;
+            return sceneName.Contains("Editor");
         }
 
         private static void StartSingleSkin(string scene)
@@ -393,13 +405,15 @@ namespace Iridium.Patches
             if (!Main.Settings.appearance.enableTrackCustomization) return;
             if (floor == null) return;
 
-            Color c = Main.Settings.appearance.trackColor;
-            float b = Main.Settings.appearance.trackBrightness;
-            float a = Main.Settings.appearance.trackOpacity;
+            var settings = Main.Settings.appearance;
+            Color c = settings.trackColor;
+            float b = settings.trackBrightness;
+            float a = settings.trackOpacity;
             
-            // Helper to get or cache original alpha
-            float GetTargetAlpha(UnityEngine.Object obj, float currentAlpha)
+            // Revised GetTargetAlpha to handle objects correctly
+            float GetTargetAlphaForObj(UnityEngine.Object? obj, float currentAlpha)
             {
+                if (obj == null) return Mathf.Min(currentAlpha, a);
                 if (!originalAlphaCache.TryGetValue(obj, out float originalAlpha))
                 {
                     originalAlpha = currentAlpha;
@@ -408,12 +422,19 @@ namespace Iridium.Patches
                 return Mathf.Min(originalAlpha, a);
             }
 
+            Color ApplyToColor(UnityEngine.Object obj, Color originalColor)
+            {
+                float r = settings.trackColorR ? (c.r * b) : originalColor.r;
+                float g = settings.trackColorG ? (c.g * b) : originalColor.g;
+                float b_ = settings.trackColorB ? (c.b * b) : originalColor.b;
+                return new Color(r, g, b_, GetTargetAlphaForObj(obj, originalColor.a));
+            }
+
             // 1. Main SpriteRenderer
             SpriteRenderer mainSr = floor.GetComponent<SpriteRenderer>();
             if (mainSr != null)
             {
-                float targetA = GetTargetAlpha(mainSr, mainSr.color.a);
-                mainSr.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
+                mainSr.color = ApplyToColor(mainSr, mainSr.color);
             }
 
             // 2. Children Renderers
@@ -429,8 +450,7 @@ namespace Iridium.Patches
                 
                 if (r is SpriteRenderer sr)
                 {
-                    float targetA = GetTargetAlpha(sr, sr.color.a);
-                    sr.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
+                    sr.color = ApplyToColor(sr, sr.color);
                 }
                 else
                 {
@@ -438,8 +458,7 @@ namespace Iridium.Patches
                     {
                         if (r.material != null)
                         {
-                            float targetA = GetTargetAlpha(r.material, r.material.color.a);
-                            r.material.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
+                            r.material.color = ApplyToColor(r.material, r.material.color);
                         }
                     }
                     catch { /* Some renderers might not support material.color */ }
@@ -450,14 +469,12 @@ namespace Iridium.Patches
             if (floor.legacyFloorSpriteRenderer != null)
             {
                 var sr = floor.legacyFloorSpriteRenderer;
-                float targetA = GetTargetAlpha(sr, sr.color.a);
-                sr.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
+                sr.color = ApplyToColor(sr, sr.color);
             }
 
             if (floor.floorRenderer != null && floor.floorRenderer is FloorSpriteRenderer fsr && fsr.renderer != null && fsr.renderer is SpriteRenderer fsrSr)
             {
-                float targetA = GetTargetAlpha(fsrSr, fsrSr.color.a);
-                fsrSr.color = new Color(c.r * b, c.g * b, c.b * b, targetA);
+                fsrSr.color = ApplyToColor(fsrSr, fsrSr.color);
             }
         }
 
@@ -483,6 +500,7 @@ namespace Iridium.Patches
         public static void ApplyTrackCustomization()
         {
             if (!Main.Settings.appearance.enableTrackCustomization) return;
+            if (!IsMenuScene(SceneManager.GetActiveScene().name) || IsInExclusionScene()) return;
 
             // Ported logic: Find all floors in the scene to ensure everything is covered
             scrFloor[] allFloors = UnityEngine.Object.FindObjectsOfType<scrFloor>();
@@ -497,22 +515,46 @@ namespace Iridium.Patches
             // Specific handling for level select editor floor
             if (scnLevelSelect.instance != null && scnLevelSelect.instance.editorFloor != null)
             {
-                Color c = Main.Settings.appearance.trackColor;
-                float b = Main.Settings.appearance.trackBrightness;
-                float a = Main.Settings.appearance.trackOpacity;
-                Color finalColor = new Color(c.r * b, c.g * b, c.b * b, a);
-                UpdateFloorRenderers(scnLevelSelect.instance.editorFloor, finalColor);
+                var settings = Main.Settings.appearance;
+                Color c = settings.trackColor;
+                float b = settings.trackBrightness;
+                float a = settings.trackOpacity;
+
+                // For editor floor, we don't have easy access to original colors for each part, 
+                // but we can try to apply the logic to children
+                UpdateFloorRenderers(scnLevelSelect.instance.editorFloor, c, b, a);
             }
         }
 
-        private static void UpdateFloorRenderers(GameObject floorGo, Color color)
+        private static void UpdateFloorRenderers(GameObject floorGo, Color color, float brightness, float opacity)
         {
+            var settings = Main.Settings.appearance;
             var renderers = floorGo.GetComponentsInChildren<Renderer>(true);
             foreach (var r in renderers)
             {
                 if (r.name.Contains("Glow")) continue;
-                if (r is SpriteRenderer sr) sr.color = color;
-                else r.material.color = color;
+                
+                if (r is SpriteRenderer sr)
+                {
+                    float r_ = settings.trackColorR ? (color.r * brightness) : sr.color.r;
+                    float g = settings.trackColorG ? (color.g * brightness) : sr.color.g;
+                    float b = settings.trackColorB ? (color.b * brightness) : sr.color.b;
+                    sr.color = new Color(r_, g, b, opacity);
+                }
+                else
+                {
+                    try
+                    {
+                        if (r.material != null)
+                        {
+                            float r_ = settings.trackColorR ? (color.r * brightness) : r.material.color.r;
+                            float g = settings.trackColorG ? (color.g * brightness) : r.material.color.g;
+                            float b = settings.trackColorB ? (color.b * brightness) : r.material.color.b;
+                            r.material.color = new Color(r_, g, b, opacity);
+                        }
+                    }
+                    catch { }
+                }
             }
         }
     }
