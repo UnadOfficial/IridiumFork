@@ -528,6 +528,13 @@ namespace Iridium
                     GUILayout.EndHorizontal();
 
                     GUILayout.BeginHorizontal();
+                    GUILayout.Space(84);
+                    appearance.trackColorR = GUILayout.Toggle(appearance.trackColorR, "R", GUILayout.Width(40));
+                    appearance.trackColorG = GUILayout.Toggle(appearance.trackColorG, "G", GUILayout.Width(40));
+                    appearance.trackColorB = GUILayout.Toggle(appearance.trackColorB, "B", GUILayout.Width(40));
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
                     GUILayout.Label(Localization.Get("Opacity"), GUILayout.Width(80));
                     appearance.trackOpacity = GUILayout.HorizontalSlider(appearance.trackOpacity, 0f, 1f);
                     GUILayout.Label(appearance.trackOpacity.ToString("P0"), UIUtils.LabelStyle, GUILayout.Width(40));
