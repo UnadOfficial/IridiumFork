@@ -148,6 +148,10 @@ namespace Iridium.Patches
                 }
             }
 
+            private static float _lastTailLength = -1f;
+            private static float _lastTailEmission = -1f;
+            private static bool _lastTailFollowPitch = false;
+
             public static void UpdateTail()
             {
                 if (!Main.Settings.tail.enableTailTweak || scrController.instance is null)
@@ -158,6 +162,23 @@ namespace Iridium.Patches
                 // 使用 allPlanets 获取所有星球实例
                 var planetarySystem = scrController.instance.planetarySystem;
                 if (planetarySystem?.allPlanets == null) return;
+
+                float currentLength = Main.Settings.tail.tailLength;
+                float currentEmission = Main.Settings.tail.tailEmission;
+                bool currentFollowPitch = Main.Settings.tail.tailFollowPitch;
+                float songPitch = scrConductor.instance.song.pitch * (scnEditor.instance != null ? scnEditor.instance.playbackSpeed : 1f);
+
+                // 只有在设置改变或者启用了跟随音高（音高可能实时变化）时才更新
+                bool needsUpdate = !Mathf.Approximately(currentLength, _lastTailLength) ||
+                                   !Mathf.Approximately(currentEmission, _lastTailEmission) ||
+                                   currentFollowPitch != _lastTailFollowPitch ||
+                                   currentFollowPitch; // 如果跟随音高，则每帧都需要更新
+
+                if (!needsUpdate) return;
+
+                _lastTailLength = currentLength;
+                _lastTailEmission = currentEmission;
+                _lastTailFollowPitch = currentFollowPitch;
 
                 foreach (var planet in planetarySystem.allPlanets)
                 {
@@ -178,18 +199,10 @@ namespace Iridium.Patches
                     var main = ps.main;
                     var emission = ps.emission;
 
-                    float speed = 1f;
-                    if (Main.Settings.tail.tailFollowPitch)
-                    {
-                        speed = scrConductor.instance.song.pitch * (scnEditor.instance != null ? scnEditor.instance.playbackSpeed : 1f);
-                    }
-                    else
-                    {
-                        speed = Main.Settings.tail.tailLength;
-                    }
+                    float speed = currentFollowPitch ? songPitch : currentLength;
 
                     main.simulationSpeed = speed;
-                    emission.rateOverTime = Main.Settings.tail.tailEmission;
+                    emission.rateOverTime = currentEmission;
                 }
             }
 
