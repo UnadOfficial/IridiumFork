@@ -64,7 +64,7 @@ namespace Iridium
             if (value)
             {
                 Logger?.Log(Localization.Get("ModEnabled"));
-                Harmony?.PatchAll(Assembly.GetExecutingAssembly());
+                Iridium.Patches.PatchManager.UpdateAllPatches();
                 
                 if (Settings.optimizer.enableOptimizer)
                 {
@@ -84,7 +84,7 @@ namespace Iridium
             else
             {
                 Logger?.Log(Localization.Get("ModDisabled"));
-                Harmony?.UnpatchAll(modEntry.Info.Id);
+                Iridium.Patches.PatchManager.UnpatchAll();
                 Iridium.Patches.AppearancePatches.Disable();
                 
                 if (_uiObject != null)
@@ -116,7 +116,7 @@ namespace Iridium
                 {
                     _showFirstRunTips = false;
                     Settings.firstRun = false;
-                    Settings.Save(Mod);
+                    if (Mod != null) Settings.Save(Mod);
                     Destroy(gameObject);
                 }
                 GUILayout.EndVertical();

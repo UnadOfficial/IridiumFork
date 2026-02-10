@@ -497,14 +497,41 @@ namespace Iridium.Patches
             }
         }
 
+        private static Color _lastTrackColor;
+        private static float _lastTrackBrightness;
+        private static float _lastTrackOpacity;
+        private static bool _lastTrackColorR;
+        private static bool _lastTrackColorG;
+        private static bool _lastTrackColorB;
+
         public static void ApplyTrackCustomization()
         {
             if (!Main.Settings.appearance.enableTrackCustomization) return;
-            if (!IsMenuScene(SceneManager.GetActiveScene().name) || IsInExclusionScene()) return;
+            string sceneName = SceneManager.GetActiveScene().name;
+            if (!IsMenuScene(sceneName) || IsInExclusionScene()) return;
 
-            // Ported logic: Find all floors in the scene to ensure everything is covered
-            scrFloor[] allFloors = UnityEngine.Object.FindObjectsOfType<scrFloor>();
-            foreach (var floor in allFloors)
+            var settings = Main.Settings.appearance;
+            
+            // 检查设置是否发生变化
+            bool settingsDirty = settings.trackColor != _lastTrackColor ||
+                                 !Mathf.Approximately(settings.trackBrightness, _lastTrackBrightness) ||
+                                 !Mathf.Approximately(settings.trackOpacity, _lastTrackOpacity) ||
+                                 settings.trackColorR != _lastTrackColorR ||
+                                 settings.trackColorG != _lastTrackColorG ||
+                                 settings.trackColorB != _lastTrackColorB;
+
+            if (settingsDirty)
+            {
+                _lastTrackColor = settings.trackColor;
+                _lastTrackBrightness = settings.trackBrightness;
+                _lastTrackOpacity = settings.trackOpacity;
+                _lastTrackColorR = settings.trackColorR;
+                _lastTrackColorG = settings.trackColorG;
+                _lastTrackColorB = settings.trackColorB;
+            }
+
+            // 使用缓存的 menuFloors 而不是 FindObjectsOfType
+            foreach (var floor in menuFloors)
             {
                 if (floor != null)
                 {
@@ -515,13 +542,10 @@ namespace Iridium.Patches
             // Specific handling for level select editor floor
             if (scnLevelSelect.instance != null && scnLevelSelect.instance.editorFloor != null)
             {
-                var settings = Main.Settings.appearance;
                 Color c = settings.trackColor;
                 float b = settings.trackBrightness;
                 float a = settings.trackOpacity;
 
-                // For editor floor, we don't have easy access to original colors for each part, 
-                // but we can try to apply the logic to children
                 UpdateFloorRenderers(scnLevelSelect.instance.editorFloor, c, b, a);
             }
         }

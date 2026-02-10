@@ -29,7 +29,7 @@ namespace Iridium
         private string _selectedFile = "";
         private readonly string[] _supportedExtensions = { ".png", ".jpg", ".jpeg", ".mp4", ".mov", ".webm" };
 
-        private SkinConfig _targetSkinConfig;
+        private SkinConfig? _targetSkinConfig;
 
         private void OpenFileBrowser(SkinConfig target)
         {
@@ -567,6 +567,7 @@ namespace Iridium
             {            
                 Save(modEntry);
                 AppearancePatches.ApplyTrackCustomization();
+                Iridium.Patches.PatchManager.UpdateAllPatches();
             }
         }
 

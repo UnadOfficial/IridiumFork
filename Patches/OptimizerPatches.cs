@@ -12,6 +12,7 @@ using DG.Tweening;
 
 namespace Iridium.Patches
 {
+    [HarmonyPatchCategory("Optimizer")]
     public static class OptimizerPatches
     {
         public static Dictionary<string, Vector3> decorRatios = [];
@@ -67,7 +68,7 @@ namespace Iridium.Patches
 
             public static void Postfix(ref Texture2D? __result)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || __result == null || GCS.internalLevelName != null) return;
+                if (__result == null || GCS.internalLevelName != null) return;
                 if (__result.width <= 32 || __result.height <= 32) return;
                 if (!Main.IsMainThread) return;
 
