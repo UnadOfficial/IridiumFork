@@ -105,5 +105,6 @@
   "OffsetY": "垂直偏移",
   "FirstRunTitle": "温馨提示",
   "FirstRunMessage": "Iridium 是一款优化模组，但仍存在不稳定的情况。如果游戏出现问题，请考虑先禁用它。",
-  "Understand": "我知道了"
+  "Understand": "我知道了",
+  "EnableCustomLevelIsland": "启用 自定义关卡岛屿(超级实验性)"
 }
