@@ -272,7 +272,10 @@ namespace Iridium
                 optimizer.optimizeEventIcons = UIUtils.M3Switch(optimizer.optimizeEventIcons, Localization.Get("OptimizeEventIcons"));
                 optimizer.optimizeScnGameUpdate = UIUtils.M3Switch(optimizer.optimizeScnGameUpdate, Localization.Get("OptimizeScnGameUpdate"));
                 optimizer.optimizeMoveDecorations = UIUtils.M3Switch(optimizer.optimizeMoveDecorations, Localization.Get("OptimizeMoveDecorations"));
+                optimizer.optimizeFilters = UIUtils.M3Switch(optimizer.optimizeFilters, Localization.Get("OptimizeFilters"));
                 optimizer.fastLoading = UIUtils.M3Switch(optimizer.fastLoading, Localization.Get("FastLoading"));
+                
+                GUILayout.Space(4);
 
                 // Error states
                 if (typeof(Notification).GetMethod("SetupNotification", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic) == null)
@@ -297,20 +300,32 @@ namespace Iridium
             GUILayout.BeginHorizontal();
             GUILayout.Label(Localization.Get("MemorySettings"), UIUtils.HeaderStyle);
             GUILayout.FlexibleSpace();
-            memory.enableSmartGC = UIUtils.M3Switch(memory.enableSmartGC, "");
+            memory.enableMemoryOptimization = UIUtils.M3Switch(memory.enableMemoryOptimization, "");
             GUILayout.EndHorizontal();
 
-            if (memory.enableSmartGC)
+            if (memory.enableMemoryOptimization)
             {
                 GUILayout.Space(8);
-                GUILayout.BeginHorizontal(GUILayout.Height(28));
-                GUILayout.Label(Localization.Get("GCInterval"), UIUtils.LabelStyle);
-                GUILayout.FlexibleSpace();
-                string intervalStr = GUILayout.TextField(memory.gcInterval.ToString("F0"), 4, UIUtils.TextFieldStyle, GUILayout.Width(50));
-                if (float.TryParse(intervalStr, out float newInterval)) memory.gcInterval = Mathf.Clamp(newInterval, 10f, 3600f);
-                GUILayout.EndHorizontal();
+                
+                // 定时清理
+                memory.enableSmartGC = UIUtils.M3Switch(memory.enableSmartGC, Localization.Get("EnableSmartGC"));
+                if (memory.enableSmartGC)
+                {
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Space(24);
+                    GUILayout.Label(Localization.Get("GCInterval"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    string intervalStr = GUILayout.TextField(memory.gcInterval.ToString("F0"), 4, UIUtils.TextFieldStyle, GUILayout.Width(50));
+                    if (float.TryParse(intervalStr, out float newInterval)) memory.gcInterval = Mathf.Clamp(newInterval, 10f, 3600f);
+                    GUILayout.EndHorizontal();
 
-                memory.gcInGame = UIUtils.M3Switch(memory.gcInGame, Localization.Get("GCInGame"));
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Space(24);
+                    memory.gcInGame = UIUtils.M3Switch(memory.gcInGame, Localization.Get("GCInGame"));
+                    GUILayout.EndHorizontal();
+                }
+
+                // 场景切换清理
                 memory.gcInLoadScene = UIUtils.M3Switch(memory.gcInLoadScene, Localization.Get("GCInLoadScene"));
             }
             GUILayout.EndVertical();

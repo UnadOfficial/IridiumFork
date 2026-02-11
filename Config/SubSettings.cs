@@ -7,6 +7,7 @@ namespace Iridium.Config
         public bool enableOptimizer = false;
         public bool optimizeMoveTrack = false;
         public bool optimizeRecolorTrack = false;
+        public bool optimizeFilters = false;
         public double divideBy = 1.0;
         public bool dontShowSavedMemory = false;
         public bool dontCompress = false;
@@ -43,10 +44,11 @@ namespace Iridium.Config
 
     public class MemorySettings
     {
+        public bool enableMemoryOptimization = false;
         public bool enableSmartGC = false;
         public float gcInterval = 60f;
         public bool gcInGame = false;
-        public bool gcInLoadScene = false;
+        public bool gcInLoadScene = true;
     }
 
     public class CompatibilitySettings

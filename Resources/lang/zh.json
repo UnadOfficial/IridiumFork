@@ -67,6 +67,7 @@
   "OptimizeEventIcons": "优化关卡事件图标生成",
   "OptimizeScnGameUpdate": "优化 游戏时 每一帧的计算逻辑",
   "OptimizeMoveDecorations": "优化 移动装饰物 逻辑",
+  "OptimizeFilters": "优化滤镜性能 (显著减少 CPU 占用)",
   "AppearanceSettings": "外观设置",
   "SkinPath": "皮肤文件路径",
   "BackgroundAdjustments": "背景画面调整",
