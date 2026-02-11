@@ -66,14 +66,20 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(MiscPatches.TailTweakPatch), () => Main.Settings.tail.enableTailTweak));
 
             // Memory
-            _definitions.Add(new PatchDef(typeof(MiscPatches.SceneGC), () => Main.Settings.memory.gcInLoadScene));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.SmartGCPatch), () => Main.Settings.memory.enableSmartGC));
+            var memCond = () => Main.Settings.memory.enableMemoryOptimization;
+            _definitions.Add(new PatchDef(typeof(MiscPatches.SceneGC), () => memCond() && Main.Settings.memory.gcInLoadScene));
+            _definitions.Add(new PatchDef(typeof(MiscPatches.SmartGCPatch), () => memCond() && Main.Settings.memory.enableSmartGC));
 
             // Compatibility
             var pauseFixCond = () => Main.Settings.compatibility.enableLegacyPauseFix;
             _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play), pauseFixCond));
             _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Apply), pauseFixCond));
             _definitions.Add(new PatchDef(typeof(CompatibilityPatches.NoFailTooEarlyPatch), () => Main.Settings.compatibility.enableNoFailTooEarly));
+
+            // Filter Optimization
+            var filterOptCond = () => Main.Settings.optimizer.enableOptimizer;
+            _definitions.Add(new PatchDef(typeof(OptimizerPatches.FilterPlusPatch), filterOptCond));
+            _definitions.Add(new PatchDef(typeof(OptimizerPatches.FilterAdvancedPlusPatch), filterOptCond));
         }
 
         public static void UpdateAllPatches()

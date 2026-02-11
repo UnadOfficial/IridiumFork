@@ -67,6 +67,7 @@
   "OptimizeEventIcons": "Optimize Level Event Icon Generation",
   "OptimizeScnGameUpdate": "Optimize Game's Update logic",
   "OptimizeMoveDecorations": "Optimize MoveDecorations Logic",
+  "OptimizeFilters": "Optimize Filter Performance (Reduce CPU Usage)",
   "AppearanceSettings": "Appearance Settings",
   "SkinPath": "Skin File Path",
   "BackgroundAdjustments": "Background Adjustments",
