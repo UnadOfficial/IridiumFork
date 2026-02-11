@@ -42,7 +42,7 @@ dotnet build
 > Iridium is designed to elevate your ADOFAI experience through better memory management, extreme performance optimization, and modern visual enhancements.
 
 ### Universal Deployment
-1.Download this project's release build.If you would like to experience new features,you can download lateest beta build or prerelease build.
+1.Download this project's release build.If you would like to experience new features,you can download latest beta build or prerelease build.
 
 2.Make sure that you have installed UnityModManager to ADOFAI.
 
