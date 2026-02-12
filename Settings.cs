@@ -21,156 +21,9 @@ namespace Iridium
         public CompatibilitySettings compatibility = new();
         public AppearanceSettings appearance = new();
 
-        private bool _showFolderBrowser;
-        private string _browserCurrentPath = "";
-        private Vector2 _browserScroll;
-        private string[] _browserSubFolders = [];
-        private string[] _browserFiles = [];
-        private string _selectedFile = "";
-        private readonly string[] _supportedExtensions = { ".png", ".jpg", ".jpeg", ".mp4", ".mov", ".webm" };
-
-        private SkinConfig? _targetSkinConfig;
-
-        private void OpenFileBrowser(SkinConfig target)
-        {
-            _targetSkinConfig = target;
-            _showFolderBrowser = true;
-            string initialPath = target.path;
-            if (string.IsNullOrEmpty(initialPath) || (!File.Exists(initialPath) && !Directory.Exists(initialPath)))
-            {
-                initialPath = Main.Mod?.Path ?? Directory.GetCurrentDirectory();
-            }
-            
-            if (File.Exists(initialPath))
-            {
-                _browserCurrentPath = Path.GetDirectoryName(initialPath) ?? initialPath;
-                _selectedFile = initialPath;
-            }
-            else
-            {
-                _browserCurrentPath = initialPath;
-                _selectedFile = "";
-            }
-            
-            RefreshBrowserFolders();
-        }
-
-        private void RefreshBrowserFolders()
-        {
-            try
-            {
-                if (Directory.Exists(_browserCurrentPath))
-                {
-                    _browserSubFolders = Directory.GetDirectories(_browserCurrentPath);
-                    _browserFiles = Directory.GetFiles(_browserCurrentPath)
-                        .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
-                        .ToArray();
-                }
-                else
-                {
-                    _browserSubFolders = [];
-                    _browserFiles = [];
-                }
-            }
-            catch (Exception ex)
-            {
-                Main.Logger?.Error($"Failed to get directory contents: {ex.Message}");
-                _browserSubFolders = [];
-                _browserFiles = [];
-            }
-        }
-
-        private void DrawFolderBrowser()
-        {
-            GUILayout.BeginVertical(UIUtils.CardStyle);
-            GUILayout.Label(Localization.Get("SelectSkinFolder"), UIUtils.HeaderStyle);
-            
-            GUILayout.Label($"{Localization.Get("CurrentPath")}:", UIUtils.LabelStyle);
-            GUILayout.TextArea(_browserCurrentPath, UIUtils.TextFieldStyle);
-
-            GUILayout.Space(4);
-
-            _browserScroll = GUILayout.BeginScrollView(_browserScroll, GUILayout.Height(300));
-            
-            // Back button
-            try 
-            {
-                var parent = Directory.GetParent(_browserCurrentPath);
-                if (parent != null)
-                {
-                    if (GUILayout.Button($"📁 [..] {Localization.Get("Back")}", UIUtils.ButtonStyle))
-                    {
-                        _browserCurrentPath = parent.FullName;
-                        RefreshBrowserFolders();
-                    }
-                }
-            }
-            catch {}
-
-            // Draw Folders
-            foreach (var folder in _browserSubFolders)
-            {
-                string folderName = Path.GetFileName(folder);
-                if (GUILayout.Button($"📁 {folderName}", UIUtils.ButtonStyle))
-                {
-                    _browserCurrentPath = folder;
-                    RefreshBrowserFolders();
-                }
-            }
-
-            // Draw Files
-            foreach (var file in _browserFiles)
-            {
-                string fileName = Path.GetFileName(file);
-                bool isSelected = _selectedFile == file;
-                
-                if (isSelected) GUI.color = new Color(0.66f, 0.76f, 1.0f);
-                if (GUILayout.Button($"📄 {fileName}", UIUtils.ButtonStyle))
-                {
-                    _selectedFile = file;
-                }
-                GUI.color = Color.white;
-            }
-            GUILayout.EndScrollView();
-
-            GUILayout.Space(8);
-            
-            if (!string.IsNullOrEmpty(_selectedFile))
-            {
-                GUILayout.Label($"{Path.GetFileName(_selectedFile)}", UIUtils.LabelStyle);
-                GUILayout.Space(4);
-            }
-
-            GUILayout.BeginHorizontal();
-            GUI.enabled = !string.IsNullOrEmpty(_selectedFile);
-            if (GUILayout.Button(Localization.Get("Select"), UIUtils.ButtonStyle, GUILayout.Height(32)))
-            {
-                if (_targetSkinConfig != null)
-                {
-                    _targetSkinConfig.path = _selectedFile;
-                }
-                _showFolderBrowser = false;
-            }
-            GUI.enabled = true;
-            GUILayout.Space(12);
-            if (GUILayout.Button(Localization.Get("Cancel"), UIUtils.ButtonStyle, GUILayout.Height(32)))
-            {
-                _showFolderBrowser = false;
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.EndVertical();
-        }
-
         public void OnGUI(UnityModManager.ModEntry modEntry)
         {
             UIUtils.InitializeStyles();
-
-            if (_showFolderBrowser)
-            {
-                DrawFolderBrowser();
-                return;
-            }
 
             GUILayout.BeginHorizontal();
 
@@ -272,6 +125,7 @@ namespace Iridium
                 optimizer.optimizeEventIcons = UIUtils.M3Switch(optimizer.optimizeEventIcons, Localization.Get("OptimizeEventIcons"));
                 optimizer.optimizeScnGameUpdate = UIUtils.M3Switch(optimizer.optimizeScnGameUpdate, Localization.Get("OptimizeScnGameUpdate"));
                 optimizer.optimizeMoveDecorations = UIUtils.M3Switch(optimizer.optimizeMoveDecorations, Localization.Get("OptimizeMoveDecorations"));
+                optimizer.optimizeFloorMesh = UIUtils.M3Switch(optimizer.optimizeFloorMesh, Localization.Get("OptimizeFloorMesh"));
                 optimizer.optimizeFilters = UIUtils.M3Switch(optimizer.optimizeFilters, Localization.Get("OptimizeFilters"));
                 optimizer.fastLoading = UIUtils.M3Switch(optimizer.fastLoading, Localization.Get("FastLoading"));
                 
@@ -354,6 +208,7 @@ namespace Iridium
                 Iridium.Patches.MiscPatches.RefreshBetaWatermark();
             }
             ui.forceDifficultyUI = UIUtils.M3Switch(ui.forceDifficultyUI, Localization.Get("ForceDifficultyUI"));
+            ui.alwaysCountdown = UIUtils.M3Switch(ui.alwaysCountdown, Localization.Get("AlwaysCountdown"));
 
             bool newMoveAutoplay = UIUtils.M3Switch(ui.moveAutoplayText, Localization.Get("MoveAutoplayText"));
             if (newMoveAutoplay != ui.moveAutoplayText)
@@ -468,101 +323,8 @@ namespace Iridium
             compatibility.legacyCamRelativeToMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyCamRelativeToMode, 
                 [Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn")]);
             
-            GUILayout.EndVertical();
-            
-            GUILayout.EndVertical();
-
-            GUILayout.Space(8);
-
-            // Appearance Card
-            GUILayout.BeginVertical(UIUtils.CardStyle);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("AppearanceSettings"), UIUtils.HeaderStyle);
-            GUILayout.FlexibleSpace();
-            appearance.enableMenuSkin = UIUtils.M3Switch(appearance.enableMenuSkin, "");
-            GUILayout.EndHorizontal();
-
-            if (appearance.enableMenuSkin)
-            {
-                GUILayout.Space(8);
-
-                GUILayout.Label(Localization.Get("SkinMode"), UIUtils.LabelStyle);
-                appearance.mode = (SkinMode)UIUtils.M3SegmentedButton((int)appearance.mode,
-                    [Localization.Get("ModeSingleGlobal"), Localization.Get("ModePerScene"), Localization.Get("ModeSlideshow")]);
-
-                GUILayout.Space(12);
-
-                if (appearance.mode == SkinMode.SingleGlobal)
-                {
-                    DrawSkinConfigUI(appearance.globalSkin, Localization.Get("GlobalSkin"));
-                }
-                else if (appearance.mode == SkinMode.PerScene)
-                {
-                    DrawSkinConfigUI(appearance.mainUISkin, Localization.Get("MainUISkin"));
-                    GUILayout.Space(8);
-                    DrawSkinConfigUI(appearance.clsSkin, Localization.Get("CLSSkin"));
-                    GUILayout.Space(8);
-                    DrawSkinConfigUI(appearance.dlcUISkin, Localization.Get("DLCUISkin"));
-                }
-                else if (appearance.mode == SkinMode.Slideshow)
-                {
-                    appearance.EnsureSlideshowSize();
-                    
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label(Localization.Get("SlideDuration"), GUILayout.Width(120));
-                    appearance.slideDuration = GUILayout.HorizontalSlider(appearance.slideDuration, 1f, 600f);
-                    GUILayout.Label(appearance.slideDuration.ToString("F0") + "s", UIUtils.LabelStyle, GUILayout.Width(40));
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label(Localization.Get("SlideshowCount"), GUILayout.Width(120));
-                    string countStr = GUILayout.TextField(appearance.slideshowCount.ToString(), 2, UIUtils.TextFieldStyle, GUILayout.Width(50));
-                    if (int.TryParse(countStr, out int newCount)) appearance.slideshowCount = Mathf.Clamp(newCount, 1, 20);
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.Space(8);
-                    for (int i = 0; i < appearance.slideshowCount; i++)
-                    {
-                        DrawSkinConfigUI(appearance.slideshowSkins[i], $"{Localization.Get("Slide")} {i + 1}");
-                        if (i < appearance.slideshowCount - 1) GUILayout.Space(8);
-                    }
-                }
-
-                GUILayout.Space(12);
-                GUILayout.BeginHorizontal();
-                GUILayout.Label(Localization.Get("TrackCustomization"), UIUtils.LabelStyle);
-                GUILayout.FlexibleSpace();
-                appearance.enableTrackCustomization = UIUtils.M3Switch(appearance.enableTrackCustomization, "");
-                GUILayout.EndHorizontal();
-
-                if (appearance.enableTrackCustomization)
-                {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label(Localization.Get("Color"), GUILayout.Width(80));
-                    appearance.trackColor = Iridium.UI.UIUtils.ColorPicker(appearance.trackColor);
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Space(84);
-                    appearance.trackColorR = GUILayout.Toggle(appearance.trackColorR, "R", GUILayout.Width(40));
-                    appearance.trackColorG = GUILayout.Toggle(appearance.trackColorG, "G", GUILayout.Width(40));
-                    appearance.trackColorB = GUILayout.Toggle(appearance.trackColorB, "B", GUILayout.Width(40));
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label(Localization.Get("Opacity"), GUILayout.Width(80));
-                    appearance.trackOpacity = GUILayout.HorizontalSlider(appearance.trackOpacity, 0f, 1f);
-                    GUILayout.Label(appearance.trackOpacity.ToString("P0"), UIUtils.LabelStyle, GUILayout.Width(40));
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label(Localization.Get("Brightness"), GUILayout.Width(80));
-                    appearance.trackBrightness = GUILayout.HorizontalSlider(appearance.trackBrightness, 0f, 5f);
-                    GUILayout.Label(appearance.trackBrightness.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
-                    GUILayout.EndHorizontal();
-                }
-            }
-            GUILayout.EndVertical();
+            GUILayout.EndVertical(); // End Sub-container
+            GUILayout.EndVertical(); // End Compatibility & Fixes Card
 
             GUILayout.EndVertical(); // End Right Column
 
@@ -583,104 +345,6 @@ namespace Iridium
                 Save(modEntry);
                 Iridium.Patches.PatchManager.UpdateAllPatches();
             }
-        }
-
-        private void DrawSkinConfigUI(SkinConfig config, string label)
-        {
-            if (config == null) return;
-            
-            GUIStyle subContainerStyle = new()
-            {
-                normal = { background = UIUtils.GetCachedRoundedTex(64, 64, 8, new Color(1, 1, 1, 0.04f)) },
-                padding = new RectOffset(12, 12, 12, 12),
-                margin = new RectOffset(0, 0, 4, 4)
-            };
-
-            GUILayout.BeginVertical(subContainerStyle);
-            GUILayout.Label(label, UIUtils.LabelStyle);
-            GUILayout.Space(4);
-
-            GUILayout.BeginHorizontal(GUILayout.Height(28));
-            // 限制路径输入框宽度，防止过长，并设置最大字符长度
-            config.path = GUILayout.TextField(config.path, 1024, UIUtils.TextFieldStyle, GUILayout.Width(300));
-            GUILayout.Space(4);
-            if (GUILayout.Button(Localization.Get("Browse"), UIUtils.ButtonStyle, GUILayout.Width(60)))
-            {
-                OpenFileBrowser(config);
-            }
-            GUILayout.EndHorizontal();
-
-            if (string.IsNullOrEmpty(config.path))
-            {
-                GUILayout.EndVertical();
-                return;
-            }
-
-            bool isVideo = _supportedExtensions.Skip(3).Any(e => config.path.ToLower().EndsWith(e));
-
-            GUILayout.Space(8);
-            
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("Scale"), GUILayout.Width(80));
-            config.scale = GUILayout.HorizontalSlider(config.scale, 0.1f, 5f);
-            GUILayout.Label(config.scale.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("OffsetX"), GUILayout.Width(80));
-            config.offsetX = GUILayout.HorizontalSlider(config.offsetX, -1f, 1f);
-            GUILayout.Label(config.offsetX.ToString("F2"), UIUtils.LabelStyle, GUILayout.Width(40));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("OffsetY"), GUILayout.Width(80));
-            config.offsetY = GUILayout.HorizontalSlider(config.offsetY, -1f, 1f);
-            GUILayout.Label(config.offsetY.ToString("F2"), UIUtils.LabelStyle, GUILayout.Width(40));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("Opacity"), GUILayout.Width(80));
-            config.opacity = GUILayout.HorizontalSlider(config.opacity, 0f, 1f);
-            GUILayout.Label(config.opacity.ToString("P0"), UIUtils.LabelStyle, GUILayout.Width(40));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("Brightness"), GUILayout.Width(80));
-            config.brightness = GUILayout.HorizontalSlider(config.brightness, 0f, 5f);
-            GUILayout.Label(config.brightness.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("Contrast"), GUILayout.Width(80));
-            config.contrast = GUILayout.HorizontalSlider(config.contrast, 0f, 5f);
-            GUILayout.Label(config.contrast.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("Saturation"), GUILayout.Width(80));
-            config.saturation = GUILayout.HorizontalSlider(config.saturation, 0f, 5f);
-            GUILayout.Label(config.saturation.ToString("F1"), UIUtils.LabelStyle, GUILayout.Width(40));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("Hue"), GUILayout.Width(80));
-            config.hue = GUILayout.HorizontalSlider(config.hue, -180f, 180f);
-            GUILayout.Label(config.hue.ToString("F0") + "°", UIUtils.LabelStyle, GUILayout.Width(40));
-            GUILayout.EndHorizontal();
-
-            if (isVideo)
-            {
-                GUILayout.Space(4);
-                config.loop = UIUtils.M3Switch(config.loop, Localization.Get("LoopVideo"));
-                
-                GUILayout.BeginHorizontal();
-                GUILayout.Label(Localization.Get("PlaybackSpeed"), GUILayout.Width(80));
-                config.playbackSpeed = GUILayout.HorizontalSlider(config.playbackSpeed, 0.1f, 3f);
-                GUILayout.Label(config.playbackSpeed.ToString("F1") + "x", UIUtils.LabelStyle, GUILayout.Width(40));
-                GUILayout.EndHorizontal();
-            }
-
-            GUILayout.EndVertical();
         }
 
         public override void Save(UnityModManager.ModEntry modEntry)

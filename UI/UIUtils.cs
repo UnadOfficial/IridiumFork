@@ -275,5 +275,15 @@ namespace Iridium.UI
             tex.Apply();
             return tex;
         }
+
+        public static Texture2D MakeSolidTex(int width, int height, Color col)
+        {
+            Texture2D tex = new(width, height);
+            Color[] pix = new Color[width * height];
+            for (int i = 0; i < pix.Length; i++) pix[i] = col;
+            tex.SetPixels(pix);
+            tex.Apply();
+            return tex;
+        }
     }
 }
