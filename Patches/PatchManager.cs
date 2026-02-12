@@ -103,26 +103,16 @@ namespace Iridium.Patches
         {
             if (_harmony == null) return;
 
-            bool changed = true;
-            int iterations = 0;
-            while (changed && iterations < 10) // Safety limit
+            foreach (var def in _definitions)
             {
-                changed = false;
-                iterations++;
-                foreach (var def in _definitions)
+                bool shouldBeActive = CalculateEffectiveStatus(def);
+                bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
+
+                if (trackedActive != shouldBeActive)
                 {
-                    bool shouldBeActive = CalculateEffectiveStatus(def);
-                    bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
-                    bool actualActive = IsActuallyPatched(def.Type);
-                    bool effectiveCurrent = trackedActive || actualActive;
-
-                    if (effectiveCurrent != shouldBeActive)
-                    {
-                        if (shouldBeActive) ApplyPatch(def.Type);
-                        else RemovePatch(def.Type);
-                        changed = true; // Continue Loop
-                    }
-
+                    if (shouldBeActive) ApplyPatch(def.Type);
+                    else RemovePatch(def.Type);
+                    
                     _activePatches[def.Type] = shouldBeActive;
                 }
             }
@@ -143,27 +133,8 @@ namespace Iridium.Patches
             return true;
         }
 
-        private static bool IsActuallyPatched(Type patchClass)
-        {
-            var allPatchedMethods = _harmony.GetPatchedMethods();
-            foreach (var original in allPatchedMethods)
-            {
-                var info = Harmony.GetPatchInfo(original);
-                if (info == null) continue;
-
-                bool matched = info.Prefixes.Any(p => p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass) ||
-                               info.Postfixes.Any(p => p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass) ||
-                               info.Transpilers.Any(p => p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass) ||
-                               info.Finalizers.Any(p => p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass);
-                if (matched)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
+        // 移除不再使用的 IsActuallyPatched 辅助方法
+        
         private static void ApplyPatch(Type type)
         {
             try

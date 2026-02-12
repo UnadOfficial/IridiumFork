@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Iridium
@@ -46,8 +46,8 @@ namespace Iridium
                         {
                             string langId = Path.GetFileNameWithoutExtension(file);
                             string json = File.ReadAllText(file);
-                            var dict = ParseJson(json);
-                            if (dict.Count > 0)
+                            var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                            if (dict != null && dict.Count > 0)
                             {
                                 languages[langId] = dict;
                                 _availableLanguages.Add(langId);
@@ -88,23 +88,6 @@ namespace Iridium
             {
                 loaded = true;
             }
-        }
-
-        private static Dictionary<string, string> ParseJson(string json)
-        {
-            var dict = new Dictionary<string, string>();
-            var matches = Regex.Matches(json, "\"([^\"]+)\"\\s*:\\s*\"([^\"]+)\"");
-            foreach (Match match in matches)
-            {
-                if (match.Groups.Count == 3)
-                {
-                    string key = match.Groups[1].Value;
-                    string value = match.Groups[2].Value;
-                    value = value.Replace("\\n", "\n").Replace("\\r", "\r").Replace("\\t", "\t");
-                    dict[key] = value;
-                }
-            }
-            return dict;
         }
 
         public static string Get(string key)

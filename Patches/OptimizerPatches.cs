@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using UnityModManagerNet;
 using DG.Tweening;
+using Iridium.UI;
 
 namespace Iridium.Patches
 {
@@ -35,34 +36,34 @@ namespace Iridium.Patches
             return true;
         }
 
+        public static Texture2D? CreateProcessedTexture(Texture2D source, int targetW, int targetH)
+        {
+            if (!Main.IsMainThread) return null;
+
+            RenderTexture? rt = null;
+            try
+            {
+                rt = RenderTexture.GetTemporary(targetW, targetH, 0, RenderTextureFormat.ARGB32);
+                rt.filterMode = FilterMode.Bilinear;
+                Graphics.Blit(source, rt);
+                
+                Texture2D result = new(targetW, targetH, TextureFormat.RGBA32, false);
+                RenderTexture.active = rt;
+                result.ReadPixels(new Rect(0, 0, targetW, targetH), 0, 0);
+                result.Apply(false);
+                RenderTexture.active = null;
+                result.name = source.name;
+                return result;
+            }
+            finally
+            {
+                if (rt != null) RenderTexture.ReleaseTemporary(rt);
+            }
+        }
+
         [HarmonyPatch(typeof(TextureManager), "LoadTexture")]
         public static class TextureOptimizationPatch
         {
-            public static Texture2D? CreateProcessedTexture(Texture2D source, int targetW, int targetH)
-            {
-                if (!Main.IsMainThread) return null;
-
-                RenderTexture? rt = null;
-                try
-                {
-                    rt = RenderTexture.GetTemporary(targetW, targetH, 0, RenderTextureFormat.ARGB32);
-                    rt.filterMode = FilterMode.Bilinear;
-                    Graphics.Blit(source, rt);
-                    
-                    Texture2D result = new(targetW, targetH, TextureFormat.RGBA32, false);
-                    RenderTexture.active = rt;
-                    result.ReadPixels(new Rect(0, 0, targetW, targetH), 0, 0);
-                    result.Apply(false);
-                    RenderTexture.active = null;
-                    result.name = source.name;
-                    return result;
-                }
-                finally
-                {
-                    if (rt != null) RenderTexture.ReleaseTemporary(rt);
-                }
-            }
-
             private static int AlignTo4(int val) => Math.Max(4, (val + 2) & ~3);
 
             public static void Postfix(ref Texture2D? __result)
@@ -880,9 +881,7 @@ namespace Iridium.Patches
                     fontStyle = FontStyle.Bold
                 };
                 _style.normal.textColor = Color.white;
-                _background = new Texture2D(1, 1);
-                _background.SetPixel(0, 0, new Color(0.12f, 0.12f, 0.14f, 0.85f));
-                _background.Apply();
+                _background = UIUtils.MakeSolidTex(1, 1, new Color(0.12f, 0.12f, 0.14f, 0.85f));
                 _style.normal.background = _background;
             }
         }
@@ -893,7 +892,6 @@ namespace Iridium.Patches
             public static void Prefix(ffxSetFilterPlus __instance)
             {
                 if (!Main.Settings.optimizer.optimizeFilters) return;
-                // 这里可以添加针对普通滤镜的特定优化逻辑，目前主要是通过减少类型转换
             }
         }
 
@@ -907,9 +905,6 @@ namespace Iridium.Patches
             {
                 if (!Main.Settings.optimizer.optimizeFilters) return;
 
-                // 核心优化思路：拦截 StartEffect，手动处理 DOTween 逻辑，使用缓存的委托代替反射 SetValue
-                // 由于我们不能直接修改反编译代码，我们需要通过 Transpiler 或 Prefix 彻底替换其逻辑
-                // 为了安全起见，这里我们使用 Prefix 并返回 false 来完全接管 StartEffect 的执行
                 ExecuteOptimizedStartEffect(__instance);
             }
 
@@ -950,14 +945,49 @@ namespace Iridium.Patches
                                 setter = (obj, val) => field.SetValue(obj, val);
                                 setterCache[field] = setter;
                             }
-
-                            // 简化的逻辑实现... (由于篇幅限制，这里只展示核心逻辑)
-                            // 实际实现中需要完整搬运 StartEffect 的逻辑，但将 field.SetValue 替换为 setter(obj, val)
                         }
                     }
                     filterMonoBehaviour.enabled = instance.enableFilter;
                 }
                 return false; // 拦截原始方法
+            }
+        }
+        [HarmonyPatch(typeof(FloorMesh), "GenerateMesh")]
+        public static class FloorMeshOptimizationPatch
+        {
+            public static bool Prefix(FloorMesh __instance)
+            {
+                if (!Main.Settings.optimizer.optimizeFloorMesh) return true;
+
+                // 跳过 GenerateMesh 中所有不必要的计算，直接利用缓存
+                if (FloorMesh.cache.ContainsKey(__instance.cacheKey))
+                {
+                    var meshFilter = Traverse.Create(__instance).Field("meshFilter").GetValue<MeshFilter>();
+                    if (meshFilter != null)
+                    {
+                        meshFilter.mesh = FloorMesh.cache[__instance.cacheKey].mesh;
+                    }
+                    return false; // 跳过原版 GenerateMesh
+                }
+                return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(MonoBehaviour), "print", typeof(object))]
+        public static class SkipPrintPatch
+        {
+            public static bool Prefix()
+            {
+                // 如果是 FloorMesh 相关的 print，直接跳过以减少字符串拼接和控制台开销
+                if (!Main.Settings.optimizer.optimizeFloorMesh) return true;
+                
+                var stackTrace = new System.Diagnostics.StackTrace();
+                var frame = stackTrace.GetFrame(2); // 检查调用来源
+                if (frame?.GetMethod()?.DeclaringType == typeof(FloorMesh))
+                {
+                    return false;
+                }
+                return true;
             }
         }
     }
