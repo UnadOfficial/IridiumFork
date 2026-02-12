@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -10,19 +9,22 @@ namespace Iridium.Patches
     public static class JsonPatches
     {
         [HarmonyPatch(typeof(LevelData), nameof(LevelData.Decode))]
-        public static class LevelDataDecodePatch
+        public static class ForceAngleDataPatch
         {
             public static void Prefix(Dictionary<string, object> dict)
             {
-                if (Main.Settings.compatibility.forceAngleData && dict is not null && dict.TryGetValue("pathData", out object val) && val is string pathData)
-                {
-                    // RDEditorUtils.DecodeFloatArray 内部使用 foreach (object obj in list)
-                    // 所以必须是 List<object>。使用 LINQ 的 Cast<object>().ToList() 是最优雅的写法喵。
-                    dict["angleData"] = scrLevelMaker.StringToAngleArray(pathData).Cast<object>().ToList();
-                    dict.Remove("pathData");
-                }
-            }
+                if (dict is null) return;
+                if (!Main.Settings.compatibility.forceAngleData) return;
+                if (!dict.TryGetValue("pathData", out object val) || val is not string pathData) return;
 
+                dict["angleData"] = scrLevelMaker.StringToAngleArray(pathData).Cast<object>().ToList();
+                dict.Remove("pathData");
+            }
+        }
+
+        [HarmonyPatch(typeof(LevelData), nameof(LevelData.Decode))]
+        public static class LegacyBehaviorPatch
+        {
             public static void Postfix(LevelData __instance)
             {
                 var comp = Main.Settings.compatibility;

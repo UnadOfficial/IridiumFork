@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
+using Iridium.Config;
 
 namespace Iridium.Patches
 {
@@ -12,6 +13,8 @@ namespace Iridium.Patches
         
         // Status
         private static readonly Dictionary<Type, bool> _activePatches = new();
+        // Optimization: Cache exact patch bindings for each patch class to speed up and isolate unpatching
+        private static readonly Dictionary<Type, List<(MethodBase Original, MethodInfo PatchMethod)>> _patchedBindings = new();
         
         // Patch Declaration
         private class PatchDef
@@ -46,22 +49,12 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(OptimizerPatches), optCond));
             _definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
 
-            // --- Appearance ---
-            var appCond = () => Main.Settings.appearance.enableMenuSkin || Main.Settings.appearance.enableTrackCustomization;
-            // 
-            _definitions.Add(new PatchDef(typeof(AppearancePatches), appCond));
-            // 
-            _definitions.Add(new PatchDef(typeof(AppearancePatches.FloorStartPatch), appCond, typeof(AppearancePatches)));
-            _definitions.Add(new PatchDef(typeof(AppearancePatches.FloorRefreshColorPatch), appCond, typeof(AppearancePatches)));
-            _definitions.Add(new PatchDef(typeof(AppearancePatches.EditorFloorUpdatePatch), appCond, typeof(AppearancePatches)));
-
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
             _definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));
             _definitions.Add(new PatchDef(typeof(MiscPatches.ForceDifficultyUIPatch), () => Main.Settings.ui.forceDifficultyUI));
             _definitions.Add(new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc));
             _definitions.Add(new PatchDef(typeof(MiscPatches.AutoplayTextPositionPatch), () => Main.Settings.ui.moveAutoplayText));
-            _definitions.Add(new PatchDef(typeof(CustomLevelIslandPatch), () => Main.Settings.ui.enableCustomLevelIsland));
             
             // Tail
             _definitions.Add(new PatchDef(typeof(MiscPatches.TailTweakPatch), () => Main.Settings.tail.enableTailTweak));
@@ -76,6 +69,10 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play), pauseFixCond));
             _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Apply), pauseFixCond));
             _definitions.Add(new PatchDef(typeof(CompatibilityPatches.NoFailTooEarlyPatch), () => Main.Settings.compatibility.enableNoFailTooEarly));
+            _definitions.Add(new PatchDef(typeof(JsonPatches.ForceAngleDataPatch), () => Main.Settings.compatibility.forceAngleData));
+            _definitions.Add(new PatchDef(typeof(JsonPatches.LegacyBehaviorPatch), () =>
+                Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||
+                Main.Settings.compatibility.legacyCamRelativeToMode != LegacyBehaviorMode.Default));
 
             // Filter Optimization
             var filterOptCond = () => Main.Settings.optimizer.enableOptimizer;
@@ -83,27 +80,50 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(OptimizerPatches.FilterAdvancedPlusPatch), filterOptCond));
         }
 
+        /// <summary>
+        /// Apply all registered patches regardless of conditions.
+        /// Used for "Load All, Unload as Needed" strategy.
+        /// </summary>
+        public static void ApplyAllPatches()
+        {
+            if (_harmony == null) return;
+            
+            Main.Logger?.Log("[PatchManager] Loading all patches (Initial phase)...");
+            foreach (var def in _definitions)
+            {
+                _activePatches.TryGetValue(def.Type, out bool currentActive);
+                if (!currentActive)
+                {
+                    ApplyPatch(def.Type);
+                }
+            }
+        }
+
         public static void UpdateAllPatches()
         {
             if (_harmony == null) return;
 
-            // Re-Register
-            
             bool changed = true;
-            while (changed)
+            int iterations = 0;
+            while (changed && iterations < 10) // Safety limit
             {
                 changed = false;
+                iterations++;
                 foreach (var def in _definitions)
                 {
                     bool shouldBeActive = CalculateEffectiveStatus(def);
-                    _activePatches.TryGetValue(def.Type, out bool currentActive);
+                    bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
+                    bool actualActive = IsActuallyPatched(def.Type);
+                    bool effectiveCurrent = trackedActive || actualActive;
 
-                    if (shouldBeActive != currentActive)
+                    if (effectiveCurrent != shouldBeActive)
                     {
                         if (shouldBeActive) ApplyPatch(def.Type);
                         else RemovePatch(def.Type);
-                        changed = true; // Coutinue Loop
+                        changed = true; // Continue Loop
                     }
+
+                    _activePatches[def.Type] = shouldBeActive;
                 }
             }
         }
@@ -123,13 +143,68 @@ namespace Iridium.Patches
             return true;
         }
 
+        private static bool IsActuallyPatched(Type patchClass)
+        {
+            var allPatchedMethods = _harmony.GetPatchedMethods();
+            foreach (var original in allPatchedMethods)
+            {
+                var info = Harmony.GetPatchInfo(original);
+                if (info == null) continue;
+
+                bool matched = info.Prefixes.Any(p => p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass) ||
+                               info.Postfixes.Any(p => p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass) ||
+                               info.Transpilers.Any(p => p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass) ||
+                               info.Finalizers.Any(p => p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass);
+                if (matched)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static void ApplyPatch(Type type)
         {
             try
             {
-                _harmony.CreateClassProcessor(type).Patch();
-                _activePatches[type] = true;
-                Main.Logger?.Log($"[PatchManager] Applied {type.Name}");
+                var processor = _harmony.CreateClassProcessor(type);
+                var originals = processor.Patch();
+
+                if (originals != null && originals.Count > 0)
+                {
+                    var bindings = new List<(MethodBase Original, MethodInfo PatchMethod)>();
+                    foreach (var original in originals)
+                    {
+                        var info = Harmony.GetPatchInfo(original);
+                        if (info == null) continue;
+
+                        foreach (var p in info.Prefixes)
+                        {
+                            if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == type)
+                                bindings.Add((original, p.PatchMethod));
+                        }
+                        foreach (var p in info.Postfixes)
+                        {
+                            if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == type)
+                                bindings.Add((original, p.PatchMethod));
+                        }
+                        foreach (var p in info.Transpilers)
+                        {
+                            if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == type)
+                                bindings.Add((original, p.PatchMethod));
+                        }
+                        foreach (var p in info.Finalizers)
+                        {
+                            if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == type)
+                                bindings.Add((original, p.PatchMethod));
+                        }
+                    }
+
+                    _patchedBindings[type] = bindings;
+                    _activePatches[type] = true;
+                    Main.Logger?.Log($"[PatchManager] Applied {type.Name} ({bindings.Count} patch bindings)");
+                }
             }
             catch (Exception e)
             {
@@ -141,25 +216,19 @@ namespace Iridium.Patches
         {
             try
             {
-                // Harmony 卸载特定类的所有 Patch
-                var processor = _harmony.CreateClassProcessor(type);
-                // 遍历该类中定义的所有 Patch 方法并逐个移除
-                // 注意：Harmony 的 Unpatch 需要原始方法和 Patch 方法
-                // 简单做法是使用 Unpatch(original, HarmonyPatchType.All, id)
-                
-                // 获取类中所有标记了 HarmonyPatch 的方法
-                var methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-                foreach (var method in methods)
+                if (_patchedBindings.TryGetValue(type, out var bindings) && bindings.Count > 0)
                 {
-                    var patchAttr = method.GetCustomAttribute<HarmonyPatch>();
-                    if (patchAttr != null || method.Name == "Prefix" || method.Name == "Postfix" || method.Name == "Transpiler")
+                    foreach (var (original, patchMethod) in bindings)
                     {
-                        // 这是一个 Patch 方法，需要找到它对应的原始方法
-                        // ClassProcessor 已经处理了这些逻辑，但 Harmony 没有直接暴露 "UnpatchClass"
-                        // 所以手动处理：(
-                        UnpatchMethod(type);
-                        break;
+                        _harmony.Unpatch(original, patchMethod);
                     }
+                    _patchedBindings.Remove(type);
+                }
+                else
+                {
+                    // Fallback to slow method if cache is missing or empty
+                    UnpatchMethod(type);
+                    _patchedBindings.Remove(type);
                 }
                 
                 _activePatches[type] = false;
@@ -173,29 +242,32 @@ namespace Iridium.Patches
 
         private static void UnpatchMethod(Type patchClass)
         {
-            // Harmony 提供的 Unpatch 逻辑通常基于原始方法。
-            // 如果要完全卸载一个类，最稳妥且不影响其他 Mod 的方式是：
-            // 找到该类 Patch 的所有 Original 方法，并从中移除属于我们 ID 的 Patch。
-            
+            // Slow fallback: search all patched methods in the game
             var allPatchedMethods = _harmony.GetPatchedMethods();
             foreach (var original in allPatchedMethods)
             {
                 var info = Harmony.GetPatchInfo(original);
                 if (info == null) continue;
 
-                // 检查这个原始方法的 Prefixes, Postfixes, Transpilers 中是否有来自我们这个 patchClass 的
-                bool containsOurPatch = info.Prefixes.Any(p => p.PatchMethod.DeclaringType == patchClass) ||
-                                       info.Postfixes.Any(p => p.PatchMethod.DeclaringType == patchClass) ||
-                                       info.Transpilers.Any(p => p.PatchMethod.DeclaringType == patchClass);
-
-                if (containsOurPatch)
+                foreach (var p in info.Prefixes)
                 {
-                    // 移除这个 ID 在该原始方法上的所有 Patch
-                    _harmony.Unpatch(original, HarmonyPatchType.All, _harmony.Id);
-                    
-                    // 注意：如果该类中有多个方法 Patch 了同一个 Original，Unpatch(..., id) 会把它们都删掉，这符合预期。
-                    // 但如果该类中只有一部分方法要卸载（比如我们想细粒度到方法），则需要更复杂的逻辑。
-                    // 目前按类（Type）管理已经满足“单个功能”的需求（只要功能在独立类或嵌套类中）。
+                    if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass)
+                        _harmony.Unpatch(original, p.PatchMethod);
+                }
+                foreach (var p in info.Postfixes)
+                {
+                    if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass)
+                        _harmony.Unpatch(original, p.PatchMethod);
+                }
+                foreach (var p in info.Transpilers)
+                {
+                    if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass)
+                        _harmony.Unpatch(original, p.PatchMethod);
+                }
+                foreach (var p in info.Finalizers)
+                {
+                    if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass)
+                        _harmony.Unpatch(original, p.PatchMethod);
                 }
             }
         }
@@ -204,6 +276,7 @@ namespace Iridium.Patches
         {
             _harmony?.UnpatchAll(_harmony.Id);
             _activePatches.Clear();
+            _patchedBindings.Clear();
             Main.Logger?.Log("[PatchManager] Unpatched all");
         }
     }

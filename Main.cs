@@ -50,7 +50,6 @@ namespace Iridium
                 // If UMM is not open, we might want to open it or show the window anyway.
                 // But usually, we just show the window.
             }
-            Iridium.Patches.AppearancePatches.OnUpdate(dt);
         }
 
         // We need a way to hook into Unity's OnGUI to show our window.
@@ -64,6 +63,9 @@ namespace Iridium
             if (value)
             {
                 Logger?.Log(Localization.Get("ModEnabled"));
+                
+                // Strategy: Load all, then unload as needed
+                Iridium.Patches.PatchManager.ApplyAllPatches();
                 Iridium.Patches.PatchManager.UpdateAllPatches();
                 
                 if (Settings.optimizer.enableOptimizer)
@@ -85,7 +87,6 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModDisabled"));
                 Iridium.Patches.PatchManager.UnpatchAll();
-                Iridium.Patches.AppearancePatches.Disable();
                 
                 if (_uiObject != null)
                 {

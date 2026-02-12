@@ -32,7 +32,6 @@ namespace Iridium.Config
         public float autoplayTextY = 0f;
         public bool forceDifficultyUI = false;
         public bool enableCircleArc = false;
-        public bool enableCustomLevelIsland = false;
     }
 
     public class TailSettings
