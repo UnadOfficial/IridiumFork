@@ -46,7 +46,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(ref DifficultyUIMode __result)
             {
-                if (Main.Settings.ui.forceDifficultyUI && ADOBase.isCLSLevel) __result = DifficultyUIMode.ShowAll;
+                if (ADOBase.isCLSLevel) __result = DifficultyUIMode.ShowAll;
             }
         }
 
@@ -55,7 +55,6 @@ namespace Iridium.Patches
         {
             public static bool Prefix(float angleA, float angleB, ref float __result)
             {
-                if (!Main.Settings.ui.enableCircleArc) return true;
                 float minDiff = Mathf.Abs(Mathf.DeltaAngle(angleA * Mathf.Rad2Deg, angleB * Mathf.Rad2Deg)) * Mathf.Deg2Rad;
                 float minDiffDeg = minDiff * Mathf.Rad2Deg;
                 if (minDiffDeg >= 89.9f && minDiffDeg <= 105.1f)
@@ -72,7 +71,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrEnableIfBeta __instance)
             {
-                if (Main.Settings.ui.hideBetaWatermark) __instance.gameObject.SetActive(false);
+                __instance.gameObject.SetActive(false);
             }
         }
 
@@ -80,12 +79,7 @@ namespace Iridium.Patches
         {
             foreach (var watermark in Resources.FindObjectsOfTypeAll<scrEnableIfBeta>())
             {
-                if (Main.Settings.ui.hideBetaWatermark) watermark.gameObject.SetActive(false);
-                else
-                {
-                    bool isBeta = SteamIntegration.initialized && !string.IsNullOrEmpty(GCS.steamBranchName);
-                    watermark.gameObject.SetActive(isBeta);
-                }
+                watermark.gameObject.SetActive(false);
             }
         }
 
@@ -107,29 +101,16 @@ namespace Iridium.Patches
 
         public static void RefreshAutoplayTextPosition()
         {
-            if (Main.Settings.ui.moveAutoplayText)
+            if (scrUIController.instance?.txtDebug == null) return;
+            
+            // 仅在第一次修改前记录位置
+            if (!_isAutoplayModified)
             {
-                if (scrUIController.instance?.txtDebug == null) return;
-                
-                // 仅在第一次修改前记录位置
-                if (!_isAutoplayModified)
-                {
-                    _originalAutoplayPos = scrUIController.instance.txtDebug.transform.localPosition;
-                    _isAutoplayModified = true;
-                }
+                _originalAutoplayPos = scrUIController.instance.txtDebug.transform.localPosition;
+                _isAutoplayModified = true;
+            }
 
-                scrUIController.instance.txtDebug.transform.localPosition = new Vector3(Main.Settings.ui.autoplayTextX, Main.Settings.ui.autoplayTextY, 0f);
-            }
-            else if (_isAutoplayModified)
-            {
-                // 如果之前修改过，则恢复一次并重置标记位
-                if (scrUIController.instance?.txtDebug != null)
-                {
-                    scrUIController.instance.txtDebug.transform.localPosition = _originalAutoplayPos;
-                }
-                _isAutoplayModified = false;
-            }
-            // 如果 moveAutoplayText 为 false 且 _isAutoplayModified 也为 false，则完全不执行任何逻辑，不触碰对象
+            scrUIController.instance.txtDebug.transform.localPosition = new Vector3(Main.Settings.ui.autoplayTextX, Main.Settings.ui.autoplayTextY, 0f);
         }
 
         [HarmonyPatch(typeof(scrConductor), "Update")]
@@ -151,10 +132,23 @@ namespace Iridium.Patches
             private static float _lastTailLength = -1f;
             private static float _lastTailEmission = -1f;
             private static bool _lastTailFollowPitch = false;
+            private static bool _tailDisabledSynced = false;
 
             public static void UpdateTail()
             {
-                if (!Main.Settings.tail.enableTailTweak || scrController.instance is null)
+                if (!Main.Settings.tail.enableTailTweak)
+                {
+                    if (!_tailDisabledSynced)
+                    {
+                        ResetTails();
+                        _tailDisabledSynced = true;
+                    }
+                    return;
+                }
+
+                _tailDisabledSynced = false;
+
+                if (scrController.instance is null)
                 {
                     return;
                 }
@@ -229,7 +223,6 @@ namespace Iridium.Patches
         {
             public static void Prefix()
             {
-                if (Main.Settings.memory.gcInLoadScene) GC.Collect();
             }
         }
 
@@ -249,8 +242,6 @@ namespace Iridium.Patches
                 while (true)
                 {
                     yield return new WaitForSeconds(5f);
-
-                    if (!Main.Settings.memory.enableSmartGC) continue;
 
                     // 检查是否达到间隔
                     if (Time.realtimeSinceStartup - _lastCleanTime < Main.Settings.memory.gcInterval) continue;

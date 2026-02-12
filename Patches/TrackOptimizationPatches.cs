@@ -30,7 +30,7 @@ namespace Iridium.Patches
         {
             public static bool Prefix(ffxMoveFloorPlus __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeMoveTrack) return true;
+                if (!Main.Settings.optimizer.optimizeMoveTrack) return true;
 
                 __instance.AdjustDurationForHardbake();
                 
@@ -123,7 +123,7 @@ namespace Iridium.Patches
         {
             public static bool Prefix(ffxRecolorFloorPlus __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeRecolorTrack) return true;
+                if (!Main.Settings.optimizer.optimizeRecolorTrack) return true;
 
                 __instance.AdjustDurationForHardbake();
                 

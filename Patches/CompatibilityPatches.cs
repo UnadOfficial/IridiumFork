@@ -27,7 +27,7 @@ namespace Iridium.Patches
         {
             public static void Prefix(List<scrFloor> floors, LevelData levelData, scrLevelMaker lm, List<LevelEvent> events, List<LevelEvent>[] floorEvents)
             {
-                if (!Main.Settings.compatibility.enableLegacyPauseFix || !LegacyPauseFixPatch_Play.isPlayingFromEditor)
+                if (!LegacyPauseFixPatch_Play.isPlayingFromEditor)
                 {
                     return;
                 }
@@ -67,7 +67,7 @@ namespace Iridium.Patches
             public static void Prefix(scrDecoration __instance, out HitboxType __state, scrPlanet planet)
             {
                 __state = __instance.hitbox;
-                if (!Main.Settings.compatibility.enableNoFailTooEarly || !ADOBase.controller.gameworld || !ADOBase.controller.noFail || __instance.hitbox != HitboxType.Kill)
+                if (!ADOBase.controller.gameworld || !ADOBase.controller.noFail || __instance.hitbox != HitboxType.Kill)
                 {
                     return;
                 }

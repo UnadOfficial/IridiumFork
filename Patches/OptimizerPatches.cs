@@ -12,7 +12,6 @@ using DG.Tweening;
 
 namespace Iridium.Patches
 {
-    [HarmonyPatchCategory("Optimizer")]
     public static class OptimizerPatches
     {
         public static Dictionary<string, Vector3> decorRatios = [];
@@ -173,7 +172,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrCustomBackgroundSprite __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null) return;
+                if (GCS.internalLevelName != null) return;
                 var sprite = __instance.displayedSprite?.sprite;
                 if (sprite?.texture == null) return;
 
@@ -203,7 +202,7 @@ namespace Iridium.Patches
 
             public static void Postfix(scrVisualDecoration __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null) return;
+                if (GCS.internalLevelName != null) return;
                 var sprite = __instance.spriteRenderer?.sprite;
                 if (sprite?.texture == null) return;
 
@@ -229,7 +228,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrDecorationManager __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
+                if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
 
                 var selected = ADOBase.editor?.selectedDecorations;
                 if (selected == null) return;
@@ -269,7 +268,7 @@ namespace Iridium.Patches
         {
             public static void Postfix()
             {
-                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
+                if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
 
                 var selected = ADOBase.editor?.selectedDecorations;
                 if (selected == null) return;
@@ -289,7 +288,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrVisualDecoration __instance, ref Vector2 __result)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
+                if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
                 var tex = __instance.spriteRenderer?.sprite?.texture;
                 if (tex != null && TryGetDecorRatio(tex.name, out Vector3 ratio))
                 {
@@ -303,7 +302,7 @@ namespace Iridium.Patches
         {
             public static void Postfix()
             {
-                if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.disableShadows)
+                if (Main.Settings.optimizer.disableShadows)
                 {
                     QualitySettings.shadows = ShadowQuality.Disable;
                 }
@@ -315,7 +314,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrVisualDecoration __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeDecorationUpdate) return;
+                if (!Main.Settings.optimizer.optimizeDecorationUpdate) return;
                 var sr = __instance.spriteRenderer;
                 if (sr != null)
                 {
@@ -331,7 +330,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrFloor __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeTileUpdate) return;
+                if (!Main.Settings.optimizer.optimizeTileUpdate) return;
                 var mr = __instance.GetComponent<MeshRenderer>();
                 if (mr != null)
                 {
@@ -348,7 +347,7 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static bool Prefix(scrVisualDecoration __instance)
             {
-                if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.fastLoading && scnEditor.instance == null)
+                if (Main.Settings.optimizer.fastLoading && scnEditor.instance == null)
                 {
                     if (__instance.boxCollider != null && __instance.boxCollider.enabled)
                         __instance.boxCollider.enabled = false;
@@ -360,7 +359,7 @@ namespace Iridium.Patches
             [HarmonyPostfix]
             public static void Postfix(scrVisualDecoration __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || !__instance.useHitbox || __instance.spriteRenderer == null) return;
+                if (GCS.internalLevelName != null || !__instance.useHitbox || __instance.spriteRenderer == null) return;
                 Vector3 ratio = __instance.spriteRenderer.transform.localScale;
                 if (__instance.hitboxType == Hitbox.Box)
                 {
@@ -386,7 +385,7 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static bool Prefix()
             {
-                if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.skipEventIfPaused && scrController.instance.paused)
+                if (Main.Settings.optimizer.skipEventIfPaused && scrController.instance.paused)
                 {
                     return false;
                 }
@@ -400,7 +399,7 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static bool Prefix()
             {
-                if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.optimizeEventIcons && !ADOBase.isLevelEditor && !Main.IsMainThread)
+                if (Main.Settings.optimizer.optimizeEventIcons && !ADOBase.isLevelEditor && !Main.IsMainThread)
                 {
                     return false;
                 }
@@ -438,7 +437,7 @@ namespace Iridium.Patches
 
             public static bool ShouldUpdate(scnGame __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeScnGameUpdate)
+                if (!Main.Settings.optimizer.optimizeScnGameUpdate)
                     return true;
 
                 _startFrameField ??= typeof(scnGame).GetField("startFrame", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -471,7 +470,7 @@ namespace Iridium.Patches
         [HarmonyPrefix]
         public static bool Prefix(ffxMoveDecorationsPlus __instance)
         {
-            if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeMoveDecorations)
+            if (!Main.Settings.optimizer.optimizeMoveDecorations)
                 return true;
 
             if (ADOBase.controller.visualQuality == VisualQuality.Low && ADOBase.isOfficialLevel && !ADOBase.levelIsMikoSkip)
@@ -817,7 +816,7 @@ namespace Iridium.Patches
             public static bool isFinished = false;
             public static void Postfix(bool reloadDecorations)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || GCS.internalLevelName != null || isFinished || !reloadDecorations || Main.Settings.optimizer.dontShowSavedMemory) return;
+                if (GCS.internalLevelName != null || isFinished || !reloadDecorations || Main.Settings.optimizer.dontShowSavedMemory) return;
 
                 if (savedVRAM_MB > 0.1f)
                 {
@@ -893,7 +892,7 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static void Prefix(ffxSetFilterPlus __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeFilters) return;
+                if (!Main.Settings.optimizer.optimizeFilters) return;
                 // 这里可以添加针对普通滤镜的特定优化逻辑，目前主要是通过减少类型转换
             }
         }
@@ -906,7 +905,7 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static void Prefix(ffxSetFilterAdvancedPlus __instance)
             {
-                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeFilters) return;
+                if (!Main.Settings.optimizer.optimizeFilters) return;
 
                 // 核心优化思路：拦截 StartEffect，手动处理 DOTween 逻辑，使用缓存的委托代替反射 SetValue
                 // 由于我们不能直接修改反编译代码，我们需要通过 Transpiler 或 Prefix 彻底替换其逻辑

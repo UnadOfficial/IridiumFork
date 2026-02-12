@@ -385,10 +385,7 @@ namespace Iridium
             GUILayout.Space(8);
             ui.enableCircleArc = UIUtils.M3Switch(ui.enableCircleArc, Localization.Get("EnableCircleArc"));
             if (ui.enableCircleArc) UIUtils.DrawInfoBox("⚠ " + Localization.Get("RestartRequired"));
-            
-            ui.enableCustomLevelIsland = UIUtils.M3Switch(ui.enableCustomLevelIsland, Localization.Get("EnableCustomLevelIsland"));
-            if (ui.enableCustomLevelIsland) UIUtils.DrawInfoBox("⚠ " + Localization.Get("RestartRequired"));
-            
+                
             GUILayout.EndVertical();
 
             GUILayout.Space(8);
@@ -584,7 +581,6 @@ namespace Iridium
             if (GUI.changed)
             {            
                 Save(modEntry);
-                AppearancePatches.ApplyTrackCustomization();
                 Iridium.Patches.PatchManager.UpdateAllPatches();
             }
         }

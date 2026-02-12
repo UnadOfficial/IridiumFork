@@ -48,8 +48,9 @@ namespace Iridium.Patches
             {
                 Main.Settings.appearance.EnsureSlideshowSize();
                 string sceneName = SceneManager.GetActiveScene().name;
+                bool sceneChanged = sceneName != lastScene;
 
-                if (sceneName != lastScene)
+                if (sceneChanged)
                 {
                     menuFloors.Clear();
                     floorRendererCache.Clear();
@@ -59,16 +60,18 @@ namespace Iridium.Patches
 
                 if (IsMenuScene(sceneName) && !InExclusionScene())
                 {
-                    // Find the best camera to hook into
-                    Camera? main = Camera.main;
-                    // If we find a camera named "Background Camera", it's usually better for backgrounds
-                    Camera[] allCameras = Camera.allCameras;
-                    foreach (var c in allCameras)
+                    Camera? main = targetCam;
+                    if (sceneChanged || main == null || !main.isActiveAndEnabled)
                     {
-                        if (c.name == "Background Camera" && c.isActiveAndEnabled)
+                        main = Camera.main;
+                        Camera[] allCameras = Camera.allCameras;
+                        foreach (var c in allCameras)
                         {
-                            main = c;
-                            break;
+                            if (c.name == "Background Camera" && c.isActiveAndEnabled)
+                            {
+                                main = c;
+                                break;
+                            }
                         }
                     }
 
@@ -115,7 +118,7 @@ namespace Iridium.Patches
             }
 
             // Always allow track customization updates if enabled
-            if (Main.Settings.appearance.enableTrackCustomization && IsMenuScene(SceneManager.GetActiveScene().name) && !InExclusionScene())
+            if (IsMenuScene(SceneManager.GetActiveScene().name) && !InExclusionScene())
             {
                 ApplyTrackCustomization();
             }
@@ -506,11 +509,11 @@ namespace Iridium.Patches
 
         public static void ApplyTrackCustomization()
         {
-            if (!Main.Settings.appearance.enableTrackCustomization) return;
+            var settings = Main.Settings.appearance;
+            if (!settings.enableTrackCustomization) return;
+
             string sceneName = SceneManager.GetActiveScene().name;
             if (!IsMenuScene(sceneName) || IsInExclusionScene()) return;
-
-            var settings = Main.Settings.appearance;
             
             // 检查设置是否发生变化
             bool settingsDirty = settings.trackColor != _lastTrackColor ||
@@ -519,6 +522,11 @@ namespace Iridium.Patches
                                  settings.trackColorR != _lastTrackColorR ||
                                  settings.trackColorG != _lastTrackColorG ||
                                  settings.trackColorB != _lastTrackColorB;
+
+            if (!settingsDirty && menuFloors.Count == 0 && (scnLevelSelect.instance == null || scnLevelSelect.instance.editorFloor == null))
+            {
+                return;
+            }
 
             if (settingsDirty)
             {
