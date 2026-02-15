@@ -110,6 +110,7 @@ namespace Iridium.Patches
 
                 if (trackedActive != shouldBeActive)
                 {
+                    Main.Logger?.Log($"[PatchManager] {def.Name} status changed: {trackedActive} -> {shouldBeActive}");
                     if (shouldBeActive) ApplyPatch(def.Type);
                     else RemovePatch(def.Type);
                     
@@ -139,6 +140,7 @@ namespace Iridium.Patches
         {
             try
             {
+                Main.Logger?.Log($"[PatchManager] Attempting to apply {type.Name}");
                 var processor = _harmony.CreateClassProcessor(type);
                 var originals = processor.Patch();
 
@@ -174,7 +176,11 @@ namespace Iridium.Patches
 
                     _patchedBindings[type] = bindings;
                     _activePatches[type] = true;
-                    Main.Logger?.Log($"[PatchManager] Applied {type.Name} ({bindings.Count} patch bindings)");
+                    Main.Logger?.Log($"[PatchManager] Successfully applied {type.Name} ({bindings.Count} patch bindings)");
+                }
+                else
+                {
+                    Main.Logger?.Log($"[PatchManager] No patch methods found in {type.Name}");
                 }
             }
             catch (Exception e)
@@ -187,8 +193,10 @@ namespace Iridium.Patches
         {
             try
             {
+                Main.Logger?.Log($"[PatchManager] Attempting to remove {type.Name}");
                 if (_patchedBindings.TryGetValue(type, out var bindings) && bindings.Count > 0)
                 {
+                    Main.Logger?.Log($"[PatchManager] Using cached bindings to remove {type.Name} ({bindings.Count} bindings)");
                     foreach (var (original, patchMethod) in bindings)
                     {
                         _harmony.Unpatch(original, patchMethod);
@@ -198,12 +206,13 @@ namespace Iridium.Patches
                 else
                 {
                     // Fallback to slow method if cache is missing or empty
+                    Main.Logger?.Log($"[PatchManager] Using fallback method to remove {type.Name}");
                     UnpatchMethod(type);
                     _patchedBindings.Remove(type);
                 }
                 
                 _activePatches[type] = false;
-                Main.Logger?.Log($"[PatchManager] Removed {type.Name}");
+                Main.Logger?.Log($"[PatchManager] Successfully removed {type.Name}");
             }
             catch (Exception e)
             {
