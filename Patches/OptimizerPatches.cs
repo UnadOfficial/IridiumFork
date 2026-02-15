@@ -40,10 +40,23 @@ namespace Iridium.Patches
         {
             if (!Main.IsMainThread) return null;
 
+            // 检查目标尺寸是否有效
+            if (targetW <= 0 || targetH <= 0)
+            {
+                Main.Logger?.Log($"[Optimizer] Invalid target dimensions: {targetW}x{targetH}");
+                return null;
+            }
+
             RenderTexture? rt = null;
             try
             {
                 rt = RenderTexture.GetTemporary(targetW, targetH, 0, RenderTextureFormat.ARGB32);
+                if (rt == null)
+                {
+                    Main.Logger?.Log($"[Optimizer] Failed to create RenderTexture for {targetW}x{targetH}");
+                    return null;
+                }
+                
                 rt.filterMode = FilterMode.Bilinear;
                 Graphics.Blit(source, rt);
                 
@@ -54,6 +67,11 @@ namespace Iridium.Patches
                 RenderTexture.active = null;
                 result.name = source.name;
                 return result;
+            }
+            catch (Exception e)
+            {
+                Main.Logger?.Log($"[Optimizer] Error in CreateProcessedTexture: {e.Message}");
+                return null;
             }
             finally
             {
@@ -82,6 +100,7 @@ namespace Iridium.Patches
                 try
                 {
                     double scaleFactor = Main.Settings.optimizer.divideBy;
+                    // 只有当缩放比例接近1.0且不压缩纹理时，才跳过优化
                     if (scaleFactor <= 1.01 && Main.Settings.optimizer.dontCompress) return;
 
                     int newW = (int)Math.Round(__result.width / scaleFactor);
@@ -104,6 +123,7 @@ namespace Iridium.Patches
                     bool resized = false;
                     if (__result.width != newW || __result.height != newH)
                     {
+                        Main.Logger?.Log($"[Optimizer] Resizing texture {texName} from {__result.width}x{__result.height} to {newW}x{newH}");
                         var optimized = CreateProcessedTexture(__result, newW, newH);
                         if (optimized != null)
                         {
@@ -120,6 +140,11 @@ namespace Iridium.Patches
                             UnityEngine.Object.DestroyImmediate(__result);
                             __result = optimized;
                             resized = true;
+                            Main.Logger?.Log($"[Optimizer] Successfully resized {texName}");
+                        }
+                        else
+                        {
+                            Main.Logger?.Log($"[Optimizer] Failed to resize {texName}");
                         }
                     }
                     
