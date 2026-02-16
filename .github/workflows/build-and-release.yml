@@ -3,7 +3,6 @@ name: Build and Release
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
 
@@ -20,10 +19,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: |
-          8.0.x
-          7.0.x
-          6.0.x
+        dotnet-version: '8.0.x'
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -31,55 +27,41 @@ jobs:
         node-version: '18'
         
     - name: Build project
-      run: |
-        echo "Building Iridium project..."
-        dotnet build --configuration Release
+      run: dotnet build --configuration Release
         
     - name: Get version
       id: get_version
+      shell: pwsh
       run: |
-        node scripts/get-version.js | Tee-Object -Variable output
-        
-        # 从输出中提取版本标签
+        $output = node scripts/get-version.js
         foreach ($line in $output -split "`n") {
-            if ($line -match "^VERSION_TAG=(.*)$") {
-                $version = $matches[1]
-                echo "VERSION_TAG=$version" >> $env:GITHUB_OUTPUT
-                echo "Detected version: $version"
-            }
+          if ($line -match "^VERSION_TAG=(.*)$") {
+            $version = $matches[1]
+            echo "VERSION_TAG=$version" >> $env:GITHUB_OUTPUT
+          }
         }
         
     - name: Package artifacts
+      shell: pwsh
       run: |
         $version = "${{ steps.get_version.outputs.VERSION_TAG }}"
         $zipName = "Iridium_$version.zip"
         
-        echo "Packaging artifacts to $zipName"
-        
-        # 确保out目录存在
         if (!(Test-Path "out")) {
-            New-Item -ItemType Directory -Path "out" -Force
+          New-Item -ItemType Directory -Path "out" -Force | Out-Null
         }
         
-        # 进入out目录并打包所有内容，不包含out文件夹本身
         Push-Location "out"
         try {
-            # 获取当前目录的所有文件和文件夹
-            $files = Get-ChildItem -Path "." -Recurse
-            if ($files.Count -gt 0) {
-                # 创建zip文件，只包含out目录下的内容
-                Compress-Archive -Path "*" -DestinationPath "../$zipName" -Force
-                echo "Successfully created $zipName"
-            } else {
-                echo "Warning: out directory is empty"
-                # 创建一个空的zip文件
-                Compress-Archive -Path "*" -DestinationPath "../$zipName" -Force
-            }
+          $items = Get-ChildItem -Path "." -Force
+          if ($items.Count -gt 0) {
+            Compress-Archive -Path "*" -DestinationPath "../$zipName" -Force
+          } else {
+            Compress-Archive -Path "*" -DestinationPath "../$zipName" -Force
+          }
         } finally {
-            Pop-Location
+          Pop-Location
         }
-        
-        echo "ZIP_NAME=$zipName" >> $env:GITHUB_OUTPUT
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -97,31 +79,28 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+      
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: iridium-build
         
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
     - name: Get version info
       id: version_info
+      shell: pwsh
       run: |
-        node scripts/get-version.js | Tee-Object -Variable output
-        
+        $output = node scripts/get-version.js
         foreach ($line in $output -split "`n") {
-            if ($line -match "^(VERSION_TAG|RELEASE_NAME)=(.*)$") {
-                $key = $matches[1]
-                $value = $matches[2]
-                echo "$key=$value" >> $env:GITHUB_OUTPUT
-            }
+          if ($line -match "^(VERSION_TAG|RELEASE_NAME)=(.*)$") {
+            $key = $matches[1]
+            $value = $matches[2]
+            echo "$key=$value" >> $env:GITHUB_OUTPUT
+          }
         }
-        
-        echo "Git SHA: ${{ github.sha }}"
-        echo "Short SHA: ${{ github.sha | substr(0, 7) }}"
         
     - name: Check for existing release
       id: check_release
@@ -136,47 +115,38 @@ jobs:
               repo: context.repo.repo
             });
             
-            const existingRelease = releases.data.find(release => release.name === releaseName);
+            const existingRelease = releases.data.find(r => r.name === releaseName);
             
             if (existingRelease) {
-              console.log(`Found existing release: ${releaseName}`);
               core.setOutput('release_exists', 'true');
               core.setOutput('existing_release_id', existingRelease.id);
             } else {
-              console.log(`No existing release found: ${releaseName}`);
               core.setOutput('release_exists', 'false');
             }
           } catch (error) {
-            console.log('Error checking releases:', error.message);
             core.setOutput('release_exists', 'false');
           }
         
     - name: Create or update release
       id: create_release
       uses: actions/github-script@v7
-      env:
-        RELEASE_NAME: ${{ steps.version_info.outputs.RELEASE_NAME }}
-        VERSION_TAG: ${{ steps.version_info.outputs.VERSION_TAG }}
-        RELEASE_EXISTS: ${{ steps.check_release.outputs.release_exists }}
-        EXISTING_RELEASE_ID: ${{ steps.check_release.outputs.existing_release_id }}
       with:
         script: |
-          const releaseName = process.env.RELEASE_NAME;
-          const versionTag = process.env.VERSION_TAG;
-          const releaseExists = process.env.RELEASE_EXISTS === 'true';
-          const existingReleaseId = process.env.EXISTING_RELEASE_ID;
+          const releaseName = `${{ steps.version_info.outputs.RELEASE_NAME }}`;
+          const versionTag = `${{ steps.version_info.outputs.VERSION_TAG }}`;
+          const releaseExists = `${{ steps.check_release.outputs.release_exists }}` === 'true';
+          const existingReleaseId = `${{ steps.check_release.outputs.existing_release_id }}`;
           const shortSha = context.sha.substring(0, 7);
           
           let finalReleaseName = releaseName;
+          let tagName = `v${versionTag}`;
           
-          // 如果release已存在，在标题后添加SHA值
           if (releaseExists) {
             finalReleaseName = `${releaseName} (${shortSha})`;
-            console.log(`Release already exists, updating name to: ${finalReleaseName}`);
+            tagName = `v${versionTag}-${shortSha}`;
           }
           
-          const releaseBody = `
-## Iridium Mod Release
+          const releaseBody = `## Iridium Mod Release
 
 **Version:** ${versionTag}
 **Commit:** ${context.sha}
@@ -189,76 +159,46 @@ jobs:
 ### Installation
 1. Download the attached zip file
 2. Extract to your A Dance of Fire and Ice Mods folder
-3. Launch the game and enjoy!
-          `;
+3. Launch the game and enjoy!`;
           
           try {
             if (releaseExists) {
-              // 更新现有release
-              console.log(`Updating existing release: ${existingReleaseId}`);
-              
-              // 先删除现有release
               await github.rest.repos.deleteRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 release_id: parseInt(existingReleaseId)
               });
-              
-              // 创建新release
-              const release = await github.rest.repos.createRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag_name: `v${versionTag}-${shortSha}`,
-                name: finalReleaseName,
-                body: releaseBody,
-                draft: false,
-                prerelease: versionTag.includes('beta') || versionTag.includes('prerelease')
-              });
-              
-              core.setOutput('release_id', release.data.id);
-              core.setOutput('upload_url', release.data.upload_url);
-              
-            } else {
-              // 创建新release
-              console.log(`Creating new release: ${finalReleaseName}`);
-              
-              const release = await github.rest.repos.createRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag_name: `v${versionTag}`,
-                name: finalReleaseName,
-                body: releaseBody,
-                draft: false,
-                prerelease: versionTag.includes('beta') || versionTag.includes('prerelease')
-              });
-              
-              core.setOutput('release_id', release.data.id);
-              core.setOutput('upload_url', release.data.upload_url);
             }
             
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tagName,
+              name: finalReleaseName,
+              body: releaseBody,
+              draft: false,
+              prerelease: versionTag.includes('beta') || versionTag.includes('prerelease')
+            });
+            
+            core.setOutput('release_id', release.data.id);
+            core.setOutput('upload_url', release.data.upload_url);
+            
           } catch (error) {
-            core.setFailed(`Failed to create/update release: ${error.message}`);
+            core.setFailed(`Failed to create release: ${error.message}`);
           }
         
     - name: Upload release asset
       uses: actions/github-script@v7
-      env:
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
       with:
         script: |
           const fs = require('fs');
-          const uploadUrl = process.env.UPLOAD_URL;
-          
-          // 查找zip文件
           const files = fs.readdirSync('.');
-          const zipFile = files.find(file => file.startsWith('Iridium_') && file.endsWith('.zip'));
+          const zipFile = files.find(f => f.startsWith('Iridium_') && f.endsWith('.zip'));
           
           if (!zipFile) {
             core.setFailed('No zip file found to upload');
             return;
           }
-          
-          console.log(`Uploading ${zipFile} to release...`);
           
           const fileContent = fs.readFileSync(zipFile);
           
@@ -274,9 +214,6 @@ jobs:
                 'content-length': fileContent.length
               }
             });
-            
-            console.log(`Successfully uploaded ${zipFile}`);
-            
           } catch (error) {
             core.setFailed(`Failed to upload asset: ${error.message}`);
           }
