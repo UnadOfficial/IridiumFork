@@ -189,9 +189,12 @@ jobs:
         
     - name: Upload release asset
       uses: actions/github-script@v7
+      env:
+        RELEASE_ID: ${{ steps.create_release.outputs.release_id }}
       with:
         script: |
           const fs = require('fs');
+          const releaseId = parseInt(process.env.RELEASE_ID);
           const files = fs.readdirSync('.');
           const zipFile = files.find(f => f.startsWith('Iridium_') && f.endsWith('.zip'));
           
@@ -206,7 +209,7 @@ jobs:
             await github.rest.repos.uploadReleaseAsset({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              release_id: ${{ steps.create_release.outputs.release_id }},
+              release_id: releaseId,
               name: zipFile,
               data: fileContent,
               headers: {
