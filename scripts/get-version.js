@@ -30,7 +30,7 @@ function getVersionInfo() {
             releaseName = `${displayName} ${baseVersion}`;
         } else {
             versionTag = `${baseVersion}_${vtype}${minor}`;
-            releaseName = `${displayName} ${baseVersion} ${vtype}${minor}`;
+            releaseName = `${baseVersion}_${vtype}${minor}`;
         }
         
         return {
