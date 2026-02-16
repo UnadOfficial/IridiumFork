@@ -25,10 +25,10 @@ jobs:
           7.0.x
           6.0.x
         
-    - name: Setup Python
-      uses: actions/setup-python@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
       with:
-        python-version: '3.x'
+        node-version: '18'
         
     - name: Build project
       run: |
@@ -38,32 +38,16 @@ jobs:
     - name: Get version
       id: get_version
       run: |
-        $versionScript = @"
-import json
-import re
-from pathlib import Path
-
-root = Path('.')
-info = json.loads((root / 'Info.json').read_text(encoding='utf-8'))
-base_version = info.get('Version', '1.0.0')
-
-vm = (root / 'VersionManager.cs').read_text(encoding='utf-8')
-
-type_match = re.search(r'public\s+static\s+VersionType\s+Type\s*=>\s*VersionType\.(\w+)\s*;', vm)
-minor_match = re.search(r'public\s+const\s+int\s+MinorVersion\s*=\s*(\d+)\s*;', vm)
-
-vtype = type_match.group(1).lower() if type_match else 'release'
-minor = minor_match.group(1) if minor_match else '0'
-
-if vtype == 'release':
-    print(base_version)
-else:
-    print(f"{base_version}_{vtype}{minor}")
-"@
+        node scripts/get-version.js | Tee-Object -Variable output
         
-        $version = python -c $versionScript
-        echo "VERSION_TAG=$version" >> $env:GITHUB_OUTPUT
-        echo "Detected version: $version"
+        # 从输出中提取版本标签
+        foreach ($line in $output -split "`n") {
+            if ($line -match "^VERSION_TAG=(.*)$") {
+                $version = $matches[1]
+                echo "VERSION_TAG=$version" >> $env:GITHUB_OUTPUT
+                echo "Detected version: $version"
+            }
+        }
         
     - name: Package artifacts
       run: |
@@ -118,39 +102,16 @@ else:
       with:
         name: iridium-build
         
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
     - name: Get version info
       id: version_info
       run: |
-        $versionScript = @"
-import json
-import re
-from pathlib import Path
-
-root = Path('.')
-info = json.loads((root / 'Info.json').read_text(encoding='utf-8'))
-base_version = info.get('Version', '1.0.0')
-
-display_name = info.get('DisplayName', 'Iridium')
-vm = (root / 'VersionManager.cs').read_text(encoding='utf-8')
-
-type_match = re.search(r'public\s+static\s+VersionType\s+Type\s*=>\s*VersionType\.(\w+)\s*;', vm)
-minor_match = re.search(r'public\s+const\s+int\s+MinorVersion\s*=\s*(\d+)\s*;', vm)
-
-vtype = type_match.group(1).lower() if type_match else 'release'
-minor = minor_match.group(1) if minor_match else '0'
-
-if vtype == 'release':
-    version_tag = base_version
-    release_name = f"{display_name} {base_version}"
-else:
-    version_tag = f"{base_version}_{vtype}{minor}"
-    release_name = f"{display_name} {base_version} {vtype}{minor}"
-
-print(f"VERSION_TAG={version_tag}")
-print(f"RELEASE_NAME={release_name}")
-"@
+        node scripts/get-version.js | Tee-Object -Variable output
         
-        $output = python -c $versionScript
         foreach ($line in $output -split "`n") {
             if ($line -match "^(VERSION_TAG|RELEASE_NAME)=(.*)$") {
                 $key = $matches[1]
