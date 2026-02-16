@@ -23,13 +23,18 @@ function getVersionInfo() {
         const minor = minorMatch ? minorMatch[1] : '0';
         
         // 计算release编号 (r编号)
-        // 1.0.0 = r1, 1.0.1 = r2, 1.0.5 = r6, 1.1.0 = r11, 2.0.0 = r101, etc.
+        // 1.0.0 = r1, 1.0.1 = r2, 1.0.5 = r6, 1.1.0 = r11, 2.0.0 = r201, etc.
         const versionParts = baseVersion.split('.');
         const major = parseInt(versionParts[0]) || 1;
         const minor_version = parseInt(versionParts[1]) || 0;
         const patch = parseInt(versionParts[2]) || 0;
         
-        const releaseNumber = major * 100 + minor_version * 10 + patch + 1;
+        let releaseNumber;
+        if (major === 1) {
+            releaseNumber = minor_version * 10 + patch + 1;
+        } else {
+            releaseNumber = major * 100 + minor_version * 10 + patch + 1;
+        }
         
         let versionTag;
         let releaseName;

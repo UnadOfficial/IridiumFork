@@ -146,7 +146,7 @@ jobs:
           
           if (releaseExists) {
             finalReleaseName = `${releaseName} (${shortSha})`;
-            finalTagName = `${tagName}-${shortSha}`;
+            finalTagName = `${tagName}_${shortSha}`;
           }
           
           // 获取commit日志
