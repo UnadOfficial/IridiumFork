@@ -22,20 +22,34 @@ function getVersionInfo() {
         const vtype = typeMatch ? typeMatch[1].toLowerCase() : 'release';
         const minor = minorMatch ? minorMatch[1] : '0';
         
+        // 计算release编号 (r编号)
+        // 1.0.0 = r1, 1.0.1 = r2, 1.0.5 = r6, 1.1.0 = r11, 2.0.0 = r101, etc.
+        const versionParts = baseVersion.split('.');
+        const major = parseInt(versionParts[0]) || 1;
+        const minor_version = parseInt(versionParts[1]) || 0;
+        const patch = parseInt(versionParts[2]) || 0;
+        
+        const releaseNumber = major * 100 + minor_version * 10 + patch + 1;
+        
         let versionTag;
         let releaseName;
+        let tagName;
         
         if (vtype === 'release') {
             versionTag = baseVersion;
             releaseName = `${displayName} ${baseVersion}`;
+            tagName = `r${releaseNumber}`;
         } else {
             versionTag = `${baseVersion}_${vtype}${minor}`;
             releaseName = `${baseVersion}_${vtype}${minor}`;
+            tagName = `r${releaseNumber}_${vtype}${minor}`;
         }
         
         return {
             VERSION_TAG: versionTag,
-            RELEASE_NAME: releaseName
+            RELEASE_NAME: releaseName,
+            TAG_NAME: tagName,
+            RELEASE_NUMBER: releaseNumber
         };
         
     } catch (error) {
@@ -43,7 +57,9 @@ function getVersionInfo() {
         // 返回默认值
         return {
             VERSION_TAG: '1.0.0',
-            RELEASE_NAME: 'Iridium 1.0.0'
+            RELEASE_NAME: 'Iridium 1.0.0',
+            TAG_NAME: 'r1',
+            RELEASE_NUMBER: 1
         };
     }
 }
@@ -53,6 +69,7 @@ if (require.main === module) {
     const versionInfo = getVersionInfo();
     console.log(`VERSION_TAG=${versionInfo.VERSION_TAG}`);
     console.log(`RELEASE_NAME=${versionInfo.RELEASE_NAME}`);
+    console.log(`TAG_NAME=${versionInfo.TAG_NAME}`);
 }
 
 module.exports = getVersionInfo;
