@@ -142,20 +142,18 @@ jobs:
             tagName = `v${versionTag}-${shortSha}`;
           }
           
-          const releaseBody = `## Iridium Mod Release
-
-**Version:** ${versionTag}
-**Commit:** ${context.sha}
-**Build Date:** ${new Date().toISOString().split('T')[0]}
-
-### Changes
-- Auto-generated release from GitHub Actions
-- Built from commit ${context.sha}
-
-### Installation
-1. Download the attached zip file
-2. Extract to your A Dance of Fire and Ice Mods folder
-3. Launch the game and enjoy!`;
+          const buildDate = new Date().toISOString().split('T')[0];
+          const releaseBody = '## Iridium Mod Release\n\n' +
+            `**Version:** ${versionTag}\n` +
+            `**Commit:** ${context.sha}\n` +
+            `**Build Date:** ${buildDate}\n\n` +
+            '### Changes\n' +
+            '- Auto-generated release from GitHub Actions\n' +
+            `- Built from commit ${context.sha}\n\n` +
+            '### Installation\n' +
+            '1. Download the attached zip file\n' +
+            '2. Extract to your A Dance of Fire and Ice Mods folder\n' +
+            '3. Launch the game and enjoy!';
           
           try {
             if (releaseExists) {
