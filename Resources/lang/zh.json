@@ -34,6 +34,7 @@
   "TailFollowPitch": "拖尾长度随倍速变化",
   "EnableCustomBpm": "启用自定义 BPM",
   "CustomBpm": "自定义 BPM",
+  "LevelSelectSettings": "选关设置",
   "LobbyMusicSettings": "大厅音乐",
   "LobbyFastMusic": "切换转速时切换音乐",
   "LobbyCustomMusic": "使用自定义大厅音乐",
