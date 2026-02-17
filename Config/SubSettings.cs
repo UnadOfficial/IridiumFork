@@ -42,13 +42,13 @@ namespace Iridium.Config
         public float tailLength = 1f;
         public float tailEmission = 20f;
         public bool tailFollowPitch = false;
-        public bool enableCustomBpm = false;
-        public float customBpm = 120f;
     }
 
     public class LobbyMusicSettings
     {
         public bool enableLobbyMusicPatch = false;
+        public bool enableCustomBpm = false;
+        public float customBpm = 120f;
         public bool fastMusic = true;
         public bool customMusic = false;
         public string defaultMusicPath = string.Empty;

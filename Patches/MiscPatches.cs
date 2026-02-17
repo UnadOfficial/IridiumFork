@@ -245,7 +245,7 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static void Prefix()
             {
-                if (!Main.Settings.tail.enableCustomBpm || scrConductor.instance == null)
+                if (!Main.Settings.lobbyMusic.enableCustomBpm || scrConductor.instance == null)
                 {
                     return;
                 }
@@ -256,7 +256,7 @@ namespace Iridium.Patches
                     return;
                 }
 
-                scrConductor.instance.bpm = Main.Settings.tail.customBpm;
+                scrConductor.instance.bpm = Main.Settings.lobbyMusic.customBpm;
             }
         }
 

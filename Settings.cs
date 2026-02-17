@@ -291,27 +291,15 @@ namespace Iridium
                 string emissionStr = GUILayout.TextField(tail.tailEmission.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
                 if (float.TryParse(emissionStr, out float newEmission)) tail.tailEmission = newEmission;
                 GUILayout.EndHorizontal();
-
-                GUILayout.Space(4);
-                tail.enableCustomBpm = UIUtils.M3Switch(tail.enableCustomBpm, Localization.Get("EnableCustomBpm"));
-                if (tail.enableCustomBpm)
-                {
-                    GUILayout.BeginHorizontal(GUILayout.Height(28));
-                    GUILayout.Label(Localization.Get("CustomBpm"), UIUtils.LabelStyle);
-                    GUILayout.FlexibleSpace();
-                    string bpmStr = GUILayout.TextField(tail.customBpm.ToString("F1"), 6, UIUtils.TextFieldStyle, GUILayout.Width(60));
-                    if (float.TryParse(bpmStr, out float newBpm)) tail.customBpm = Mathf.Max(1f, newBpm);
-                    GUILayout.EndHorizontal();
-                }
             }
             GUILayout.EndVertical();
 
             GUILayout.Space(8);
 
-            // Lobby Music Card
+            // Level Select Settings Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("LobbyMusicSettings"), UIUtils.HeaderStyle);
+            GUILayout.Label(Localization.Get("LevelSelectSettings"), UIUtils.HeaderStyle);
             GUILayout.FlexibleSpace();
             bool newEnableLobbyMusic = UIUtils.M3Switch(lobbyMusic.enableLobbyMusicPatch, "");
             if (newEnableLobbyMusic != lobbyMusic.enableLobbyMusicPatch)
@@ -327,6 +315,18 @@ namespace Iridium
             if (lobbyMusic.enableLobbyMusicPatch)
             {
                 GUILayout.Space(8);
+                lobbyMusic.enableCustomBpm = UIUtils.M3Switch(lobbyMusic.enableCustomBpm, Localization.Get("EnableCustomBpm"));
+                if (lobbyMusic.enableCustomBpm)
+                {
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Label(Localization.Get("CustomBpm"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    string bpmStr = GUILayout.TextField(lobbyMusic.customBpm.ToString("F1"), 6, UIUtils.TextFieldStyle, GUILayout.Width(60));
+                    if (float.TryParse(bpmStr, out float newBpm)) lobbyMusic.customBpm = Mathf.Max(1f, newBpm);
+                    GUILayout.EndHorizontal();
+                }
+
+                GUILayout.Space(4);
                 lobbyMusic.fastMusic = UIUtils.M3Switch(lobbyMusic.fastMusic, Localization.Get("LobbyFastMusic"));
 
                 bool newCustomMusic = UIUtils.M3Switch(lobbyMusic.customMusic, Localization.Get("LobbyCustomMusic"));
