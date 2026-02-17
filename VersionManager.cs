@@ -12,16 +12,17 @@ namespace Iridium
 
     public static class VersionManager
     {
-        public static VersionType Type => VersionType.Hotfix;
+        public static VersionType Type => VersionType.Beta;
         public const int MinorVersion = 1;
 
         public static string GetFullVersionString()
         {
+            string baseVersion = Main.Mod?.Info.Version ?? "1.0.0";
             if (Type == VersionType.Release)
             {
-                return "1.0.5-hotfix1";
+                return baseVersion;
             }
-            return $"1.0.5-hotfix1-{Type.ToString().ToLower()}{MinorVersion}";
+            return $"{baseVersion}-{Type.ToString().ToLower()}{MinorVersion}";
         }
     }
 }

@@ -32,6 +32,8 @@
   "TailLength": "Tail Length",
   "TailEmission": "Tail Density",
   "TailFollowPitch": "Tail Follow Pitch",
+  "EnableCustomBpm": "Enable Custom BPM",
+  "CustomBpm": "Custom BPM",
   "CompatibilitySettings": "Compatibility & Fixes",
   "EnableLegacyPauseFix": "Revert 2.9.4 CCW U-Turn Pause Fix",
   "EnableNoFailTooEarly": "Killer Decorations to Purple Judgements in NoFail",

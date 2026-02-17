@@ -117,6 +117,12 @@ namespace Iridium.Patches
         public static class TailTweakPatch
         {
             private static readonly ConditionalWeakTable<scrPlanet, ParticleSystem> _psCache = new();
+            private static readonly HashSet<string> _allowedScenes = new()
+            {
+                "scnLevelSelect",
+                "scnCLS",
+                "scnTaroMenu0"
+            };
 
             [HarmonyTranspiler]
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -134,9 +140,15 @@ namespace Iridium.Patches
             private static bool _lastTailFollowPitch = false;
             private static bool _tailDisabledSynced = false;
 
+            private static bool IsAllowedScene()
+            {
+                string sceneName = ADOBase.sceneName;
+                return !string.IsNullOrEmpty(sceneName) && _allowedScenes.Contains(sceneName);
+            }
+
             public static void UpdateTail()
             {
-                if (!Main.Settings.tail.enableTailTweak)
+                if (!Main.Settings.tail.enableTailTweak || !IsAllowedScene())
                 {
                     if (!_tailDisabledSynced)
                     {
@@ -147,6 +159,11 @@ namespace Iridium.Patches
                 }
 
                 _tailDisabledSynced = false;
+
+                if (Main.Settings.tail.enableCustomBpm && scrConductor.instance != null)
+                {
+                    scrConductor.instance.bpm = Main.Settings.tail.customBpm;
+                }
 
                 if (scrController.instance is null)
                 {
@@ -203,7 +220,7 @@ namespace Iridium.Patches
             public static void ResetTails()
             {
                 if (scrController.instance?.planetarySystem?.allPlanets == null) return;
-                
+
                 foreach (var planet in scrController.instance.planetarySystem.allPlanets)
                 {
                     if (planet?.planetRenderer?.tailParticles is null) continue;
