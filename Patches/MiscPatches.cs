@@ -160,11 +160,6 @@ namespace Iridium.Patches
 
                 _tailDisabledSynced = false;
 
-                if (Main.Settings.tail.enableCustomBpm && scrConductor.instance != null)
-                {
-                    scrConductor.instance.bpm = Main.Settings.tail.customBpm;
-                }
-
                 if (scrController.instance is null)
                 {
                     return;
@@ -235,6 +230,35 @@ namespace Iridium.Patches
                 }
             }
         }
+
+        [HarmonyPatch(typeof(scrConductor), "Update")]
+        public static class CustomBpmPatch
+        {
+            private static readonly HashSet<string> _allowedScenes = new()
+            {
+                "scnLevelSelect",
+                "scnCLS",
+                "scnTaroMenu0"
+            };
+
+            [HarmonyPrefix]
+            public static void Prefix()
+            {
+                if (!Main.Settings.tail.enableCustomBpm || scrConductor.instance == null)
+                {
+                    return;
+                }
+
+                string sceneName = ADOBase.sceneName;
+                if (string.IsNullOrEmpty(sceneName) || !_allowedScenes.Contains(sceneName))
+                {
+                    return;
+                }
+
+                scrConductor.instance.bpm = Main.Settings.tail.customBpm;
+            }
+        }
+
         [HarmonyPatch(typeof(UnityEngine.SceneManagement.SceneManager), "GetSceneAt")]
         public static class SceneGC
         {
