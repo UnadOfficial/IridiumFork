@@ -32,6 +32,8 @@
   "TailLength": "拖尾长度",
   "TailEmission": "拖尾密度",
   "TailFollowPitch": "拖尾长度随倍速变化",
+  "EnableCustomBpm": "启用自定义 BPM",
+  "CustomBpm": "自定义 BPM",
   "CompatibilitySettings": "兼容性与修复",
   "EnableLegacyPauseFix": "撤销 2.9.4 对逆时针发卡弯暂停的修复",
   "EnableNoFailTooEarly": "不死模式下死亡装饰物转为紫色判定",

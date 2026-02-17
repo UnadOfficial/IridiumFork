@@ -267,23 +267,35 @@ namespace Iridium
                     tail.tailFollowPitch = newFollowPitch;
                     if (!tail.tailFollowPitch) Iridium.Patches.MiscPatches.TailTweakPatch.ResetTails();
                 }
-                
+
                 if (!tail.tailFollowPitch)
                 {
                     GUILayout.BeginHorizontal(GUILayout.Height(28));
-                GUILayout.Label(Localization.Get("TailLength"), UIUtils.LabelStyle);
-                GUILayout.FlexibleSpace();
-                string lengthStr = GUILayout.TextField(tail.tailLength.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
-                if (float.TryParse(lengthStr, out float newLength)) tail.tailLength = newLength;
-                GUILayout.EndHorizontal();
-            }
+                    GUILayout.Label(Localization.Get("TailLength"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    string lengthStr = GUILayout.TextField(tail.tailLength.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
+                    if (float.TryParse(lengthStr, out float newLength)) tail.tailLength = newLength;
+                    GUILayout.EndHorizontal();
+                }
 
-            GUILayout.BeginHorizontal(GUILayout.Height(28));
-            GUILayout.Label(Localization.Get("TailEmission"), UIUtils.LabelStyle);
-            GUILayout.FlexibleSpace();
-            string emissionStr = GUILayout.TextField(tail.tailEmission.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
-            if (float.TryParse(emissionStr, out float newEmission)) tail.tailEmission = newEmission;
-            GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal(GUILayout.Height(28));
+                GUILayout.Label(Localization.Get("TailEmission"), UIUtils.LabelStyle);
+                GUILayout.FlexibleSpace();
+                string emissionStr = GUILayout.TextField(tail.tailEmission.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
+                if (float.TryParse(emissionStr, out float newEmission)) tail.tailEmission = newEmission;
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(4);
+                tail.enableCustomBpm = UIUtils.M3Switch(tail.enableCustomBpm, Localization.Get("EnableCustomBpm"));
+                if (tail.enableCustomBpm)
+                {
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Label(Localization.Get("CustomBpm"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    string bpmStr = GUILayout.TextField(tail.customBpm.ToString("F1"), 6, UIUtils.TextFieldStyle, GUILayout.Width(60));
+                    if (float.TryParse(bpmStr, out float newBpm)) tail.customBpm = Mathf.Max(1f, newBpm);
+                    GUILayout.EndHorizontal();
+                }
             }
             GUILayout.EndVertical();
 

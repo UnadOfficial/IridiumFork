@@ -34,7 +34,8 @@ PY
 ZIP_NAME="Iridium_${VERSION_TAG}.zip"
 
 echo "[build] package -> ${ZIP_NAME}"
-rm -f "$ZIP_NAME"
-zip -r "$ZIP_NAME" out/*
-
+cd out
+rm -f "Iridium_*.zip"
+zip -r "$ZIP_NAME" ./
+cd ..
 echo "[done] ${ZIP_NAME}"

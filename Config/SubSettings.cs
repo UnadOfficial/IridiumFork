@@ -42,6 +42,8 @@ namespace Iridium.Config
         public float tailLength = 1f;
         public float tailEmission = 20f;
         public bool tailFollowPitch = false;
+        public bool enableCustomBpm = false;
+        public float customBpm = 120f;
     }
 
     public class MemorySettings
