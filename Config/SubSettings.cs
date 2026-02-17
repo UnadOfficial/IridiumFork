@@ -46,6 +46,15 @@ namespace Iridium.Config
         public float customBpm = 120f;
     }
 
+    public class LobbyMusicSettings
+    {
+        public bool enableLobbyMusicPatch = false;
+        public bool fastMusic = true;
+        public bool customMusic = false;
+        public string defaultMusicPath = string.Empty;
+        public string fastMusicPath = string.Empty;
+    }
+
     public class MemorySettings
     {
         public bool enableMemoryOptimization = false;

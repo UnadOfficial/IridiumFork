@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using ADOFAI;
@@ -256,6 +257,129 @@ namespace Iridium.Patches
                 }
 
                 scrConductor.instance.bpm = Main.Settings.tail.customBpm;
+            }
+        }
+
+        [HarmonyPatch(typeof(scnLevelSelect), "Awake")]
+        public static class LobbyMusicPatch
+        {
+            private static bool _loadingDefault;
+            private static bool _loadingFast;
+            private static AudioClip? _defaultBgm;
+            private static AudioClip? _fastBgm;
+
+            [HarmonyPostfix]
+            public static void Postfix()
+            {
+                ReloadFromSettings();
+            }
+
+            public static void ReloadFromSettings()
+            {
+                if (!Main.Settings.lobbyMusic.customMusic)
+                {
+                    TryApplyLoadedClips();
+                    return;
+                }
+
+                StartLoad(true, Main.Settings.lobbyMusic.defaultMusicPath);
+                StartLoad(false, Main.Settings.lobbyMusic.fastMusicPath);
+            }
+
+            public static void StartLoad(bool loadDefault, string? path)
+            {
+                if (scrConductor.instance == null) return;
+                scrConductor.instance.StartCoroutine(LoadMusicCo(loadDefault, path));
+            }
+
+            private static IEnumerator LoadMusicCo(bool loadDefault, string? path)
+            {
+                if (loadDefault)
+                {
+                    _loadingDefault = true;
+                    _defaultBgm = null;
+                }
+                else
+                {
+                    _loadingFast = true;
+                    _fastBgm = null;
+                }
+
+                AudioClip? clip = null;
+                if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                {
+                    Main.Logger?.Log($"[LobbyMusic] start loading '{path}', default={loadDefault}");
+
+                    clip = AudioManager.Instance.FindOrLoadAudioClip(Path.GetFileName(path) + "*external", null);
+                    if (clip == null)
+                    {
+                        IEnumerator load = AudioManager.Instance.FindOrLoadAudioClipExternal(path, false, 0f);
+                        yield return load;
+                        RDAudioLoadResult result = (RDAudioLoadResult)load.Current;
+                        if ((int)result.type == 0)
+                        {
+                            clip = result.clip;
+                        }
+                        else
+                        {
+                            Main.Logger?.Log($"[LobbyMusic] load failed: {result.type}");
+                        }
+                    }
+
+                    Main.Logger?.Log($"[LobbyMusic] end loading '{path}', default={loadDefault}");
+                }
+
+                if (loadDefault)
+                {
+                    _loadingDefault = false;
+                    _defaultBgm = clip;
+                }
+                else
+                {
+                    _loadingFast = false;
+                    _fastBgm = clip;
+                }
+
+                TryApplyLoadedClips();
+            }
+
+            public static void TryApplyLoadedClips()
+            {
+                if (scrConductor.instance == null || !ADOBase.isLevelSelect) return;
+
+                if (!Main.Settings.lobbyMusic.customMusic)
+                {
+                    return;
+                }
+
+                if (!_loadingDefault)
+                {
+                    if ((scrConductor.instance.song.clip = _defaultBgm) == null)
+                    {
+                        scrConductor.instance.song.Stop();
+                    }
+                    else
+                    {
+                        scrConductor.instance.song.volume = 1f;
+                        scrConductor.instance.song.pitch = 1f;
+                    }
+                }
+
+                if (!_loadingFast)
+                {
+                    if ((scrConductor.instance.song2.clip = _fastBgm) == null)
+                    {
+                        scrConductor.instance.song2.Stop();
+                    }
+                    else
+                    {
+                        scrConductor.instance.song2.pitch = 1f;
+                        if (!Main.Settings.lobbyMusic.fastMusic)
+                        {
+                            scrConductor.instance.song2.volume = 0f;
+                        }
+                    }
+                }
             }
         }
 

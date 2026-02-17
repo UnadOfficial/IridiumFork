@@ -17,13 +17,20 @@ namespace Iridium
         public OptimizerSettings optimizer = new();
         public UISettings ui = new();
         public TailSettings tail = new();
+        public LobbyMusicSettings lobbyMusic = new();
         public MemorySettings memory = new();
         public CompatibilitySettings compatibility = new();
         public AppearanceSettings appearance = new();
 
+        private string? _defaultLobbyMusicPathCache;
+        private string? _fastLobbyMusicPathCache;
+
         public void OnGUI(UnityModManager.ModEntry modEntry)
         {
             UIUtils.InitializeStyles();
+
+            _defaultLobbyMusicPathCache ??= lobbyMusic.defaultMusicPath;
+            _fastLobbyMusicPathCache ??= lobbyMusic.fastMusicPath;
 
             GUILayout.BeginHorizontal();
 
@@ -295,6 +302,78 @@ namespace Iridium
                     string bpmStr = GUILayout.TextField(tail.customBpm.ToString("F1"), 6, UIUtils.TextFieldStyle, GUILayout.Width(60));
                     if (float.TryParse(bpmStr, out float newBpm)) tail.customBpm = Mathf.Max(1f, newBpm);
                     GUILayout.EndHorizontal();
+                }
+            }
+            GUILayout.EndVertical();
+
+            GUILayout.Space(8);
+
+            // Lobby Music Card
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("LobbyMusicSettings"), UIUtils.HeaderStyle);
+            GUILayout.FlexibleSpace();
+            bool newEnableLobbyMusic = UIUtils.M3Switch(lobbyMusic.enableLobbyMusicPatch, "");
+            if (newEnableLobbyMusic != lobbyMusic.enableLobbyMusicPatch)
+            {
+                lobbyMusic.enableLobbyMusicPatch = newEnableLobbyMusic;
+                if (lobbyMusic.enableLobbyMusicPatch)
+                {
+                    Iridium.Patches.MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                }
+            }
+            GUILayout.EndHorizontal();
+
+            if (lobbyMusic.enableLobbyMusicPatch)
+            {
+                GUILayout.Space(8);
+                lobbyMusic.fastMusic = UIUtils.M3Switch(lobbyMusic.fastMusic, Localization.Get("LobbyFastMusic"));
+
+                bool newCustomMusic = UIUtils.M3Switch(lobbyMusic.customMusic, Localization.Get("LobbyCustomMusic"));
+                if (newCustomMusic != lobbyMusic.customMusic)
+                {
+                    lobbyMusic.customMusic = newCustomMusic;
+                    Iridium.Patches.MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                }
+
+                if (lobbyMusic.customMusic)
+                {
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Label(Localization.Get("LobbyDefaultMusicPath"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    _defaultLobbyMusicPathCache = GUILayout.TextField(_defaultLobbyMusicPathCache ?? string.Empty, UIUtils.TextFieldStyle, GUILayout.Width(260));
+                    GUILayout.Space(6);
+                    bool canApplyDefaultPath = (_defaultLobbyMusicPathCache ?? string.Empty) != lobbyMusic.defaultMusicPath;
+                    GUI.enabled = canApplyDefaultPath;
+                    if (GUILayout.Button(Localization.Get("Apply"), UIUtils.ButtonStyle, GUILayout.Width(70)))
+                    {
+                        lobbyMusic.defaultMusicPath = (_defaultLobbyMusicPathCache ?? string.Empty).Trim();
+                        Iridium.Patches.MiscPatches.LobbyMusicPatch.StartLoad(true, lobbyMusic.defaultMusicPath);
+                    }
+                    GUI.enabled = true;
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Label(Localization.Get("LobbyFastMusicPath"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    _fastLobbyMusicPathCache = GUILayout.TextField(_fastLobbyMusicPathCache ?? string.Empty, UIUtils.TextFieldStyle, GUILayout.Width(260));
+                    GUILayout.Space(6);
+                    bool canApplyFastPath = (_fastLobbyMusicPathCache ?? string.Empty) != lobbyMusic.fastMusicPath;
+                    GUI.enabled = canApplyFastPath;
+                    if (GUILayout.Button(Localization.Get("Apply"), UIUtils.ButtonStyle, GUILayout.Width(70)))
+                    {
+                        lobbyMusic.fastMusicPath = (_fastLobbyMusicPathCache ?? string.Empty).Trim();
+                        Iridium.Patches.MiscPatches.LobbyMusicPatch.StartLoad(false, lobbyMusic.fastMusicPath);
+                    }
+                    GUI.enabled = true;
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.Space(6);
+                    if (GUILayout.Button(Localization.Get("LobbyReloadMusic"), UIUtils.ButtonStyle, GUILayout.Width(140)))
+                    {
+                        Iridium.Patches.MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                    }
+                    UIUtils.DrawInfoBox(Localization.Get("LobbyMusicHint"));
                 }
             }
             GUILayout.EndVertical();

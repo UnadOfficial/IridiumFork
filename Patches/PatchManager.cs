@@ -60,6 +60,9 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(MiscPatches.TailTweakPatch), () => Main.Settings.tail.enableTailTweak));
             _definitions.Add(new PatchDef(typeof(MiscPatches.CustomBpmPatch), () => Main.Settings.tail.enableCustomBpm));
 
+            // Lobby music
+            _definitions.Add(new PatchDef(typeof(MiscPatches.LobbyMusicPatch), () => Main.Settings.lobbyMusic.enableLobbyMusicPatch));
+
             // Memory
             var memCond = () => Main.Settings.memory.enableMemoryOptimization;
             _definitions.Add(new PatchDef(typeof(MiscPatches.SceneGC), () => memCond() && Main.Settings.memory.gcInLoadScene));
