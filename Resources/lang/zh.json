@@ -83,5 +83,17 @@
   "OptimizeFilters": "优化滤镜性能 (显著减少 CPU 占用)",
   "FirstRunTitle": "温馨提示",
   "FirstRunMessage": "Iridium 是一款优化模组，但仍存在不稳定的情况。如果游戏出现问题，请考虑先禁用它。",
-  "Understand": "我知道了"
+  "Understand": "我知道了",
+  "HitTextSettings": "判定文本自定义",
+  "HitTextHint": "文本留空使用默认值。颜色输入6或8位十六进制RGBA (如 FF0000FF)，无需#号，留空使用默认颜色。",
+  "Default": "默认",
+  "HitMargin_TooEarly": "提前",
+  "HitMargin_VeryEarly": "太快",
+  "HitMargin_EarlyPerfect": "稍快",
+  "HitMargin_Perfect": "完美",
+  "HitMargin_LatePerfect": "稍慢",
+  "HitMargin_VeryLate": "太慢",
+  "HitMargin_TooLate": "错过",
+  "HitMargin_Multipress": "多次按键",
+  "HitMargin_OverPress": "按太快"
 }
