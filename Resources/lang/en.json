@@ -83,5 +83,17 @@
   "OptimizeFilters": "Optimize Filter Performance (Reduce CPU Usage)",
   "FirstRunTitle": "Tips",
   "FirstRunMessage": "Iridium is an optimization mod, but it still has unstable situations. If there are problems with the game, please consider disabling it first.",
-  "Understand": "Understand"
+  "Understand": "Understand",
+  "HitTextSettings": "Hit Text Customization",
+  "HitTextHint": "Leave text empty to use default. Enter 8-digit hex color (RGBA, e.g. FF0000FF) or 6-digit (RGB) for default alpha. Leave empty for default color.",
+  "Default": "Default",
+  "HitMargin_TooEarly": "Too Early",
+  "HitMargin_VeryEarly": "Very Early",
+  "HitMargin_EarlyPerfect": "Early Perfect",
+  "HitMargin_Perfect": "Perfect",
+  "HitMargin_LatePerfect": "Late Perfect",
+  "HitMargin_VeryLate": "Very Late",
+  "HitMargin_TooLate": "Too Late",
+  "HitMargin_Multipress": "Multipress",
+  "HitMargin_OverPress": "OverPress"
 }

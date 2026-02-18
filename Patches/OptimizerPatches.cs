@@ -977,43 +977,5 @@ namespace Iridium.Patches
                 return false; // 拦截原始方法
             }
         }
-        [HarmonyPatch(typeof(FloorMesh), "GenerateMesh")]
-        public static class FloorMeshOptimizationPatch
-        {
-            public static bool Prefix(FloorMesh __instance)
-            {
-                if (!Main.Settings.optimizer.optimizeFloorMesh) return true;
-
-                // 跳过 GenerateMesh 中所有不必要的计算，直接利用缓存
-                if (FloorMesh.cache.ContainsKey(__instance.cacheKey))
-                {
-                    var meshFilter = Traverse.Create(__instance).Field("meshFilter").GetValue<MeshFilter>();
-                    if (meshFilter != null)
-                    {
-                        meshFilter.mesh = FloorMesh.cache[__instance.cacheKey].mesh;
-                    }
-                    return false; // 跳过原版 GenerateMesh
-                }
-                return true;
-            }
-        }
-
-        [HarmonyPatch(typeof(MonoBehaviour), "print", typeof(object))]
-        public static class SkipPrintPatch
-        {
-            public static bool Prefix()
-            {
-                // 如果是 FloorMesh 相关的 print，直接跳过以减少字符串拼接和控制台开销
-                if (!Main.Settings.optimizer.optimizeFloorMesh) return true;
-                
-                var stackTrace = new System.Diagnostics.StackTrace();
-                var frame = stackTrace.GetFrame(2); // 检查调用来源
-                if (frame?.GetMethod()?.DeclaringType == typeof(FloorMesh))
-                {
-                    return false;
-                }
-                return true;
-            }
-        }
     }
 }

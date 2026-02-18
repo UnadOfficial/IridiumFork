@@ -21,6 +21,7 @@ namespace Iridium
         public MemorySettings memory = new();
         public CompatibilitySettings compatibility = new();
         public AppearanceSettings appearance = new();
+        public HitTextSettings hitText = new();
 
         private string? _defaultLobbyMusicPathCache;
         private string? _fastLobbyMusicPathCache;
@@ -417,6 +418,34 @@ namespace Iridium
             GUILayout.EndVertical(); // End Sub-container
             GUILayout.EndVertical(); // End Compatibility & Fixes Card
 
+            GUILayout.Space(8);
+
+            // Hit Text Settings Card
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("HitTextSettings"), UIUtils.HeaderStyle);
+            GUILayout.FlexibleSpace();
+            hitText.enableHitTextCustomization = UIUtils.M3Switch(hitText.enableHitTextCustomization, "");
+            GUILayout.EndHorizontal();
+
+            if (hitText.enableHitTextCustomization)
+            {
+                GUILayout.Space(8);
+                UIUtils.DrawInfoBox(Localization.Get("HitTextHint"));
+
+                GUILayout.Space(8);
+                DrawHitMarginSetting("TooEarly", ref hitText.tooEarlyText, ref hitText.tooEarlyColor);
+                DrawHitMarginSetting("VeryEarly", ref hitText.veryEarlyText, ref hitText.veryEarlyColor);
+                DrawHitMarginSetting("EarlyPerfect", ref hitText.earlyPerfectText, ref hitText.earlyPerfectColor);
+                DrawHitMarginSetting("Perfect", ref hitText.perfectText, ref hitText.perfectColor);
+                DrawHitMarginSetting("LatePerfect", ref hitText.latePerfectText, ref hitText.latePerfectColor);
+                DrawHitMarginSetting("VeryLate", ref hitText.veryLateText, ref hitText.veryLateColor);
+                DrawHitMarginSetting("TooLate", ref hitText.tooLateText, ref hitText.tooLateColor);
+                DrawHitMarginSetting("Multipress", ref hitText.multipressText, ref hitText.multipressColor);
+                DrawHitMarginSetting("OverPress", ref hitText.overPressText, ref hitText.overPressColor);
+            }
+            GUILayout.EndVertical();
+
             GUILayout.EndVertical(); // End Right Column
 
             GUILayout.EndHorizontal();
@@ -441,6 +470,58 @@ namespace Iridium
         public override void Save(UnityModManager.ModEntry modEntry)
         {
             Save(this, modEntry);
+        }
+
+        private static string _hitTextTooEarly = "";
+        private static string _hitTextVeryEarly = "";
+        private static string _hitTextEarlyPerfect = "";
+        private static string _hitTextPerfect = "";
+        private static string _hitTextLatePerfect = "";
+        private static string _hitTextVeryLate = "";
+        private static string _hitTextTooLate = "";
+        private static string _hitTextMultipress = "";
+        private static string _hitTextOverPress = "";
+
+        private void DrawHitMarginSetting(string marginType, ref string textValue, ref Color? colorValue)
+        {
+            GUILayout.BeginHorizontal(GUILayout.Height(24));
+            
+            // Color preview on the left
+            Color previewColor = colorValue.HasValue ? colorValue.Value : new Color(0.5f, 0.5f, 0.5f, 0.5f);
+            var previewStyle = new GUIStyle(GUI.skin.box)
+            {
+                normal = { background = UIUtils.MakeSolidTex(1, 1, previewColor) },
+                fixedWidth = 20,
+                fixedHeight = 20,
+                margin = new RectOffset(0, 8, 2, 2)
+            };
+            GUILayout.Box("", previewStyle);
+            
+            GUILayout.Label(Localization.Get("HitMargin_" + marginType), UIUtils.LabelStyle, GUILayout.Width(90));
+            
+            // Text field
+            string newText = GUILayout.TextField(textValue, 12, UIUtils.TextFieldStyle, GUILayout.Width(80));
+            if (newText != textValue) textValue = newText;
+            
+            GUILayout.Space(4);
+            
+            // Color field (RGBA hex)
+            GUILayout.Label("#", UIUtils.LabelStyle, GUILayout.Width(12));
+            string colorHex = colorValue.HasValue ? hitText.GetColorHex(colorValue) : "";
+            string newHex = GUILayout.TextField(colorHex, 8, UIUtils.TextFieldStyle, GUILayout.Width(70));
+            if (newHex != colorHex && (newHex.Length == 6 || newHex.Length == 8))
+            {
+                hitText.SetColorFromHex(ref colorValue, newHex);
+            }
+            
+            // Reset button
+            if (GUILayout.Button("×", UIUtils.ButtonStyle, GUILayout.Width(24)))
+            {
+                colorValue = null;
+            }
+            
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
         }
     }
 }
