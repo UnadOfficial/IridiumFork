@@ -16,7 +16,11 @@ namespace Iridium
 
         public static bool IsMainThread => System.Threading.Thread.CurrentThread.ManagedThreadId == _mainThreadId;
 
+        // 当前版本号（用于版本升级检测）
+        private const string CurrentVersion = "1.0.6_beta5";
+
         private static bool _showFirstRunTips = false;
+        private static bool _showUpgradeTips = false;
         private static Rect _windowRect = new(Screen.width / 2f - 200, Screen.height / 2f - 100, 400, 200);
 
         public static bool Load(UnityModManager.ModEntry modEntry)
@@ -27,9 +31,16 @@ namespace Iridium
             Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
             Localization.Load();
             
+            // 检查是否需要显示首次启动提示
             if (Settings.firstRun)
             {
                 _showFirstRunTips = true;
+            }
+            
+            // 检查是否需要显示版本升级提示（从旧版本升级到此版本）
+            if (!Settings.firstRun && Settings.lastVersion != CurrentVersion)
+            {
+                _showUpgradeTips = true;
             }
 
             modEntry.OnToggle = OnToggle;
@@ -45,16 +56,7 @@ namespace Iridium
 
         private static void OnUpdate(UnityModManager.ModEntry modEntry, float dt)
         {
-            if (_showFirstRunTips)
-            {
-                // If UMM is not open, we might want to open it or show the window anyway.
-                // But usually, we just show the window.
-            }
         }
-
-        // We need a way to hook into Unity's OnGUI to show our window.
-        // UMM's modEntry.OnGUI is only called inside the UMM menu.
-        // To show a popup over the game, we can use a Harmony patch on some game OnGUI or create a GameObject.
 
         private static GameObject? _uiObject;
 
@@ -73,7 +75,8 @@ namespace Iridium
                     Iridium.Patches.OptimizerPatches.ResetDecorOptimization(true);
                 }
 
-                if (_showFirstRunTips)
+                // 如果需要显示弹窗，创建UI对象
+                if (_showFirstRunTips || _showUpgradeTips)
                 {
                     if (_uiObject == null)
                     {
@@ -101,13 +104,23 @@ namespace Iridium
         {
             private void OnGUI()
             {
-                if (!_showFirstRunTips) return;
-
                 UIUtils.InitializeStyles();
-                _windowRect = GUI.Window(999, _windowRect, DrawWindow, Localization.Get("FirstRunTitle"), UIUtils.CardStyle);
+                
+                // 先显示首次启动提示
+                if (_showFirstRunTips)
+                {
+                    _windowRect = GUI.Window(998, _windowRect, DrawFirstRunWindow, Localization.Get("FirstRunTitle"), UIUtils.CardStyle);
+                    return; // 等待首次提示关闭后再显示升级提示
+                }
+                
+                // 首次提示关闭后，显示升级提示
+                if (_showUpgradeTips)
+                {
+                    _windowRect = GUI.Window(997, _windowRect, DrawUpgradeWindow, Localization.Get("UpgradeTitle"), UIUtils.CardStyle);
+                }
             }
 
-            private void DrawWindow(int windowID)
+            private void DrawFirstRunWindow(int windowID)
             {
                 GUILayout.BeginVertical();
                 GUILayout.Space(10);
@@ -117,6 +130,28 @@ namespace Iridium
                 {
                     _showFirstRunTips = false;
                     Settings.firstRun = false;
+                    Settings.lastVersion = CurrentVersion;
+                    if (Mod != null) Settings.Save(Mod);
+                    // 如果没有升级提示，销毁UI对象
+                    if (!_showUpgradeTips)
+                    {
+                        Destroy(gameObject);
+                    }
+                }
+                GUILayout.EndVertical();
+                GUI.DragWindow();
+            }
+
+            private void DrawUpgradeWindow(int windowID)
+            {
+                GUILayout.BeginVertical();
+                GUILayout.Space(10);
+                GUILayout.Label(Localization.Get("UpgradeMessage"), UIUtils.LabelStyle);
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(Localization.Get("Understand"), UIUtils.ButtonStyle))
+                {
+                    _showUpgradeTips = false;
+                    Settings.lastVersion = CurrentVersion;
                     if (Mod != null) Settings.Save(Mod);
                     Destroy(gameObject);
                 }

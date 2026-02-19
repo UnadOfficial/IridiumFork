@@ -12,6 +12,14 @@ namespace Iridium.Patches
 {
     public static class MiscPatches
     {
+        // 公共场景白名单，用于大厅相关功能
+        private static readonly HashSet<string> LobbyScenes = new()
+        {
+            "scnLevelSelect",
+            "scnCLS",
+            "scnTaroMenu0"
+        };
+
         [HarmonyPatch(typeof(scnLevelSelect))]
         public static class RemoveNewsPatch
         {
@@ -118,12 +126,6 @@ namespace Iridium.Patches
         public static class TailTweakPatch
         {
             private static readonly ConditionalWeakTable<scrPlanet, ParticleSystem> _psCache = new();
-            private static readonly HashSet<string> _allowedScenes = new()
-            {
-                "scnLevelSelect",
-                "scnCLS",
-                "scnTaroMenu0"
-            };
 
             [HarmonyTranspiler]
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -141,15 +143,9 @@ namespace Iridium.Patches
             private static bool _lastTailFollowPitch = false;
             private static bool _tailDisabledSynced = false;
 
-            private static bool IsAllowedScene()
-            {
-                string sceneName = ADOBase.sceneName;
-                return !string.IsNullOrEmpty(sceneName) && _allowedScenes.Contains(sceneName);
-            }
-
             public static void UpdateTail()
             {
-                if (!Main.Settings.tail.enableTailTweak || !IsAllowedScene())
+                if (!Main.Settings.tail.enableTailTweak || !LobbyScenes.Contains(ADOBase.sceneName))
                 {
                     if (!_tailDisabledSynced)
                     {
@@ -161,10 +157,7 @@ namespace Iridium.Patches
 
                 _tailDisabledSynced = false;
 
-                if (scrController.instance is null)
-                {
-                    return;
-                }
+                if (scrController.instance is null) return;
 
                 // 使用 allPlanets 获取所有星球实例
                 var planetarySystem = scrController.instance.planetarySystem;
@@ -235,26 +228,11 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(scrConductor), "Update")]
         public static class CustomBpmPatch
         {
-            private static readonly HashSet<string> _allowedScenes = new()
-            {
-                "scnLevelSelect",
-                "scnCLS",
-                "scnTaroMenu0"
-            };
-
             [HarmonyPrefix]
             public static void Prefix()
             {
-                if (!Main.Settings.lobbyMusic.enableCustomBpm || scrConductor.instance == null)
-                {
-                    return;
-                }
-
-                string sceneName = ADOBase.sceneName;
-                if (string.IsNullOrEmpty(sceneName) || !_allowedScenes.Contains(sceneName))
-                {
-                    return;
-                }
+                if (!Main.Settings.lobbyMusic.enableCustomBpm || scrConductor.instance == null) return;
+                if (!LobbyScenes.Contains(ADOBase.sceneName)) return;
 
                 scrConductor.instance.bpm = Main.Settings.lobbyMusic.customBpm;
             }
@@ -380,14 +358,6 @@ namespace Iridium.Patches
                         }
                     }
                 }
-            }
-        }
-
-        [HarmonyPatch(typeof(UnityEngine.SceneManagement.SceneManager), "GetSceneAt")]
-        public static class SceneGC
-        {
-            public static void Prefix()
-            {
             }
         }
 

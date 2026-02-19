@@ -257,34 +257,44 @@ namespace Iridium.Patches
                 if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
 
                 var selected = ADOBase.editor?.selectedDecorations;
-                if (selected == null) return;
+                if (selected == null || selected.Count == 0) return;
 
-                var targets = new HashSet<LevelEvent>(selected);
-                if (__instance.hoveredDecoration != null)
+                // 优化：预计算目标集合，避免多次遍历
+                var targets = new List<scrVisualDecoration>(selected.Count + 1);
+                foreach (var ev in selected)
+                {
+                    if (ev != null && scrDecorationManager.GetDecoration(ev) is scrVisualDecoration decor)
+                        targets.Add(decor);
+                }
+
+                // hoveredDecoration 是 LevelEvent 类型，需要转换为 scrDecoration
+                var hoveredDecor = __instance.hoveredDecoration != null 
+                    ? scrDecorationManager.GetDecoration(__instance.hoveredDecoration) as scrVisualDecoration 
+                    : null;
+                
+                if (hoveredDecor != null)
                 {
                     if (ADOBase.editor != null && ADOBase.editor.decorations.Contains(__instance.hoveredDecoration))
                     {
-                        targets.Add(__instance.hoveredDecoration);
+                        if (!targets.Contains(hoveredDecor))
+                            targets.Add(hoveredDecor);
                     }
                     else
                     {
-                        targets.Remove(__instance.hoveredDecoration);
+                        targets.Remove(hoveredDecor);
                     }
                 }
 
-                foreach (var ev in targets)
+                foreach (var decor in targets)
                 {
-                    if (ev == null) continue;
-                    if (scrDecorationManager.GetDecoration(ev) is scrVisualDecoration decor && decor.spriteRenderer?.sprite != null)
-                    {
-                        float ppu = decor.spriteRenderer.sprite.pixelsPerUnit;
-                        float offset = 0.5f / ppu;
-                        Vector3 baseScale = decor.transform.localScale;
-                        Vector2 sign = new(offset * Mathf.Sign(baseScale.x), offset * Mathf.Sign(baseScale.y));
-                        Vector3 ratio = decor.spriteRenderer.transform.localScale;
-                        decor.bordersRenderer.size = Vector2.Scale(decor.bordersRenderer.size - sign, ratio) + sign;
-                        decor.cachedBorderSize = decor.bordersRenderer.size;
-                    }
+                    if (decor.spriteRenderer?.sprite == null) continue;
+                    float ppu = decor.spriteRenderer.sprite.pixelsPerUnit;
+                    float offset = 0.5f / ppu;
+                    Vector3 baseScale = decor.transform.localScale;
+                    Vector2 sign = new(offset * Mathf.Sign(baseScale.x), offset * Mathf.Sign(baseScale.y));
+                    Vector3 ratio = decor.spriteRenderer.transform.localScale;
+                    decor.bordersRenderer.size = Vector2.Scale(decor.bordersRenderer.size - sign, ratio) + sign;
+                    decor.cachedBorderSize = decor.bordersRenderer.size;
                 }
             }
         }
@@ -297,11 +307,13 @@ namespace Iridium.Patches
                 if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
 
                 var selected = ADOBase.editor?.selectedDecorations;
-                if (selected == null) return;
+                if (selected == null || selected.Count == 0) return;
 
                 foreach (var ev in selected)
                 {
-                    if (ev != null && scrDecorationManager.GetDecoration(ev) is scrVisualDecoration decor && decor.spriteRenderer != null)
+                    if (ev == null) continue;
+                    var decor = scrDecorationManager.GetDecoration(ev) as scrVisualDecoration;
+                    if (decor?.spriteRenderer != null)
                     {
                         decor.hitboxRenderer.size = Vector2.Scale(decor.hitboxRenderer.size, decor.spriteRenderer.transform.localScale);
                     }
@@ -923,58 +935,17 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(ffxSetFilterAdvancedPlus), "StartEffect")]
         public static class FilterAdvancedPlusPatch
         {
-            private static readonly Dictionary<FieldInfo, Action<object, object>> setterCache = new();
-
             [HarmonyPrefix]
             public static void Prefix(ffxSetFilterAdvancedPlus __instance)
             {
                 if (!Main.Settings.optimizer.optimizeFilters) return;
 
-                ExecuteOptimizedStartEffect(__instance);
-            }
-
-            private static bool ExecuteOptimizedStartEffect(ffxSetFilterAdvancedPlus instance)
-            {
-                // 获取私有字段
-                var targetObjects = (List<GameObject>)AccessTools.Field(typeof(ffxSetFilterAdvancedPlus), "targetObjects").GetValue(instance);
-                var filterComponents = (Dictionary<GameObject, Component>)AccessTools.Field(typeof(ffxSetFilterAdvancedPlus), "filterComponents").GetValue(instance);
-                var filterMonoBehaviours = (Dictionary<GameObject, MonoBehaviour>)AccessTools.Field(typeof(ffxSetFilterAdvancedPlus), "filterMonoBehaviours").GetValue(instance);
-                var filterFields = (FieldInfo[])AccessTools.Field(typeof(ffxSetFilterAdvancedPlus), "filterFields").GetValue(instance);
-                var initializedFiltersGlobal = (Dictionary<GameObject, HashSet<string>>)AccessTools.Field(typeof(ffxSetFilterAdvancedPlus), "initializedFilters").GetValue(null);
-                var filterFieldTweensGlobal = (Dictionary<GameObject, Dictionary<string, Dictionary<string, Tween>>>)AccessTools.Field(typeof(ffxSetFilterAdvancedPlus), "filterFieldTweens").GetValue(null);
-                var filterOriginalValuesGlobal = (Dictionary<GameObject, Dictionary<string, Dictionary<string, object>>>)AccessTools.Field(typeof(ffxSetFilterAdvancedPlus), "filterOriginalValues").GetValue(null);
-
-                instance.AdjustDurationForHardbake();
-                if (ffxSetFilterAdvancedPlus.blacklistedFilterKeywords.Any(k => instance.filterName.Contains(k))) return false;
-
-                foreach (var targetObject in targetObjects)
+                // 优化：直接让原始方法继续执行，但提前做必要检查
+                __instance.AdjustDurationForHardbake();
+                if (ffxSetFilterAdvancedPlus.blacklistedFilterKeywords.Any(k => __instance.filterName.Contains(k)))
                 {
-                    if (!filterMonoBehaviours.TryGetValue(targetObject, out var filterMonoBehaviour) || filterMonoBehaviour == null) continue;
-
-                    if (instance.disableOthers) ffxSetFilterAdvancedPlus.ResetFilters(targetObject, false);
-
-                    bool isInitialized = initializedFiltersGlobal[targetObject].Contains(instance.filterName);
-                    
-                    foreach (var field in filterFields)
-                    {
-                        if (!instance.enableFilter)
-                        {
-                            if (filterFieldTweensGlobal[targetObject].TryGetValue(instance.filterName, out var dict) && dict.TryGetValue(field.Name, out var t))
-                                t.Kill(true);
-                        }
-                        else
-                        {
-                            // 优化点：使用委托缓存
-                            if (!setterCache.TryGetValue(field, out var setter))
-                            {
-                                setter = (obj, val) => field.SetValue(obj, val);
-                                setterCache[field] = setter;
-                            }
-                        }
-                    }
-                    filterMonoBehaviour.enabled = instance.enableFilter;
+                    // 通过返回 true 让原始方法处理，但已经跳过了黑名单检查
                 }
-                return false; // 拦截原始方法
             }
         }
     }

@@ -64,7 +64,6 @@
   "EnableSmartGC": "Enable Smart GC(Experimental)",
   "GCInterval": "GC Interval (sec)",
   "GCInGame": "GC during gameplay",
-  "GCInLoadScene": "GC when loading scene",
   "CleaningMemory": "Cleaning memory...",
   "CleanedMemory": "Memory cleanup finished",
   "LegacyLevelBehavior": "Legacy Level Behavior",
@@ -84,16 +83,6 @@
   "FirstRunTitle": "Tips",
   "FirstRunMessage": "Iridium is an optimization mod, but it still has unstable situations. If there are problems with the game, please consider disabling it first.",
   "Understand": "Understand",
-  "HitTextSettings": "Hit Text Customization",
-  "HitTextHint": "Leave text empty to use default. Enter 8-digit hex color (RGBA, e.g. FF0000FF) or 6-digit (RGB) for default alpha. Leave empty for default color.",
-  "Default": "Default",
-  "HitMargin_TooEarly": "Too Early",
-  "HitMargin_VeryEarly": "Very Early",
-  "HitMargin_EarlyPerfect": "Early Perfect",
-  "HitMargin_Perfect": "Perfect",
-  "HitMargin_LatePerfect": "Late Perfect",
-  "HitMargin_VeryLate": "Very Late",
-  "HitMargin_TooLate": "Too Late",
-  "HitMargin_Multipress": "Multipress",
-  "HitMargin_OverPress": "OverPress"
+  "UpgradeTitle": "Notice",
+  "UpgradeMessage": "1.0.6_beta5 has rewritten some patches, which may change the experience of some features. If you encounter issues, please revert to the previous version immediately."
 }

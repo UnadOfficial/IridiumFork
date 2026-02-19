@@ -55,8 +55,7 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(MiscPatches.ForceDifficultyUIPatch), () => Main.Settings.ui.forceDifficultyUI));
             _definitions.Add(new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc));
             _definitions.Add(new PatchDef(typeof(MiscPatches.AutoplayTextPositionPatch), () => Main.Settings.ui.moveAutoplayText));
-            _definitions.Add(new PatchDef(typeof(HitPatches.HitTextPatch), () => Main.Settings.hitText.enableHitTextCustomization));
-            
+
             // Tail
             _definitions.Add(new PatchDef(typeof(MiscPatches.TailTweakPatch), () => Main.Settings.tail.enableTailTweak));
             _definitions.Add(new PatchDef(typeof(MiscPatches.CustomBpmPatch), () => Main.Settings.lobbyMusic.enableCustomBpm));
@@ -66,7 +65,6 @@ namespace Iridium.Patches
 
             // Memory
             var memCond = () => Main.Settings.memory.enableMemoryOptimization;
-            _definitions.Add(new PatchDef(typeof(MiscPatches.SceneGC), () => memCond() && Main.Settings.memory.gcInLoadScene));
             _definitions.Add(new PatchDef(typeof(MiscPatches.SmartGCPatch), () => memCond() && Main.Settings.memory.enableSmartGC));
 
             // Compatibility
