@@ -27,34 +27,17 @@ namespace Iridium.Patches
         {
             public static void Prefix(List<scrFloor> floors, LevelData levelData, scrLevelMaker lm, List<LevelEvent> events, List<LevelEvent>[] floorEvents)
             {
-                if (!LegacyPauseFixPatch_Play.isPlayingFromEditor)
-                {
-                    return;
-                }
-
-                List<LevelEvent>[] activeEvents = floorEvents;
-                if (activeEvents == null)
-                {
-                    activeEvents = new List<LevelEvent>[floors.Count];
-                    for (int i = 0; i < activeEvents.Length; i++)
-                    {
-                        activeEvents[i] = [];
-                    }
-                    foreach (var ev in events)
-                    {
-                        activeEvents[ev.floor].Add(ev);
-                    }
-                }
+                if (!LegacyPauseFixPatch_Play.isPlayingFromEditor) return;
+                if (floorEvents == null) return; // 如果没有 floorEvents，直接返回，避免重复计算
 
                 bool isCCW = false;
                 foreach (var floor in floors)
                 {
-                    foreach (var ev in activeEvents[floor.seqID])
+                    var floorEventList = floorEvents[floor.seqID];
+                    for (int i = 0; i < floorEventList.Count; i++)
                     {
-                        if (ev.eventType == LevelEventType.Twirl)
-                        {
+                        if (floorEventList[i].eventType == LevelEventType.Twirl)
                             isCCW = !isCCW;
-                        }
                     }
                     floor.isCCW = isCCW;
                 }

@@ -61,7 +61,6 @@ namespace Iridium.Config
         public bool enableSmartGC = false;
         public float gcInterval = 60f;
         public bool gcInGame = false;
-        public bool gcInLoadScene = true;
     }
 
     public class CompatibilitySettings
@@ -78,63 +77,6 @@ namespace Iridium.Config
         Default,
         AlwaysOff,
         AlwaysOn
-    }
-
-    public class HitTextSettings
-    {
-        public bool enableHitTextCustomization = false;
-
-        // Text settings
-        public string tooEarlyText = "";
-        public string veryEarlyText = "";
-        public string earlyPerfectText = "";
-        public string perfectText = "";
-        public string latePerfectText = "";
-        public string veryLateText = "";
-        public string tooLateText = "";
-        public string multipressText = "";
-        public string overPressText = "";
-
-        // Color settings (nullable to indicate use default)
-        public Color? tooEarlyColor = null;
-        public Color? veryEarlyColor = null;
-        public Color? earlyPerfectColor = null;
-        public Color? perfectColor = null;
-        public Color? latePerfectColor = null;
-        public Color? veryLateColor = null;
-        public Color? tooLateColor = null;
-        public Color? multipressColor = null;
-        public Color? overPressColor = null;
-
-        // Helper methods for serialization (RGBA hex format)
-        public string GetColorHex(Color? color)
-        {
-            if (!color.HasValue) return "";
-            var c = color.Value;
-            return $"{(int)(c.r * 255):X2}{(int)(c.g * 255):X2}{(int)(c.b * 255):X2}{(int)(c.a * 255):X2}";
-        }
-
-        public void SetColorFromHex(ref Color? target, string hex)
-        {
-            if (string.IsNullOrEmpty(hex))
-            {
-                target = null;
-                return;
-            }
-            // Support both RGB (6 chars) and RGBA (8 chars)
-            if (hex.Length == 6 && int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out int rgb))
-            {
-                target = new Color(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f, 1f);
-            }
-            else if (hex.Length == 8 && long.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out long rgba))
-            {
-                target = new Color(((rgba >> 24) & 0xFF) / 255f, ((rgba >> 16) & 0xFF) / 255f, ((rgba >> 8) & 0xFF) / 255f, (rgba & 0xFF) / 255f);
-            }
-            else
-            {
-                target = null;
-            }
-        }
     }
 
     public class AppearanceSettings
