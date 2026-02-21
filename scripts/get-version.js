@@ -42,7 +42,7 @@ function getVersionInfo() {
         
         if (vtype === 'release') {
             versionTag = baseVersion;
-            releaseName = `${displayName} ${baseVersion}`;
+            releaseName = `${baseVersion}`;
             tagName = `r${releaseNumber}`;
         } else {
             versionTag = `${baseVersion}_${vtype}${minor}`;
