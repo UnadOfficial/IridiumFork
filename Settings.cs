@@ -22,6 +22,7 @@ namespace Iridium
         public MemorySettings memory = new();
         public CompatibilitySettings compatibility = new();
         public AppearanceSettings appearance = new();
+        public HitSoundSettings hitSound = new();
 
         private string? _defaultLobbyMusicPathCache;
         private string? _fastLobbyMusicPathCache;
@@ -414,6 +415,23 @@ namespace Iridium
             
             GUILayout.EndVertical(); // End Sub-container
             GUILayout.EndVertical(); // End Compatibility & Fixes Card
+
+            GUILayout.Space(8);
+
+            // Hit Sound Settings Card
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("HitSoundSettings"), UIUtils.HeaderStyle);
+            GUILayout.FlexibleSpace();
+            hitSound.enableHitSoundPitch = UIUtils.M3Switch(hitSound.enableHitSoundPitch, "");
+            GUILayout.EndHorizontal();
+            
+            if (hitSound.enableHitSoundPitch)
+            {
+                GUILayout.Space(8);
+                UIUtils.DrawInfoBox(Localization.Get("EnableHitSoundPitch"));
+            }
+            GUILayout.EndVertical();
 
             GUILayout.EndVertical(); // End Right Column
 
