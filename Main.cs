@@ -17,7 +17,12 @@ namespace Iridium
         public static bool IsMainThread => System.Threading.Thread.CurrentThread.ManagedThreadId == _mainThreadId;
 
         // 当前版本号（用于版本升级检测）
-        private const string CurrentVersion = "1.0.6_beta5";
+        private static string CurrentVersion {
+            get
+            {
+                return $"{VersionManager.GetFullVersionString()}";
+            }
+        }
 
         private static bool _showFirstRunTips = false;
         private static bool _showUpgradeTips = false;
@@ -54,8 +59,42 @@ namespace Iridium
             return true;
         }
 
+        private static readonly System.Collections.Generic.Queue<System.Action> _actionQueue = new();
+        private static readonly object _queueLock = new();
+
+        public static void RunOnMainThread(System.Action action)
+        {
+            lock (_queueLock)
+            {
+                _actionQueue.Enqueue(action);
+            }
+        }
+
         private static void OnUpdate(UnityModManager.ModEntry modEntry, float dt)
         {
+            if (_actionQueue.Count > 0)
+            {
+                System.Collections.Generic.List<System.Action> actions = new();
+                lock (_queueLock)
+                {
+                    while (_actionQueue.Count > 0)
+                    {
+                        actions.Add(_actionQueue.Dequeue());
+                    }
+                }
+
+                foreach (var action in actions)
+                {
+                    try
+                    {
+                        action.Invoke();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Logger?.Log($"[Main] Error in main thread action: {e}");
+                    }
+                }
+            }
         }
 
         private static GameObject? _uiObject;

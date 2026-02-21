@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -15,7 +16,7 @@ namespace Iridium.Patches
 {
     public static class OptimizerPatches
     {
-        public static Dictionary<string, Vector3> decorRatios = [];
+        public static ConcurrentDictionary<string, Vector3> decorRatios = new();
         public static float savedVRAM_MB = 0f;
 
         public static void ResetDecorOptimization(bool fullReset)
@@ -27,24 +28,26 @@ namespace Iridium.Patches
 
         private static bool TryGetDecorRatio(string id, out Vector3 scale)
         {
-            if (!decorRatios.ContainsKey(id))
+            if (!decorRatios.TryGetValue(id, out scale))
             {
                 scale = Vector3.one;
                 return false;
             }
-            scale = decorRatios[id];
             return true;
         }
 
         public static Texture2D? CreateProcessedTexture(Texture2D source, int targetW, int targetH)
         {
-            if (!Main.IsMainThread) return null;
-
             // 检查目标尺寸是否有效
             if (targetW <= 0 || targetH <= 0)
             {
                 Main.Logger?.Log($"[Optimizer] Invalid target dimensions: {targetW}x{targetH}");
                 return null;
+            }
+
+            if (!Main.IsMainThread)
+            {
+                return ResizeTextureCPU(source, targetW, targetH);
             }
 
             RenderTexture? rt = null;
@@ -79,6 +82,58 @@ namespace Iridium.Patches
             }
         }
 
+        private static Texture2D? ResizeTextureCPU(Texture2D source, int targetW, int targetH)
+        {
+            try
+            {
+                Color32[] sourcePixels = source.GetPixels32();
+                Color32[] targetPixels = new Color32[targetW * targetH];
+                int sourceW = source.width;
+                int sourceH = source.height;
+
+                float xRatio = (float)(sourceW - 1) / targetW;
+                float yRatio = (float)(sourceH - 1) / targetH;
+
+                for (int y = 0; y < targetH; y++)
+                {
+                    int yFloor = (int)(y * yRatio);
+                    float yLerp = (y * yRatio) - yFloor;
+                    int y1 = yFloor * sourceW;
+                    int y2 = (yFloor + 1) * sourceW;
+
+                    for (int x = 0; x < targetW; x++)
+                    {
+                        int xFloor = (int)(x * xRatio);
+                        float xLerp = (x * xRatio) - xFloor;
+
+                        int index = y * targetW + x;
+
+                        Color32 c1 = sourcePixels[y1 + xFloor];
+                        Color32 c2 = sourcePixels[y1 + xFloor + 1];
+                        Color32 c3 = sourcePixels[y2 + xFloor];
+                        Color32 c4 = sourcePixels[y2 + xFloor + 1];
+
+                        targetPixels[index] = Color32.Lerp(
+                            Color32.Lerp(c1, c2, xLerp),
+                            Color32.Lerp(c3, c4, xLerp),
+                            yLerp
+                        );
+                    }
+                }
+
+                Texture2D result = new(targetW, targetH, source.format, source.mipmapCount > 1);
+                result.SetPixels32(targetPixels);
+                result.Apply(false, false);
+                result.name = source.name;
+                return result;
+            }
+            catch (Exception e)
+            {
+                Main.Logger?.Log($"[Optimizer] CPU Resize Error: {e.Message}");
+                return null;
+            }
+        }
+
         [HarmonyPatch(typeof(TextureManager), "LoadTexture")]
         public static class TextureOptimizationPatch
         {
@@ -88,7 +143,7 @@ namespace Iridium.Patches
             {
                 if (__result == null || GCS.internalLevelName != null) return;
                 if (__result.width <= 32 || __result.height <= 32) return;
-                if (!Main.IsMainThread) return;
+                // if (!Main.IsMainThread) return; // Allow background thread optimization
 
                 long oldSize = 0;
                 if (!Main.Settings.optimizer.dontShowSavedMemory) 
@@ -137,7 +192,13 @@ namespace Iridium.Patches
                             {
                                 optimized.Apply(false, false);
                             }
-                            UnityEngine.Object.DestroyImmediate(__result);
+                            
+                            var oldTex = __result;
+                            if (Main.IsMainThread)
+                                UnityEngine.Object.DestroyImmediate(oldTex);
+                            else
+                                Main.RunOnMainThread(() => UnityEngine.Object.DestroyImmediate(oldTex));
+                                
                             __result = optimized;
                             resized = true;
                             Main.Logger?.Log($"[Optimizer] Successfully resized {texName}");
