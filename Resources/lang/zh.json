@@ -84,5 +84,7 @@
   "FirstRunMessage": "Iridium 是一款优化模组，但仍存在不稳定的情况。如果游戏出现问题，请考虑先禁用它。",
   "Understand": "我知道了",
   "UpgradeTitle": "提示",
-  "UpgradeMessage": "由于 1.0.6_beta5 尝试重写了部分 Patch，可能导致部分功能的使用体验变更。如果出现问题，请立即退回旧版。"
+  "UpgradeMessage": "由于 1.0.6_beta5 尝试重写了部分 Patch，可能导致部分功能的使用体验变更。如果出现问题，请立即退回旧版。",
+  "HitSoundSettings": "打击音设置",
+  "EnableHitSoundPitch": "打击音随倍速变化"
 }

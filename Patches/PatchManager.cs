@@ -77,6 +77,9 @@ namespace Iridium.Patches
                 Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||
                 Main.Settings.compatibility.legacyCamRelativeToMode != LegacyBehaviorMode.Default));
 
+            // Hit Sound
+            _definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
+
             // Filter Optimization
             var filterOptCond = () => Main.Settings.optimizer.enableOptimizer;
             _definitions.Add(new PatchDef(typeof(OptimizerPatches.FilterPlusPatch), filterOptCond));

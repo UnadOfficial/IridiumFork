@@ -82,4 +82,9 @@ namespace Iridium.Config
     public class AppearanceSettings
     {
     }
+
+    public class HitSoundSettings
+    {
+        public bool enableHitSoundPitch = false;
+    }
 }

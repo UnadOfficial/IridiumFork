@@ -84,5 +84,7 @@
   "FirstRunMessage": "Iridium is an optimization mod, but it still has unstable situations. If there are problems with the game, please consider disabling it first.",
   "Understand": "Understand",
   "UpgradeTitle": "Notice",
-  "UpgradeMessage": "1.0.6_beta5 has rewritten some patches, which may change the experience of some features. If you encounter issues, please revert to the previous version immediately."
+  "UpgradeMessage": "1.0.6_beta5 has rewritten some patches, which may change the experience of some features. If you encounter issues, please revert to the previous version immediately.",
+  "HitSoundSettings": "Hit Sound Settings",
+  "EnableHitSoundPitch": "Hit Sound Follows Pitch"
 }
