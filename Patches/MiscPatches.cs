@@ -17,7 +17,10 @@ namespace Iridium.Patches
         {
             "scnLevelSelect",
             "scnCLS",
-            "scnTaroMenu0"
+            "scnTaroMenu0",
+            "scnTaroMenu1",
+            "scnTaroMenu2",
+            "scnTaroMenu3"
         };
 
         [HarmonyPatch(typeof(scnLevelSelect))]
@@ -228,10 +231,19 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(scrConductor), "Update")]
         public static class CustomBpmPatch
         {
-            [HarmonyPrefix]
-            public static void Prefix()
+            [HarmonyTranspiler]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                if (!Main.Settings.lobbyMusic.enableCustomBpm || scrConductor.instance == null) return;
+                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(CustomBpmPatch), nameof(UpdateBpm)));
+                foreach (var instruction in instructions)
+                {
+                    yield return instruction;
+                }
+            }
+
+            public static void UpdateBpm()
+            {
+                if (!Main.Settings.lobbyMusic.enableCustomBpm || scrConductor.instance is null) return;
                 if (!LobbyScenes.Contains(ADOBase.sceneName)) return;
 
                 scrConductor.instance.bpm = Main.Settings.lobbyMusic.customBpm;
@@ -266,7 +278,7 @@ namespace Iridium.Patches
 
             public static void StartLoad(bool loadDefault, string? path)
             {
-                if (scrConductor.instance == null) return;
+                if (scrConductor.instance is null) return;
                 scrConductor.instance.StartCoroutine(LoadMusicCo(loadDefault, path));
             }
 
@@ -323,7 +335,7 @@ namespace Iridium.Patches
 
             public static void TryApplyLoadedClips()
             {
-                if (scrConductor.instance == null || !ADOBase.isLevelSelect) return;
+                if (scrConductor.instance is null || !ADOBase.isLevelSelect) return;
 
                 if (!Main.Settings.lobbyMusic.customMusic)
                 {
@@ -332,7 +344,7 @@ namespace Iridium.Patches
 
                 if (!_loadingDefault)
                 {
-                    if ((scrConductor.instance.song.clip = _defaultBgm) == null)
+                    if ((scrConductor.instance.song.clip = _defaultBgm) is null)
                     {
                         scrConductor.instance.song.Stop();
                     }
@@ -345,7 +357,7 @@ namespace Iridium.Patches
 
                 if (!_loadingFast)
                 {
-                    if ((scrConductor.instance.song2.clip = _fastBgm) == null)
+                    if ((scrConductor.instance.song2.clip = _fastBgm) is null)
                     {
                         scrConductor.instance.song2.Stop();
                     }
@@ -407,7 +419,7 @@ namespace Iridium.Patches
                 }
 
                 // 2. 只有在不在关卡内时，才尝试卸载 AssetBundles (防止画面内容缺失)
-                bool isInLevel = scrController.instance != null && scrController.instance.gameworld;
+                bool isInLevel = scrController.instance is not null && scrController.instance.gameworld;
                 if (!isInLevel)
                 {
                     // 使用 false 表示只卸载 bundle 容器，不销毁已加载的对象

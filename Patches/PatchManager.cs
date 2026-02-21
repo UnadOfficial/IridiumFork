@@ -46,7 +46,15 @@ namespace Iridium.Patches
 
             // --- Optimizer ---
             var optCond = () => Main.Settings.optimizer.enableOptimizer;
-            _definitions.Add(new PatchDef(typeof(OptimizerPatches), optCond));
+            // Register all nested patch classes in OptimizerPatches
+            foreach (var type in typeof(OptimizerPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            {
+                // Only register types that have HarmonyPatch attribute
+                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
+                {
+                    _definitions.Add(new PatchDef(type, optCond));
+                }
+            }
             _definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
 
             // --- UI / Misc ---
@@ -79,11 +87,6 @@ namespace Iridium.Patches
 
             // Hit Sound
             _definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
-
-            // Filter Optimization
-            var filterOptCond = () => Main.Settings.optimizer.enableOptimizer;
-            _definitions.Add(new PatchDef(typeof(OptimizerPatches.FilterPlusPatch), filterOptCond));
-            _definitions.Add(new PatchDef(typeof(OptimizerPatches.FilterAdvancedPlusPatch), filterOptCond));
         }
 
         /// <summary>
