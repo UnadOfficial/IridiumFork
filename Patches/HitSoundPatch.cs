@@ -13,14 +13,10 @@ namespace Iridium.Patches
         private static readonly ConditionalWeakTable<Transform, AudioSource> _audioSourceCache = new();
         private static float _lastPitch = 1f;
 
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        [HarmonyPrefix]
+        public static void Prefix()
         {
-            yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HitSoundPatch), nameof(UpdateHitSoundPitch)));
-            foreach (var instruction in instructions)
-            {
-                yield return instruction;
-            }
+            UpdateHitSoundPitch();
         }
 
         public static void UpdateHitSoundPitch()

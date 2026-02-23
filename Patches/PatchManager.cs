@@ -10,12 +10,12 @@ namespace Iridium.Patches
     public static class PatchManager
     {
         private static Harmony _harmony => Main.Harmony!;
-        
+
         // Status
         private static readonly Dictionary<Type, bool> _activePatches = new();
         // Optimization: Cache exact patch bindings for each patch class to speed up and isolate unpatching
         private static readonly Dictionary<Type, List<(MethodBase Original, MethodInfo PatchMethod)>> _patchedBindings = new();
-        
+
         // Patch Declaration
         private class PatchDef
         {
@@ -96,7 +96,7 @@ namespace Iridium.Patches
         public static void ApplyAllPatches()
         {
             if (_harmony == null) return;
-            
+
             Main.Logger?.Log("[PatchManager] Loading all patches (Initial phase)...");
             foreach (var def in _definitions)
             {
@@ -122,7 +122,7 @@ namespace Iridium.Patches
                     Main.Logger?.Log($"[PatchManager] {def.Name} status changed: {trackedActive} -> {shouldBeActive}");
                     if (shouldBeActive) ApplyPatch(def.Type);
                     else RemovePatch(def.Type);
-                    
+
                     _activePatches[def.Type] = shouldBeActive;
                 }
             }
@@ -132,7 +132,7 @@ namespace Iridium.Patches
         {
             // Condition
             if (!def.Condition()) return false;
-            
+
             // Check Parent
             if (def.Parent != null)
             {
@@ -144,7 +144,7 @@ namespace Iridium.Patches
         }
 
         // 移除不再使用的 IsActuallyPatched 辅助方法
-        
+
         private static void ApplyPatch(Type type)
         {
             try
@@ -219,7 +219,7 @@ namespace Iridium.Patches
                     UnpatchMethod(type);
                     _patchedBindings.Remove(type);
                 }
-                
+
                 _activePatches[type] = false;
                 Main.Logger?.Log($"[PatchManager] Successfully removed {type.Name}");
             }
