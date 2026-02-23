@@ -34,15 +34,10 @@ namespace Iridium.Patches
                 newsContainer = GameObject.Find("News Container");
             }
 
-            [HarmonyPatch("Update"), HarmonyTranspiler]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            [HarmonyPatch("Update"), HarmonyPrefix]
+            public static void Prefix()
             {
-                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(RemoveNewsPatch), nameof(UpdateNews)));
-                foreach (CodeInstruction c in instructions)
-                {
-                    yield return c;
-                }
-                yield break;
+                UpdateNews();
             }
 
             public static void UpdateNews()
@@ -98,13 +93,10 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(scrUIController), "Update")]
         public static class AutoplayTextPositionPatch
         {
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            [HarmonyPrefix]
+            public static void Prefix()
             {
-                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MiscPatches), nameof(RefreshAutoplayTextPosition)));
-                foreach (var instruction in instructions)
-                {
-                    yield return instruction;
-                }
+                RefreshAutoplayTextPosition();
             }
         }
 
@@ -114,7 +106,7 @@ namespace Iridium.Patches
         public static void RefreshAutoplayTextPosition()
         {
             if (scrUIController.instance?.txtDebug == null) return;
-            
+
             // 仅在第一次修改前记录位置
             if (!_isAutoplayModified)
             {
@@ -130,15 +122,10 @@ namespace Iridium.Patches
         {
             private static readonly ConditionalWeakTable<scrPlanet, ParticleSystem> _psCache = new();
 
-            [HarmonyTranspiler]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            [HarmonyPrefix]
+            public static void Prefix()
             {
-                // 在方法开始时注入，确保一定会被执行
-                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(TailTweakPatch), nameof(UpdateTail)));
-                foreach (var instruction in instructions)
-                {
-                    yield return instruction;
-                }
+                UpdateTail();
             }
 
             private static float _lastTailLength = -1f;
@@ -231,14 +218,10 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(scrConductor), "Update")]
         public static class CustomBpmPatch
         {
-            [HarmonyTranspiler]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            [HarmonyPrefix]
+            public static void Prefix()
             {
-                yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(CustomBpmPatch), nameof(UpdateBpm)));
-                foreach (var instruction in instructions)
-                {
-                    yield return instruction;
-                }
+                UpdateBpm();
             }
 
             public static void UpdateBpm()
@@ -429,7 +412,7 @@ namespace Iridium.Patches
                 // 3. 强制 GC (分步进行以减缓卡顿)
                 GC.Collect(0, GCCollectionMode.Optimized, false);
                 yield return null;
-                
+
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false);
                 yield return null;
 

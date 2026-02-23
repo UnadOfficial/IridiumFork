@@ -17,10 +17,11 @@ namespace Iridium
         public static bool IsMainThread => System.Threading.Thread.CurrentThread.ManagedThreadId == _mainThreadId;
 
         // 当前版本号（用于版本升级检测）
-        private static string CurrentVersion {
+        private static string CurrentVersion
+        {
             get
             {
-                return $"{VersionManager.GetFullVersionString()}";
+                return VersionManager.GetFullVersionString();
             }
         }
 
@@ -35,13 +36,13 @@ namespace Iridium
             Logger = new Logger(Mod.Logger);
             Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
             Localization.Load();
-            
+
             // 检查是否需要显示首次启动提示
             if (Settings.firstRun)
             {
                 _showFirstRunTips = true;
             }
-            
+
             // 检查是否需要显示版本升级提示（从旧版本升级到此版本）
             if (!Settings.firstRun && Settings.lastVersion != CurrentVersion)
             {
@@ -52,9 +53,9 @@ namespace Iridium
             modEntry.OnGUI = Settings.OnGUI;
             modEntry.OnSaveGUI = Settings.Save;
             modEntry.OnUpdate = OnUpdate;
-            
+
             Harmony = new Harmony(modEntry.Info.Id);
-            
+
             Logger?.Log(Localization.Get("ModLoaded", Settings.language));
             return true;
         }
@@ -104,11 +105,11 @@ namespace Iridium
             if (value)
             {
                 Logger?.Log(Localization.Get("ModEnabled"));
-                
+
                 // Strategy: Load all, then unload as needed
                 Iridium.Patches.PatchManager.ApplyAllPatches();
                 Iridium.Patches.PatchManager.UpdateAllPatches();
-                
+
                 if (Settings.optimizer.enableOptimizer)
                 {
                     Iridium.Patches.OptimizerPatches.ResetDecorOptimization(true);
@@ -129,7 +130,7 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModDisabled"));
                 Iridium.Patches.PatchManager.UnpatchAll();
-                
+
                 if (_uiObject != null)
                 {
                     Object.Destroy(_uiObject);
@@ -144,14 +145,14 @@ namespace Iridium
             private void OnGUI()
             {
                 UIUtils.InitializeStyles();
-                
+
                 // 先显示首次启动提示
                 if (_showFirstRunTips)
                 {
                     _windowRect = GUI.Window(998, _windowRect, DrawFirstRunWindow, Localization.Get("FirstRunTitle"), UIUtils.CardStyle);
                     return; // 等待首次提示关闭后再显示升级提示
                 }
-                
+
                 // 首次提示关闭后，显示升级提示
                 if (_showUpgradeTips)
                 {
