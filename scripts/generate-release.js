@@ -223,11 +223,9 @@ ${commitList}`;
 **提交:** ${commitSha}
 **构建日期:** ${buildDate}
 
-${changelogSection}
-
 ${commitSection}
 
-#### 安装方法
+${changelogSection}
 
 1. 下载附加的zip文件
 2. 解压到你的 A Dance of Fire and Ice /Mods 文件夹
