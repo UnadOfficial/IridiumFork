@@ -22,6 +22,7 @@ namespace Iridium
         public CompatibilitySettings compatibility = new();
         public AppearanceSettings appearance = new();
         public HitSoundSettings hitSound = new();
+        public JudgeTextSettings judgeText = new();
 
         private string? _defaultLobbyMusicPathCache;
         private string? _fastLobbyMusicPathCache;
@@ -135,6 +136,7 @@ namespace Iridium
                 optimizer.optimizeMoveDecorations = UIUtils.M3Switch(optimizer.optimizeMoveDecorations, Localization.Get("OptimizeMoveDecorations"));
                 optimizer.optimizeFloorMesh = UIUtils.M3Switch(optimizer.optimizeFloorMesh, Localization.Get("OptimizeFloorMesh"));
                 optimizer.optimizeFilters = UIUtils.M3Switch(optimizer.optimizeFilters, Localization.Get("OptimizeFilters"));
+                optimizer.optimizeCLSAsyncScan = UIUtils.M3Switch(optimizer.optimizeCLSAsyncScan, Localization.Get("OptimizeCLSAsyncScan"));
                 optimizer.fastLoading = UIUtils.M3Switch(optimizer.fastLoading, Localization.Get("FastLoading"));
                 
                 GUILayout.Space(4);
@@ -388,6 +390,56 @@ namespace Iridium
             }
             GUILayout.EndVertical();
 
+            GUILayout.Space(8);
+
+            // Judge Text Settings Card
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("JudgeTextSettings"), UIUtils.HeaderStyle);
+            GUILayout.FlexibleSpace();
+            judgeText.enableJudgeTextCustomization = UIUtils.M3Switch(judgeText.enableJudgeTextCustomization, "");
+            GUILayout.EndHorizontal();
+
+            if (judgeText.enableJudgeTextCustomization)
+            {
+                GUILayout.Space(8);
+                
+                // 显示为偏移选项
+                bool newShowAsOffset = UIUtils.M3Switch(judgeText.showAsOffset, Localization.Get("ShowAsOffset"));
+                if (newShowAsOffset != judgeText.showAsOffset)
+                {
+                    judgeText.showAsOffset = newShowAsOffset;
+                }
+                
+                GUILayout.Space(8);
+                
+                // 自定义文本区域
+                GUI.enabled = !judgeText.showAsOffset; // 如果显示为偏移，则禁用自定义文本输入
+                
+                GUILayout.Label(Localization.Get("CustomJudgeText"), UIUtils.LabelStyle);
+                GUILayout.Space(4);
+                
+                DrawJudgeTextInput("TooEarly", ref judgeText.tooEarly);
+                DrawJudgeTextInput("VeryEarly", ref judgeText.veryEarly);
+                DrawJudgeTextInput("EarlyPerfect", ref judgeText.earlyPerfect);
+                DrawJudgeTextInput("Perfect", ref judgeText.perfect);
+                DrawJudgeTextInput("LatePerfect", ref judgeText.latePerfect);
+                DrawJudgeTextInput("VeryLate", ref judgeText.veryLate);
+                DrawJudgeTextInput("TooLate", ref judgeText.tooLate);
+                DrawJudgeTextInput("Multipress", ref judgeText.multipress);
+                DrawJudgeTextInput("FailMiss", ref judgeText.failMiss);
+                DrawJudgeTextInput("FailOverload", ref judgeText.failOverload);
+                
+                GUI.enabled = true;
+                
+                GUILayout.Space(8);
+                if (GUILayout.Button(Localization.Get("ResetJudgeText"), UIUtils.ButtonStyle, GUILayout.Width(120)))
+                {
+                    judgeText.ResetToDefault();
+                }
+            }
+            GUILayout.EndVertical();
+
             GUILayout.EndVertical(); // End Right Column
 
             GUILayout.EndHorizontal();
@@ -412,6 +464,19 @@ namespace Iridium
         public override void Save(UnityModManager.ModEntry modEntry)
         {
             Save(this, modEntry);
+        }
+
+        private void DrawJudgeTextInput(string key, ref string value)
+        {
+            GUILayout.BeginHorizontal(GUILayout.Height(24));
+            GUILayout.Label(Localization.Get($"JudgeText_{key}"), UIUtils.LabelStyle, GUILayout.Width(100));
+            GUILayout.FlexibleSpace();
+            string newValue = GUILayout.TextField(value, 20, UIUtils.TextFieldStyle, GUILayout.Width(120));
+            if (newValue != value)
+            {
+                value = newValue;
+            }
+            GUILayout.EndHorizontal();
         }
 
     }
