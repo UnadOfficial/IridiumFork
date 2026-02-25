@@ -217,6 +217,8 @@ ${commitList}`;
     
     const body = `## Iridium Mod Release
 
+${changelogSection}
+
 ### 中文版本说明
 
 **版本:** ${versionTag}
@@ -225,21 +227,13 @@ ${commitList}`;
 
 ${commitSection}
 
-${changelogSection}
-
-1. 下载附加的zip文件
-2. 解压到你的 A Dance of Fire and Ice /Mods 文件夹
-3. 启动游戏以使用Mod
-
----
+#### 安装方法
 
 ### English Release Notes
 
 **Version:** ${versionTag}
 **Commit:** ${commitSha}
 **Build Date:** ${buildDate}
-
-${changelogSection}
 
 ${commitSection}
 
