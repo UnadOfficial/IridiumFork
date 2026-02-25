@@ -64,10 +64,6 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc));
             _definitions.Add(new PatchDef(typeof(MiscPatches.AutoplayTextPositionPatch), () => Main.Settings.ui.moveAutoplayText));
 
-            // Tail
-            _definitions.Add(new PatchDef(typeof(MiscPatches.TailTweakPatch), () => Main.Settings.tail.enableTailTweak));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.CustomBpmPatch), () => Main.Settings.lobbyMusic.enableCustomBpm));
-
             // Lobby music
             _definitions.Add(new PatchDef(typeof(MiscPatches.LobbyMusicPatch), () => Main.Settings.lobbyMusic.enableLobbyMusicPatch));
 

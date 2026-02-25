@@ -17,7 +17,6 @@ namespace Iridium
         
         public OptimizerSettings optimizer = new();
         public UISettings ui = new();
-        public TailSettings tail = new();
         public LobbyMusicSettings lobbyMusic = new();
         public MemorySettings memory = new();
         public CompatibilitySettings compatibility = new();
@@ -247,50 +246,6 @@ namespace Iridium
             ui.enableCircleArc = UIUtils.M3Switch(ui.enableCircleArc, Localization.Get("EnableCircleArc"));
             if (ui.enableCircleArc) UIUtils.DrawInfoBox("⚠ " + Localization.Get("RestartRequired"));
                 
-            GUILayout.EndVertical();
-
-            GUILayout.Space(8);
-
-            // Tail Settings Card
-            GUILayout.BeginVertical(UIUtils.CardStyle);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("TailSettings"), UIUtils.HeaderStyle);
-            GUILayout.FlexibleSpace();
-            bool newEnableTail = UIUtils.M3Switch(tail.enableTailTweak, "");
-            if (newEnableTail != tail.enableTailTweak)
-            {
-                tail.enableTailTweak = newEnableTail;
-                if (!tail.enableTailTweak) Iridium.Patches.MiscPatches.TailTweakPatch.ResetTails();
-            }
-            GUILayout.EndHorizontal();
-
-            if (tail.enableTailTweak)
-            {
-                GUILayout.Space(8);
-                bool newFollowPitch = UIUtils.M3Switch(tail.tailFollowPitch, Localization.Get("TailFollowPitch"));
-                if (newFollowPitch != tail.tailFollowPitch)
-                {
-                    tail.tailFollowPitch = newFollowPitch;
-                    if (!tail.tailFollowPitch) Iridium.Patches.MiscPatches.TailTweakPatch.ResetTails();
-                }
-
-                if (!tail.tailFollowPitch)
-                {
-                    GUILayout.BeginHorizontal(GUILayout.Height(28));
-                    GUILayout.Label(Localization.Get("TailLength"), UIUtils.LabelStyle);
-                    GUILayout.FlexibleSpace();
-                    string lengthStr = GUILayout.TextField(tail.tailLength.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
-                    if (float.TryParse(lengthStr, out float newLength)) tail.tailLength = newLength;
-                    GUILayout.EndHorizontal();
-                }
-
-                GUILayout.BeginHorizontal(GUILayout.Height(28));
-                GUILayout.Label(Localization.Get("TailEmission"), UIUtils.LabelStyle);
-                GUILayout.FlexibleSpace();
-                string emissionStr = GUILayout.TextField(tail.tailEmission.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
-                if (float.TryParse(emissionStr, out float newEmission)) tail.tailEmission = newEmission;
-                GUILayout.EndHorizontal();
-            }
             GUILayout.EndVertical();
 
             GUILayout.Space(8);
