@@ -36,14 +36,6 @@ namespace Iridium.Config
         public bool alwaysCountdown = false;
     }
 
-    public class TailSettings
-    {
-        public bool enableTailTweak = false;
-        public float tailLength = 1f;
-        public float tailEmission = 20f;
-        public bool tailFollowPitch = false;
-    }
-
     public class LobbyMusicSettings
     {
         public bool enableLobbyMusicPatch = false;
