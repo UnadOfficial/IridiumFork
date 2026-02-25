@@ -58,6 +58,7 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
 
             // --- UI / Misc ---
+            _definitions.Add(new PatchDef(typeof(AsyncUIPatches), () => Main.Settings.optimizer.optimizeCLSAsyncScan));
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
             _definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));
             _definitions.Add(new PatchDef(typeof(MiscPatches.ForceDifficultyUIPatch), () => Main.Settings.ui.forceDifficultyUI));
@@ -83,6 +84,11 @@ namespace Iridium.Patches
 
             // Hit Sound
             _definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
+
+            // Judge Text
+            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
+            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
+            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.GetHitMarginPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
         }
 
         /// <summary>

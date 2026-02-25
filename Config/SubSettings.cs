@@ -8,6 +8,7 @@ namespace Iridium.Config
         public bool optimizeMoveTrack = false;
         public bool optimizeRecolorTrack = false;
         public bool optimizeFilters = false;
+        public bool optimizeCLSAsyncScan = false;
         public double divideBy = 1.0;
         public bool dontShowSavedMemory = false;
         public bool dontCompress = false;
@@ -78,5 +79,55 @@ namespace Iridium.Config
     public class HitSoundSettings
     {
         public bool enableHitSoundPitch = false;
+    }
+
+    public class JudgeTextSettings
+    {
+        public bool enableJudgeTextCustomization = false;
+        public bool showAsOffset = false; // 显示为偏移 (如 "5ms")
+        
+        // 自定义判定文本
+        public string tooEarly = "TooEarly";
+        public string veryEarly = "VeryEarly";
+        public string earlyPerfect = "EarlyPerfect";
+        public string perfect = "Perfect";
+        public string latePerfect = "LatePerfect";
+        public string veryLate = "VeryLate";
+        public string tooLate = "TooLate";
+        public string multipress = "Multipress";
+        public string failMiss = "FailMiss";
+        public string failOverload = "FailOverload";
+        
+        public string GetTextForHitMargin(int hitMargin)
+        {
+            return hitMargin switch
+            {
+                0 => tooEarly,
+                1 => veryEarly,
+                2 => earlyPerfect,
+                3 => perfect,
+                4 => latePerfect,
+                5 => veryLate,
+                6 => tooLate,
+                7 => multipress,
+                8 => failMiss,
+                9 => failOverload,
+                _ => ""
+            };
+        }
+        
+        public void ResetToDefault()
+        {
+            tooEarly = "TooEarly";
+            veryEarly = "VeryEarly";
+            earlyPerfect = "EarlyPerfect";
+            perfect = "Perfect";
+            latePerfect = "LatePerfect";
+            veryLate = "VeryLate";
+            tooLate = "TooLate";
+            multipress = "Multipress";
+            failMiss = "FailMiss";
+            failOverload = "FailOverload";
+        }
     }
 }

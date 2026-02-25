@@ -22,33 +22,69 @@ function getVersionInfo() {
         
         let versionTag;
         let releaseName;
+        let tagName;
         
         if (vtype === 'release') {
             versionTag = baseVersion;
             releaseName = `${displayName} ${baseVersion}`;
+            tagName = `v${baseVersion}`;
         } else {
-            versionTag = `${baseVersion}_${vtype}${minor}`;
+            versionTag = `${baseVersion}-${vtype}${minor}`;
             releaseName = `${displayName} ${baseVersion} ${vtype}${minor}`;
+            tagName = `v${baseVersion}-${vtype}${minor}`;
         }
         
         return {
             VERSION_TAG: versionTag,
-            RELEASE_NAME: releaseName
+            RELEASE_NAME: releaseName,
+            TAG_NAME: tagName
         };
         
     } catch (error) {
         console.error('Error reading version info:', error.message);
         return {
             VERSION_TAG: '1.0.0',
-            RELEASE_NAME: 'Iridium 1.0.0'
+            RELEASE_NAME: 'Iridium 1.0.0',
+            TAG_NAME: 'v1.0.0'
         };
     }
 }
 
-function getCommitLog() {
+/**
+ * 获取上一个 release 的 tag
+ */
+function getLastReleaseTag() {
     try {
-        // 获取最近的commit日志，格式为: hash|subject
-        const log = execSync('git log --oneline -20', { encoding: 'utf8' }).trim();
+        // 获取所有 tag，按版本排序
+        const tags = execSync('git tag --sort=-version:refname', { encoding: 'utf8' }).trim();
+        if (!tags) return null;
+        
+        const tagList = tags.split('\n').filter(t => t.startsWith('v'));
+        return tagList.length > 0 ? tagList[0] : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * 获取从上一个 release 到现在的所有 commit
+ */
+function getCommitLogSinceLastRelease() {
+    try {
+        const lastTag = getLastReleaseTag();
+        let logCommand;
+        
+        if (lastTag) {
+            // 获取从上一个 tag 到 HEAD 的所有 commit
+            logCommand = `git log ${lastTag}..HEAD --oneline`;
+        } else {
+            // 如果没有上一个 tag，获取所有 commit
+            logCommand = 'git log --oneline';
+        }
+        
+        const log = execSync(logCommand, { encoding: 'utf8' }).trim();
+        if (!log) return [];
+        
         const commits = log.split('\n').map(line => {
             const [hash, ...rest] = line.split(' ');
             return {
@@ -63,13 +99,120 @@ function getCommitLog() {
     }
 }
 
-function generateReleaseBody(versionTag, commitSha, commits) {
-    const buildDate = new Date().toISOString().split('T')[0];
+/**
+ * 获取最近的 commit（fallback）
+ */
+function getCommitLog(limit = 20) {
+    try {
+        const log = execSync(`git log --oneline -${limit}`, { encoding: 'utf8' }).trim();
+        const commits = log.split('\n').map(line => {
+            const [hash, ...rest] = line.split(' ');
+            return {
+                hash: hash,
+                message: rest.join(' ')
+            };
+        });
+        return commits;
+    } catch (error) {
+        console.error('Error reading commit log:', error.message);
+        return [];
+    }
+}
+
+/**
+ * 读取 CHANGELOG.md 内容
+ */
+function getChangelog() {
+    try {
+        const changelogPath = path.join(__dirname, '..', '.github', 'workflows', 'CHANGELOG.md');
+        if (!fs.existsSync(changelogPath)) {
+            return null;
+        }
+        
+        const content = fs.readFileSync(changelogPath, 'utf8');
+        // 移除注释行
+        const lines = content.split('\n');
+        const cleanedLines = lines.filter(line => !line.trim().startsWith('<!--') && !line.trim().startsWith('-->'));
+        const cleanedContent = cleanedLines.join('\n').trim();
+        
+        return cleanedContent || null;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * 读取 CHANGELOG.md.backup 内容
+ */
+function getChangelogBackup() {
+    try {
+        const backupPath = path.join(__dirname, '..', '.github', 'workflows', 'CHANGELOG.md.backup');
+        if (!fs.existsSync(backupPath)) {
+            return null;
+        }
+        
+        const content = fs.readFileSync(backupPath, 'utf8');
+        const lines = content.split('\n');
+        const cleanedLines = lines.filter(line => !line.trim().startsWith('<!--') && !line.trim().startsWith('-->'));
+        const cleanedContent = cleanedLines.join('\n').trim();
+        
+        return cleanedContent || null;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * 检查 CHANGELOG 是否有变化
+ */
+function hasChangelogChanged() {
+    const current = getChangelog();
+    const backup = getChangelogBackup();
     
-    // 构建commit列表
-    let commitList = '';
-    if (commits && commits.length > 0) {
-        commitList = commits.map(c => `- \`${c.hash}\` ${c.message}`).join('\n');
+    // 如果没有 CHANGELOG，认为没有变化
+    if (!current) return false;
+    
+    // 如果没有 backup，认为有变化
+    if (!backup) return true;
+    
+    // 比较内容（忽略空白差异）
+    return current.trim() !== backup.trim();
+}
+
+/**
+ * 生成 Release Body
+ */
+function generateReleaseBody(versionTag, commitSha, options = {}) {
+    const buildDate = new Date().toISOString().split('T')[0];
+    const { includeChangelog = true, includeCommits = true } = options;
+    
+    let changelogSection = '';
+    let commitSection = '';
+    
+    // 检查并添加 CHANGELOG
+    if (includeChangelog && hasChangelogChanged()) {
+        const changelog = getChangelog();
+        if (changelog) {
+            changelogSection = `#### 更新日志 / Changelog
+
+${changelog}
+
+---`;
+        }
+    }
+    
+    // 添加 commit 历史
+    if (includeCommits) {
+        const commits = getCommitLogSinceLastRelease();
+        if (commits && commits.length > 0) {
+            const commitList = commits.map(c => `- \`${c.hash}\` ${c.message}`).join('\n');
+            const lastTag = getLastReleaseTag();
+            const commitRange = lastTag ? `(${lastTag}...HEAD)` : '(all commits)';
+            
+            commitSection = `#### 提交历史 / Commits ${commitRange}
+
+${commitList}`;
+        }
     }
     
     const body = `## Iridium Mod Release
@@ -80,9 +223,9 @@ function generateReleaseBody(versionTag, commitSha, commits) {
 **提交:** ${commitSha}
 **构建日期:** ${buildDate}
 
-#### 最近的提交
+${changelogSection}
 
-${commitList}
+${commitSection}
 
 #### 安装方法
 
@@ -98,9 +241,9 @@ ${commitList}
 **Commit:** ${commitSha}
 **Build Date:** ${buildDate}
 
-#### Recent Commits
+${changelogSection}
 
-${commitList}
+${commitSection}
 
 #### Installation
 
@@ -121,6 +264,15 @@ if (require.main === module) {
     const versionInfo = getVersionInfo();
     console.log(`VERSION_TAG=${versionInfo.VERSION_TAG}`);
     console.log(`RELEASE_NAME=${versionInfo.RELEASE_NAME}`);
+    console.log(`TAG_NAME=${versionInfo.TAG_NAME}`);
 }
 
-module.exports = { getVersionInfo, getCommitLog, generateReleaseBody };
+module.exports = { 
+    getVersionInfo, 
+    getCommitLog, 
+    getCommitLogSinceLastRelease,
+    getChangelog,
+    getChangelogBackup,
+    hasChangelogChanged,
+    generateReleaseBody 
+};
