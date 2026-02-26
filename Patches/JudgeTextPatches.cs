@@ -11,9 +11,8 @@ namespace Iridium.Patches
     /// </summary>
     public static class JudgeTextPatches
     {
-        private static float _lastHitAngleOffset = 0f;
-        private static float _lastBpmTimesSpeed = 1f;
-        private static bool _hasValidOffset = false;
+        private static double _lastTiming = 0;
+        private static bool _hasValidTiming = false;
 
         /// <summary>
         /// Get display text for a HitMargin
@@ -22,67 +21,57 @@ namespace Iridium.Patches
         {
             var settings = Main.Settings.judgeText;
             
-            if (settings.showAsOffset)
-            {
-                if (_hasValidOffset)
-                {
-                    double offsetMs = AngleOffsetToMilliseconds(_lastHitAngleOffset, _lastBpmTimesSpeed);
-                    
-                    // 检查结果是否有效
-                    if (double.IsNaN(offsetMs) || double.IsInfinity(offsetMs))
-                    {
-                        return "0ms";
-                    }
-                    
-                    return $"{(offsetMs >= 0 ? "" : "-")}{Math.Abs(offsetMs):F0}ms";
-                }
-                return "0ms";
-            }
-            else
-            {
-                return settings.GetTextForHitMargin(hitMargin);
-            }
+            // TODO: showAsOffset 功能暂时禁用
+            // if (settings.showAsOffset)
+            // {
+            //     if (_hasValidTiming)
+            //     {
+            //         // 检查结果是否有效
+            //         if (double.IsNaN(_lastTiming) || double.IsInfinity(_lastTiming))
+            //         {
+            //             return "0ms";
+            //         }
+            //         
+            //         return $"{(_lastTiming >= 0 ? "" : "-")}{Math.Abs(_lastTiming):F0}ms";
+            //     }
+            //     return "0ms";
+            // }
+            // else
+            // {
+            //     return settings.GetTextForHitMargin(hitMargin);
+            // }
+            
+            return settings.GetTextForHitMargin(hitMargin);
         }
 
         /// <summary>
-        /// 将角度偏移转换为毫秒
+        /// Patch for scrPlanet.SwitchChosen - Calculate timing using Overlayer's method
+        /// This is called before GetHitMargin, so we capture the timing here
         /// </summary>
-        private static double AngleOffsetToMilliseconds(float angleOffsetRad, float bpmTimesSpeed)
+        [HarmonyPatch(typeof(scrPlanet), "SwitchChosen")]
+        public static class SwitchChosenPatch
         {
-            // 防止除以零或无效值
-            if (bpmTimesSpeed <= 0 || float.IsNaN(bpmTimesSpeed) || float.IsInfinity(bpmTimesSpeed))
-            {
-                return 0;
-            }
-            
-            if (float.IsNaN(angleOffsetRad) || float.IsInfinity(angleOffsetRad))
-            {
-                return 0;
-            }
-
-            // 使用与游戏相同的计算方式
-            double timeInSeconds = scrMisc.AngleToTime(angleOffsetRad, bpmTimesSpeed);
-            
-            return timeInSeconds * 1000.0;
-        }
-
-        /// <summary>
-        /// Patch for scrMisc.GetHitMargin - Capture angle offset when hit margin is calculated
-        /// </summary>
-        [HarmonyPatch(typeof(scrMisc), "GetHitMargin")]
-        public static class GetHitMarginPatch
-        {
-            public static void Postfix(float hitangle, float refangle, bool isCW, float bpmTimesSpeed, HitMargin __result)
+            public static void Prefix(scrPlanet __instance)
             {
                 if (!Main.Settings.judgeText.enableJudgeTextCustomization) return;
                 if (!Main.Settings.judgeText.showAsOffset) return;
 
-                // 计算角度偏移（与 GetHitMargin 中相同的计算方式）
-                float angleOffset = (hitangle - refangle) * (isCW ? 1f : -1f);
+                // 检查是否在游戏中
+                if (scrController.instance == null || !scrController.instance.gameworld) 
+                {
+                    _hasValidTiming = false;
+                    return;
+                }
+
+                // 使用与 Overlayer 完全一致的计算方式
+                // Timing = (angle - targetExitAngle) * direction * 60000 / (Math.PI * bpm * speed * pitch)
+                _lastTiming =
+                    (__instance.angle - __instance.targetExitAngle)
+                    * (scrController.instance.isCW ? 1.0 : -1.0)
+                    * 60000.0
+                    / (Math.PI * __instance.conductor.bpm * scrController.instance.speed * __instance.conductor.song.pitch);
                 
-                _lastHitAngleOffset = angleOffset;
-                _lastBpmTimesSpeed = bpmTimesSpeed;
-                _hasValidOffset = true;
+                _hasValidTiming = true;
             }
         }
 
