@@ -11,8 +11,8 @@ namespace Iridium.Patches
     /// </summary>
     public static class JudgeTextPatches
     {
-        // 存储最近一次判定的角度偏移（弧度）
         private static float _lastHitAngleOffset = 0f;
+        private static float _lastBpmTimesSpeed = 1f;
         private static bool _hasValidOffset = false;
 
         /// <summary>
@@ -24,18 +24,22 @@ namespace Iridium.Patches
             
             if (settings.showAsOffset)
             {
-                // 显示为偏移格式
                 if (_hasValidOffset)
                 {
-                    // 将角度转换为时间（毫秒）
-                    double offsetMs = AngleOffsetToMilliseconds(_lastHitAngleOffset);
-                    return $"{(offsetMs >= 0 ? "+" : "")}{offsetMs:F0}ms";
+                    double offsetMs = AngleOffsetToMilliseconds(_lastHitAngleOffset, _lastBpmTimesSpeed);
+                    
+                    // 检查结果是否有效
+                    if (double.IsNaN(offsetMs) || double.IsInfinity(offsetMs))
+                    {
+                        return "0ms";
+                    }
+                    
+                    return $"{(offsetMs >= 0 ? "" : "-")}{Math.Abs(offsetMs):F0}ms";
                 }
                 return "0ms";
             }
             else
             {
-                // 使用自定义文本
                 return settings.GetTextForHitMargin(hitMargin);
             }
         }
@@ -43,30 +47,23 @@ namespace Iridium.Patches
         /// <summary>
         /// 将角度偏移转换为毫秒
         /// </summary>
-        private static double AngleOffsetToMilliseconds(float angleOffsetRad)
+        private static double AngleOffsetToMilliseconds(float angleOffsetRad, float bpmTimesSpeed)
         {
-            try
-            {
-                var conductor = scrConductor.instance;
-                if (conductor == null) return 0;
-
-                // 获取 BPM 和速度
-                double bpm = conductor.bpm;
-                double speed = GCS.currentSpeedTrial;
-                double bpmTimesSpeed = bpm * speed;
-
-                // 使用 AngleToTime 将角度转换为时间（秒）
-                // AngleToTime: angle / PI * (60 / bpm)
-                // 但这里我们需要考虑 speed 和 pitch
-                double timeInSeconds = (angleOffsetRad / Math.PI) * (60.0 / bpmTimesSpeed);
-                
-                // 转换为毫秒
-                return timeInSeconds * 1000.0;
-            }
-            catch
+            // 防止除以零或无效值
+            if (bpmTimesSpeed <= 0 || float.IsNaN(bpmTimesSpeed) || float.IsInfinity(bpmTimesSpeed))
             {
                 return 0;
             }
+            
+            if (float.IsNaN(angleOffsetRad) || float.IsInfinity(angleOffsetRad))
+            {
+                return 0;
+            }
+
+            // 使用与游戏相同的计算方式
+            double timeInSeconds = scrMisc.AngleToTime(angleOffsetRad, bpmTimesSpeed);
+            
+            return timeInSeconds * 1000.0;
         }
 
         /// <summary>
@@ -75,7 +72,7 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(scrMisc), "GetHitMargin")]
         public static class GetHitMarginPatch
         {
-            public static void Postfix(float hitangle, float refangle, bool isCW, HitMargin __result)
+            public static void Postfix(float hitangle, float refangle, bool isCW, float bpmTimesSpeed, HitMargin __result)
             {
                 if (!Main.Settings.judgeText.enableJudgeTextCustomization) return;
                 if (!Main.Settings.judgeText.showAsOffset) return;
@@ -84,6 +81,7 @@ namespace Iridium.Patches
                 float angleOffset = (hitangle - refangle) * (isCW ? 1f : -1f);
                 
                 _lastHitAngleOffset = angleOffset;
+                _lastBpmTimesSpeed = bpmTimesSpeed;
                 _hasValidOffset = true;
             }
         }
