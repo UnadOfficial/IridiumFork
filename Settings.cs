@@ -404,12 +404,14 @@ namespace Iridium
             {
                 GUILayout.Space(8);
                 
-                // 显示为偏移选项
+                // 显示为偏移选项 (暂时禁用)
+                GUI.enabled = false;
                 bool newShowAsOffset = UIUtils.M3Switch(judgeText.showAsOffset, Localization.Get("ShowAsOffset"));
                 if (newShowAsOffset != judgeText.showAsOffset)
                 {
                     judgeText.showAsOffset = newShowAsOffset;
                 }
+                GUI.enabled = true;
                 
                 GUILayout.Space(8);
                 

@@ -1,3 +1,6 @@
+![Scratch Compiler](https://socialify.git.ci/Xbodwf/Iridium/image?custom_description=An+optimized+mod+for+ADOFAI&custom_language=csharp&description=1&font=Lexend&forks=1&issues=1&language=1&name=1&pulls=1&stargazers=1&theme=Auto)
+
+
 # Iridium
 
 An optimized mod for A Dance of Fire and Ice, focusing on performance, visual customization, and compatibility.
@@ -15,6 +18,9 @@ An optimized mod for A Dance of Fire and Ice, focusing on performance, visual cu
 1.首先去Releases下载最新稳定发行版。如果您想体验新功能，可以下载最新的beta或者prerelease.
 
 2.确保您已安装UnityModManager
+
+> [!WARNING]
+> 为了您使用Iridium的稳定性,建议使用0.27.0.0以上版本的UMM
 
 3.解压下载好的文件 到 游戏目录(与`A Dance of Fire And Ice_Data`同级)/Mods/Iridium (不存在就创建)
 

@@ -88,7 +88,7 @@ namespace Iridium.Patches
             // Judge Text
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
-            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.GetHitMarginPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
+            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.SwitchChosenPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
         }
 
         /// <summary>
