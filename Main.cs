@@ -17,16 +17,11 @@ namespace Iridium
         public static bool IsMainThread => System.Threading.Thread.CurrentThread.ManagedThreadId == _mainThreadId;
 
         // 当前版本号（用于版本升级检测）
-        private static string CurrentVersion
-        {
-            get
-            {
-                return VersionManager.GetFullVersionString();
-            }
-        }
+        private static string CurrentVersion => VersionManager.GetFullVersionString();
 
         private static bool _showFirstRunTips = false;
         private static bool _showUpgradeTips = false;
+        private static string _upgradeMessageKey = "";
         private static Rect _windowRect = new(Screen.width / 2f - 200, Screen.height / 2f - 100, 400, 200);
 
         public static bool Load(UnityModManager.ModEntry modEntry)
@@ -38,25 +33,33 @@ namespace Iridium
             Localization.Load();
 
             // 检查是否需要显示首次启动提示
-            if (Settings.firstRun)
+            if (Main.Settings.firstRun)
             {
                 _showFirstRunTips = true;
             }
 
-            // 检查是否需要显示版本升级提示（从旧版本升级到此版本）
-            if (!Settings.firstRun && Settings.lastVersion != CurrentVersion)
+            // 检查是否需要显示版本升级提示
+            // 只有当从旧版本升级到 beta5 或更高版本时才触发特定提示
+            if (!Main.Settings.firstRun && Main.Settings.lastVersion != CurrentVersion)
             {
-                _showUpgradeTips = true;
+                // 如果是从 beta5 之前的版本升级到 beta5+
+                // 或者未来有新的重大更新提示，可以在这里根据版本号逻辑判断
+                // 目前逻辑：只要版本变了且没看过 beta5 的提示，就显示一次
+                if (string.IsNullOrEmpty(Main.Settings.lastUpgradeMessageSeen_106_beta5) || Main.Settings.lastUpgradeMessageSeen_106_beta5 != "1.0.6_beta5")
+                {
+                    _showUpgradeTips = true;
+                    _upgradeMessageKey = "UpgradeMessage_1_0_6_beta5";
+                }
             }
 
             modEntry.OnToggle = OnToggle;
-            modEntry.OnGUI = Settings.OnGUI;
-            modEntry.OnSaveGUI = Settings.Save;
+            modEntry.OnGUI = Main.Settings.OnGUI;
+            modEntry.OnSaveGUI = Main.Settings.Save;
             modEntry.OnUpdate = OnUpdate;
 
             Harmony = new Harmony(modEntry.Info.Id);
 
-            Logger?.Log(Localization.Get("ModLoaded", Settings.language));
+            Logger?.Log(Localization.Get("ModLoaded", Main.Settings.language));
             return true;
         }
 
@@ -110,7 +113,7 @@ namespace Iridium
                 Iridium.Patches.PatchManager.ApplyAllPatches();
                 Iridium.Patches.PatchManager.UpdateAllPatches();
 
-                if (Settings.optimizer.enableOptimizer)
+                if (Main.Settings.optimizer.enableOptimizer)
                 {
                     Iridium.Patches.OptimizerPatches.ResetDecorOptimization(true);
                 }
@@ -169,9 +172,10 @@ namespace Iridium
                 if (GUILayout.Button(Localization.Get("Understand"), UIUtils.ButtonStyle))
                 {
                     _showFirstRunTips = false;
-                    Settings.firstRun = false;
-                    Settings.lastVersion = CurrentVersion;
-                    if (Mod != null) Settings.Save(Mod);
+                    Main.Settings.firstRun = false;
+                    Main.Settings.lastVersion = CurrentVersion;
+                    Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5"; // 首次启动也视为看过当前最新的升级提示
+                    if (Mod != null) Main.Settings.Save(Mod);
                     // 如果没有升级提示，销毁UI对象
                     if (!_showUpgradeTips)
                     {
@@ -186,13 +190,14 @@ namespace Iridium
             {
                 GUILayout.BeginVertical();
                 GUILayout.Space(10);
-                GUILayout.Label(Localization.Get("UpgradeMessage"), UIUtils.LabelStyle);
+                GUILayout.Label(Localization.Get(_upgradeMessageKey), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button(Localization.Get("Understand"), UIUtils.ButtonStyle))
                 {
                     _showUpgradeTips = false;
-                    Settings.lastVersion = CurrentVersion;
-                    if (Mod != null) Settings.Save(Mod);
+                    Main.Settings.lastVersion = CurrentVersion;
+                    Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
+                    if (Mod != null) Main.Settings.Save(Mod);
                     Destroy(gameObject);
                 }
                 GUILayout.EndVertical();

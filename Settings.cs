@@ -14,6 +14,7 @@ namespace Iridium
         public string language = "en";
         public bool firstRun = true;
         public string? lastVersion = null; // 用于跟踪版本升级
+        public string? lastUpgradeMessageSeen_106_beta5 = null; // 记录用户最后看过的特定升级提示 ID
         
         public OptimizerSettings optimizer = new();
         public UISettings ui = new();
@@ -136,7 +137,6 @@ namespace Iridium
                 optimizer.optimizeMoveDecorations = UIUtils.M3Switch(optimizer.optimizeMoveDecorations, Localization.Get("OptimizeMoveDecorations"));
                 optimizer.optimizeFloorMesh = UIUtils.M3Switch(optimizer.optimizeFloorMesh, Localization.Get("OptimizeFloorMesh"));
                 optimizer.optimizeFilters = UIUtils.M3Switch(optimizer.optimizeFilters, Localization.Get("OptimizeFilters"));
-                optimizer.optimizeCLSAsyncScan = UIUtils.M3Switch(optimizer.optimizeCLSAsyncScan, Localization.Get("OptimizeCLSAsyncScan"));
                 optimizer.fastLoading = UIUtils.M3Switch(optimizer.fastLoading, Localization.Get("FastLoading"));
                 
                 GUILayout.Space(4);
@@ -404,14 +404,11 @@ namespace Iridium
             {
                 GUILayout.Space(8);
                 
-                // 显示为偏移选项 (暂时禁用)
-                GUI.enabled = false;
                 bool newShowAsOffset = UIUtils.M3Switch(judgeText.showAsOffset, Localization.Get("ShowAsOffset"));
                 if (newShowAsOffset != judgeText.showAsOffset)
                 {
                     judgeText.showAsOffset = newShowAsOffset;
                 }
-                GUI.enabled = true;
                 
                 GUILayout.Space(8);
                 

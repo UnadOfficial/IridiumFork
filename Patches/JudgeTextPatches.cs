@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using HarmonyLib;
+using Iridium.Config;
 using TMPro;
 using UnityEngine;
 
@@ -8,101 +9,99 @@ namespace Iridium.Patches
 {
     /// <summary>
     /// Judge Text Patches - Customizes judge text display with offset support
+    /// Uses SuperStrictJudge's approach for accurate timing calculation
     /// </summary>
     public static class JudgeTextPatches
     {
-        private static double _lastTiming = 0;
-        private static bool _hasValidTiming = false;
+        // Cached settings reference for performance
+        private static JudgeTextSettings Settings => Main.Settings.judgeText;
 
         /// <summary>
-        /// Get display text for a HitMargin
+        /// Calculate timing offset from angular offset in radians.
+        /// angularOffset = targetExitAngle - actualAngle (as passed to scrHitTextMesh.Show)
+        /// 
+        /// Sign convention (User requested):
+        /// 提前 (Early hit) = +
+        /// 错过 (Late hit) = -
         /// </summary>
-        private static string GetDisplayText(int hitMargin)
+        private static double CalculateTimingFromAngle(float angularOffset)
         {
-            var settings = Main.Settings.judgeText;
+            var controller = scrController.instance;
+            var conductor = scrConductor.instance;
+            if (controller == null || conductor == null) return 0;
+
+            double bpm = conductor.bpm;
+            double speed = controller.speed;
+            double pitch = conductor.song.pitch;
+
+            // Standard Timing (Early = Negative, Late = Positive)
+            // angularOffset is (target - actual). 
+            // If isCW (Clockwise, angle decreasing): Early means actual > target, so angularOffset < 0.
+            // If !isCW (Counter-Clockwise, angle increasing): Early means actual < target, so angularOffset > 0.
+            double standardTiming = angularOffset * (controller.isCW ? 1.0 : -1.0) * 60000.0 / (Math.PI * bpm * speed * pitch);
             
-            // TODO: showAsOffset 功能暂时禁用
-            // if (settings.showAsOffset)
-            // {
-            //     if (_hasValidTiming)
-            //     {
-            //         // 检查结果是否有效
-            //         if (double.IsNaN(_lastTiming) || double.IsInfinity(_lastTiming))
-            //         {
-            //             return "0ms";
-            //         }
-            //         
-            //         return $"{(_lastTiming >= 0 ? "" : "-")}{Math.Abs(_lastTiming):F0}ms";
-            //     }
-            //     return "0ms";
-            // }
-            // else
-            // {
-            //     return settings.GetTextForHitMargin(hitMargin);
-            // }
-            
-            return settings.GetTextForHitMargin(hitMargin);
+            // User requested: 提前 (Early) = +, 错过 (Late) = -
+            // This is the exact inverse of standard timing.
+            return -standardTiming;
         }
 
         /// <summary>
-        /// Patch for scrPlanet.SwitchChosen - Calculate timing using Overlayer's method
-        /// This is called before GetHitMargin, so we capture the timing here
+        /// Get display text for offset mode
         /// </summary>
-        [HarmonyPatch(typeof(scrPlanet), "SwitchChosen")]
-        public static class SwitchChosenPatch
+        private static string GetOffsetText(double timing)
         {
-            public static void Prefix(scrPlanet __instance)
-            {
-                if (!Main.Settings.judgeText.enableJudgeTextCustomization) return;
-                if (!Main.Settings.judgeText.showAsOffset) return;
-
-                // 检查是否在游戏中
-                if (scrController.instance == null || !scrController.instance.gameworld) 
-                {
-                    _hasValidTiming = false;
-                    return;
-                }
-
-                // 使用与 Overlayer 完全一致的计算方式
-                // Timing = (angle - targetExitAngle) * direction * 60000 / (Math.PI * bpm * speed * pitch)
-                _lastTiming =
-                    (__instance.angle - __instance.targetExitAngle)
-                    * (scrController.instance.isCW ? 1.0 : -1.0)
-                    * 60000.0
-                    / (Math.PI * __instance.conductor.bpm * scrController.instance.speed * __instance.conductor.song.pitch);
-                
-                _hasValidTiming = true;
-            }
+            if (double.IsNaN(timing) || double.IsInfinity(timing))
+                return "0ms";
+            
+            // Display as integer (F0) as per user example "5ms"
+            // Use Math.Round to ensure 0.5ms becomes 1ms
+            long ms = (long)Math.Round(timing);
+            return $"{(ms >= 0 ? "+" : "-")}{Math.Abs(ms)}ms";
         }
 
         /// <summary>
-        /// Patch for scrHitTextMesh.Init - Override text initialization
+        /// Patch for scrHitTextMesh.Init - Handles custom judge text mode (not offset mode)
         /// </summary>
         [HarmonyPatch(typeof(scrHitTextMesh), "Init")]
         public static class HitTextMeshInitPatch
         {
             public static void Postfix(scrHitTextMesh __instance, HitMargin hitMargin, TextMesh ___text)
             {
-                if (!Main.Settings.judgeText.enableJudgeTextCustomization) return;
-                
-                ___text.text = GetDisplayText((int)hitMargin);
+                if (!Settings.enableJudgeTextCustomization) return;
+                if (Settings.showAsOffset) return; // Offset mode handled by Show patch
+
+                ___text.text = Settings.GetTextForHitMargin((int)hitMargin);
             }
         }
 
         /// <summary>
-        /// Patch for scrHitTextMesh.Show - Ensure text is updated on show
+        /// Patch for scrHitTextMesh.Show - Handles offset mode display
+        /// The 'angle' parameter is the angular offset in radians (targetExitAngle - actualAngle)
         /// </summary>
         [HarmonyPatch(typeof(scrHitTextMesh), "Show")]
         public static class HitTextMeshShowPatch
         {
-            public static void Prefix(scrHitTextMesh __instance, HitMargin __instance_hitMargin, TextMesh ___text)
+            public static void Prefix(scrHitTextMesh __instance, float angle, TextMesh ___text)
             {
-                if (!Main.Settings.judgeText.enableJudgeTextCustomization) return;
-                
+                if (!Settings.enableJudgeTextCustomization || !Settings.showAsOffset) return;
+
                 if (___text != null)
                 {
-                    ___text.text = GetDisplayText((int)__instance_hitMargin);
+                    double timing = CalculateTimingFromAngle(angle);
+                    ___text.text = GetOffsetText(timing);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Patch for scrController.Awake_Rewind - Reset state (if any) on rewind
+        /// </summary>
+        [HarmonyPatch(typeof(scrController), "Awake_Rewind")]
+        public static class ResetTimingOnRewindPatch
+        {
+            public static void Postfix()
+            {
+                // No global state anymore, but keeping for future use or consistency
             }
         }
     }
