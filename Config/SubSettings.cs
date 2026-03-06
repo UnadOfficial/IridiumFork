@@ -74,6 +74,7 @@ namespace Iridium.Config
 
     public class AppearanceSettings
     {
+        public bool enableAllAngleRoundedCorners = false;
     }
 
     public class HitSoundSettings

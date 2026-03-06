@@ -84,6 +84,11 @@ namespace Iridium.Patches
             // Hit Sound
             _definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
 
+            // Appearance
+            var appearanceCond = () => Main.Settings.appearance.enableAllAngleRoundedCorners;
+            _definitions.Add(new PatchDef(typeof(FloorMeshPatches.Num6PostfixPatch), appearanceCond));
+            _definitions.Add(new PatchDef(typeof(FloorMeshPatches.CornerThresholdTranspilerPatch), appearanceCond));
+
             // Judge Text
             // InitPatch: Handles custom text mode
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
@@ -91,25 +96,6 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
             // Rewind: Reset
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
-        }
-
-        /// <summary>
-        /// Apply all registered patches regardless of conditions.
-        /// Used for "Load All, Unload as Needed" strategy.
-        /// </summary>
-        public static void ApplyAllPatches()
-        {
-            if (_harmony == null) return;
-
-            Main.Logger?.Log("[PatchManager] Loading all patches (Initial phase)...");
-            foreach (var def in _definitions)
-            {
-                _activePatches.TryGetValue(def.Type, out bool currentActive);
-                if (!currentActive)
-                {
-                    ApplyPatch(def.Type);
-                }
-            }
         }
 
         public static void UpdateAllPatches()

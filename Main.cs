@@ -109,8 +109,7 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModEnabled"));
 
-                // Strategy: Load all, then unload as needed
-                Iridium.Patches.PatchManager.ApplyAllPatches();
+                // Strategy: Load only what's needed (lazy loading)
                 Iridium.Patches.PatchManager.UpdateAllPatches();
 
                 if (Main.Settings.optimizer.enableOptimizer)
