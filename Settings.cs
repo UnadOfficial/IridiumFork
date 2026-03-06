@@ -439,6 +439,19 @@ namespace Iridium
             }
             GUILayout.EndVertical();
 
+            GUILayout.Space(8);
+
+            // Appearance Settings Card
+            GUILayout.BeginVertical(UIUtils.CardStyle);
+            GUILayout.Label(Localization.Get("AppearanceSettings"), UIUtils.HeaderStyle);
+            GUILayout.Space(8);
+            appearance.enableAllAngleRoundedCorners = UIUtils.M3Switch(appearance.enableAllAngleRoundedCorners, Localization.Get("EnableAllAngleRoundedCorners"));
+            if (appearance.enableAllAngleRoundedCorners)
+            {
+                UIUtils.DrawInfoBox("⚠ " + Localization.Get("RestartRequired"));
+            }
+            GUILayout.EndVertical();
+
             GUILayout.EndVertical(); // End Right Column
 
             GUILayout.EndHorizontal();
