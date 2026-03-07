@@ -30,52 +30,6 @@ namespace Iridium.Patches
 
         #endregion
 
-        #region Texture Loading Optimization
-
-        /// <summary>
-        /// 优化纹理加载 - 强制使用压缩格式
-        /// </summary>
-        [HarmonyPatch(typeof(TextureManager), "LoadTexture")]
-        public static class TextureLoadingOptimizationPatch
-        {
-            private static FieldInfo? _textureFormatField;
-
-            [HarmonyPrefix]
-            public static void Prefix()
-            {
-                if (!Main.Settings.optimizer.optimizeTextureLoading) return;
-
-                // 尝试修改 TextureFormat 为压缩格式
-                // 注意：这需要在 LoadTexture 内部修改，这里只是标记
-            }
-
-            [HarmonyPostfix]
-            public static void Postfix(ref Texture2D __result)
-            {
-                if (!Main.Settings.optimizer.optimizeTextureLoading) return;
-                if (__result == null) return;
-
-                try
-                {
-                    // 如果纹理未压缩，尝试压缩
-                    if (__result.format == TextureFormat.RGBA32 || __result.format == TextureFormat.ARGB32)
-                    {
-                        // 压缩纹理（减少 75% 内存）
-                        __result.Compress(true); // highQuality = true
-                        __result.Apply(false, true); // makeNoLongerReadable = true
-
-                        Main.Logger?.Log($"[LoadingOptimization] Compressed texture: {__result.name}");
-                    }
-                }
-                catch (Exception e)
-                {
-                    Main.Logger?.Error($"[LoadingOptimization] Failed to compress texture: {e}");
-                }
-            }
-        }
-
-        #endregion
-
         #region Decoration Batch Creation
 
         /// <summary>

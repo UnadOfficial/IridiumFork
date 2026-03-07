@@ -153,7 +153,6 @@ namespace Iridium
                 GUILayout.Label("⚡ " + Localization.Get("LoadingOptimizations"), UIUtils.LabelStyle);
                 GUILayout.Space(4);
 
-                optimizer.optimizeTextureLoading = UIUtils.M3Switch(optimizer.optimizeTextureLoading, Localization.Get("OptimizeTextureLoading"));
                 optimizer.batchCreateDecorations = UIUtils.M3Switch(optimizer.batchCreateDecorations, Localization.Get("BatchCreateDecorations"));
 
                 if (optimizer.batchCreateDecorations)
