@@ -95,5 +95,20 @@
   "JudgeText_TooLate": "Too Late",
   "JudgeText_Multipress": "Multipress",
   "JudgeText_FailMiss": "Fail (Miss)",
-  "JudgeText_FailOverload": "Fail (Overload)"
+  "JudgeText_FailOverload": "Fail (Overload)",
+  "SceneOptimizations": "Scene Optimizations (scnGame/scnEditor)",
+  "CacheGameObjectReferences": "Cache GameObject References",
+  "OptimizeEventProcessing": "Optimize Event Processing (Pre-classify events)",
+  "OptimizeEffectRemoval": "Optimize Effect Removal (Reduce GC)",
+  "OptimizeMissIndicators": "Optimize Miss Indicators",
+  "OptimizeEditorMouseDetection": "Optimize Editor Mouse Detection",
+  "OptimizeEditorEventIndicators": "Optimize Editor Event Indicators",
+  "LoadingOptimizations": "Loading Optimizations (Experimental)",
+  "OptimizeTextureLoading": "Compress Textures on Load (Save Memory)",
+  "BatchCreateDecorations": "Batch Create Decorations (Reduce Stuttering)",
+  "DecorationBatchSize": "Batch Size (per frame)",
+  "CacheFloorEvents": "Cache Floor Events (Faster Event Processing)",
+  "AsyncDestroyEffects": "Async Destroy Effects (Reduce Blocking)",
+  "OptimizeMoveTrackTweens": "Optimize MoveTrack Tweens (Reduce GC)",
+  "BatchMoveDecorations": "Batch MoveDecorations (Better Performance)"
 }
