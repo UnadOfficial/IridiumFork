@@ -104,7 +104,6 @@
   "OptimizeEditorMouseDetection": "Optimize Editor Mouse Detection",
   "OptimizeEditorEventIndicators": "Optimize Editor Event Indicators",
   "LoadingOptimizations": "Loading Optimizations (Experimental)",
-  "OptimizeTextureLoading": "Compress Textures on Load (Save Memory)",
   "BatchCreateDecorations": "Batch Create Decorations (Reduce Stuttering)",
   "DecorationBatchSize": "Batch Size (per frame)",
   "CacheFloorEvents": "Cache Floor Events (Faster Event Processing)",

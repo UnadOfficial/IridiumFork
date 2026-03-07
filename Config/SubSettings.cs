@@ -33,7 +33,6 @@ namespace Iridium.Config
         public bool optimizeEditorEventIndicators = false;
 
         // Loading Optimization Patches
-        public bool optimizeTextureLoading = false;
         public bool batchCreateDecorations = false;
         public int decorationBatchSize = 10;
         public bool cacheFloorEvents = false;

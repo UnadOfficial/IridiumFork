@@ -104,7 +104,6 @@
   "OptimizeEditorMouseDetection": "优化编辑器鼠标检测",
   "OptimizeEditorEventIndicators": "优化编辑器事件指示器",
   "LoadingOptimizations": "加载优化 (实验性)",
-  "OptimizeTextureLoading": "加载时压缩纹理 (节省内存)",
   "BatchCreateDecorations": "批量创建装饰物 (减少卡顿)",
   "DecorationBatchSize": "批次大小 (每帧)",
   "CacheFloorEvents": "缓存地板事件 (加快事件处理)",
