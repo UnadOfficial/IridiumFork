@@ -70,8 +70,31 @@ namespace Iridium.Patches
             private static IEnumerator BatchCreateDecorations(scnGame game)
             {
                 _isBatchCreating = true;
-                var decManager = game.decorationManager;
-                var decorations = game.decorations;
+
+                // 使用反射或直接访问 scnGame 的字段
+                var decManagerField = AccessTools.Field(typeof(scnGame), "decManager");
+                var decorationsField = AccessTools.Field(typeof(scnGame), "decorations");
+                var eventsField = AccessTools.Field(typeof(scnGame), "events");
+                var imgHolderField = AccessTools.Field(typeof(scnGame), "imgHolder");
+
+                if (decManagerField == null || decorationsField == null)
+                {
+                    Main.Logger?.Error("[LoadingOptimization] Failed to access scnGame fields");
+                    _isBatchCreating = false;
+                    yield break;
+                }
+
+                var decManager = decManagerField.GetValue(game) as scrDecorationManager;
+                var decorations = decorationsField.GetValue(game) as List<LevelEvent>;
+                var events = eventsField?.GetValue(game) as List<LevelEvent>;
+                var imgHolder = imgHolderField?.GetValue(game) as TextureManager;
+
+                if (decManager == null || decorations == null)
+                {
+                    Main.Logger?.Error("[LoadingOptimization] Failed to get decoration manager or decorations");
+                    _isBatchCreating = false;
+                    yield break;
+                }
 
                 decManager.ClearDecorations();
 
@@ -80,38 +103,33 @@ namespace Iridium.Patches
 
                 foreach (var decoration in decorations)
                 {
-                    try
-                    {
-                        decManager.CreateDecoration(decoration, out _, -1);
-                        count++;
+                    decManager.CreateDecoration(decoration, out _, -1);
+                    count++;
 
-                        // 每批次后暂停一帧
-                        if (count % batchSize == 0)
-                        {
-                            yield return null;
-                        }
-                    }
-                    catch (Exception e)
+                    // 每批次后暂停一帧
+                    if (count % batchSize == 0)
                     {
-                        Main.Logger?.Error($"[LoadingOptimization] Failed to create decoration: {e}");
+                        yield return null;
                     }
                 }
 
                 // 处理 MoveDecorations 事件中的图片
-                foreach (var evt in game.events)
+                if (events != null && imgHolder != null)
                 {
-                    if (evt.eventType == LevelEventType.MoveDecorations)
+                    foreach (var evt in events)
                     {
-                        // 异步加载图片
-                        string imagePath = evt.GetString("image");
-                        if (!string.IsNullOrEmpty(imagePath))
+                        if (evt.eventType == LevelEventType.MoveDecorations)
                         {
-                            game.imgHolder.AddSprite(imagePath, imagePath, out _);
-                            count++;
-
-                            if (count % batchSize == 0)
+                            string imagePath = evt.GetString("image");
+                            if (!string.IsNullOrEmpty(imagePath))
                             {
-                                yield return null;
+                                imgHolder.AddSprite(imagePath, imagePath, out _);
+                                count++;
+
+                                if (count % batchSize == 0)
+                                {
+                                    yield return null;
+                                }
                             }
                         }
                     }
@@ -229,7 +247,7 @@ namespace Iridium.Patches
         /// </summary>
         public static class TweenPoolManager
         {
-            public static Tween GetTween()
+            public static Tween? GetTween()
             {
                 lock (_tweenPoolLock)
                 {
@@ -239,8 +257,8 @@ namespace Iridium.Patches
                     }
                 }
 
-                // 池中没有，创建新的
-                return null; // DOTween 会自动创建
+                // 池中没有，返回 null，DOTween 会自动创建
+                return null;
             }
 
             public static void ReturnTween(Tween tween)
