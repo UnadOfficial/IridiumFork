@@ -84,11 +84,6 @@ namespace Iridium.Patches
             // Hit Sound
             _definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
 
-            // Appearance
-            var appearanceCond = () => Main.Settings.appearance.enableAllAngleRoundedCorners;
-            _definitions.Add(new PatchDef(typeof(FloorMeshPatches.Num6PostfixPatch), appearanceCond));
-            _definitions.Add(new PatchDef(typeof(FloorMeshPatches.CornerThresholdTranspilerPatch), appearanceCond));
-
             // Judge Text
             // InitPatch: Handles custom text mode
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
