@@ -523,58 +523,7 @@ namespace Iridium.Patches
             }
         }
 
-        [HarmonyPatch(typeof(scnGame), "Update")]
-        public static class ScnGameUpdateOptimizationPatch
-        {
-            private static float _lastOrthoSize;
-            private static float _lastAspect;
-            private static AccessTools.FieldRef<scnGame, int>? _startFrameAccessor;
-            private static AccessTools.FieldRef<scnGame, Camera>? _cameraAccessor;
-            private static bool _initialized;
-
-            private static void Initialize()
-            {
-                try
-                {
-                    _startFrameAccessor = AccessTools.FieldRefAccess<scnGame, int>("startFrame");
-                    _cameraAccessor = AccessTools.FieldRefAccess<scnGame, Camera>("camera");
-                }
-                catch (Exception e)
-                {
-                    Main.Logger?.Log($"[Optimizer] Failed to create accessors for scnGame: {e.Message}");
-                }
-                _initialized = true;
-            }
-
-            [HarmonyPrefix]
-            public static bool Prefix(scnGame __instance)
-            {
-                if (!Main.Settings.optimizer.optimizeScnGameUpdate) return true;
-
-                if (!_initialized) Initialize();
-                if (_startFrameAccessor == null || _cameraAccessor == null) return true;
-
-                int startFrame = _startFrameAccessor(__instance);
-
-                if ((GCS.customLevelPaths != null || ADOBase.isInternalLevel) && !ADOBase.isLevelEditor && Time.frameCount - startFrame == 3)
-                    return true;
-
-                Camera cam = _cameraAccessor(__instance);
-                if (cam == null) return true;
-
-                float orthoSize = cam.orthographicSize;
-                float aspect = cam.aspect;
-
-                if (Mathf.Approximately(orthoSize, _lastOrthoSize) && Mathf.Approximately(aspect, _lastAspect))
-                {
-                    return false;
-                }
-
-                _lastOrthoSize = orthoSize;
-                _lastAspect = aspect;
-                return true;
-            }
-        }
+        // NOTE: scnGame.Update optimization moved to SceneOptimizationPatches.cs
 
         [HarmonyPatch(typeof(ffxMoveDecorationsPlus), "StartEffect")]
         public static class MoveDecorationsOptimizationPatch

@@ -137,7 +137,42 @@ namespace Iridium
                 optimizer.optimizeFloorMesh = UIUtils.M3Switch(optimizer.optimizeFloorMesh, Localization.Get("OptimizeFloorMesh"));
                 optimizer.optimizeFilters = UIUtils.M3Switch(optimizer.optimizeFilters, Localization.Get("OptimizeFilters"));
                 optimizer.fastLoading = UIUtils.M3Switch(optimizer.fastLoading, Localization.Get("FastLoading"));
-                
+
+                GUILayout.Space(8);
+                GUILayout.Label("🎯 " + Localization.Get("SceneOptimizations"), UIUtils.LabelStyle);
+                GUILayout.Space(4);
+
+                optimizer.cacheGameObjectReferences = UIUtils.M3Switch(optimizer.cacheGameObjectReferences, Localization.Get("CacheGameObjectReferences"));
+                optimizer.optimizeEventProcessing = UIUtils.M3Switch(optimizer.optimizeEventProcessing, Localization.Get("OptimizeEventProcessing"));
+                optimizer.optimizeEffectRemoval = UIUtils.M3Switch(optimizer.optimizeEffectRemoval, Localization.Get("OptimizeEffectRemoval"));
+                optimizer.optimizeMissIndicators = UIUtils.M3Switch(optimizer.optimizeMissIndicators, Localization.Get("OptimizeMissIndicators"));
+                optimizer.optimizeEditorMouseDetection = UIUtils.M3Switch(optimizer.optimizeEditorMouseDetection, Localization.Get("OptimizeEditorMouseDetection"));
+                optimizer.optimizeEditorEventIndicators = UIUtils.M3Switch(optimizer.optimizeEditorEventIndicators, Localization.Get("OptimizeEditorEventIndicators"));
+
+                GUILayout.Space(8);
+                GUILayout.Label("⚡ " + Localization.Get("LoadingOptimizations"), UIUtils.LabelStyle);
+                GUILayout.Space(4);
+
+                optimizer.optimizeTextureLoading = UIUtils.M3Switch(optimizer.optimizeTextureLoading, Localization.Get("OptimizeTextureLoading"));
+                optimizer.batchCreateDecorations = UIUtils.M3Switch(optimizer.batchCreateDecorations, Localization.Get("BatchCreateDecorations"));
+
+                if (optimizer.batchCreateDecorations)
+                {
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Space(24);
+                    GUILayout.Label(Localization.Get("DecorationBatchSize"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    string batchSizeStr = GUILayout.TextField(optimizer.decorationBatchSize.ToString(), 3, UIUtils.TextFieldStyle, GUILayout.Width(50));
+                    if (int.TryParse(batchSizeStr, out int newBatchSize))
+                        optimizer.decorationBatchSize = Mathf.Clamp(newBatchSize, 1, 100);
+                    GUILayout.EndHorizontal();
+                }
+
+                optimizer.cacheFloorEvents = UIUtils.M3Switch(optimizer.cacheFloorEvents, Localization.Get("CacheFloorEvents"));
+                optimizer.asyncDestroyEffects = UIUtils.M3Switch(optimizer.asyncDestroyEffects, Localization.Get("AsyncDestroyEffects"));
+                optimizer.optimizeMoveTrackTweens = UIUtils.M3Switch(optimizer.optimizeMoveTrackTweens, Localization.Get("OptimizeMoveTrackTweens"));
+                optimizer.batchMoveDecorations = UIUtils.M3Switch(optimizer.batchMoveDecorations, Localization.Get("BatchMoveDecorations"));
+
                 GUILayout.Space(4);
 
                 // Error states

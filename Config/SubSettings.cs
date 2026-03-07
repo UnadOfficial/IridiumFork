@@ -23,6 +23,23 @@ namespace Iridium.Config
         public bool optimizeScnGameUpdate = false;
         public bool optimizeMoveDecorations = false;
         public bool optimizeFloorMesh = false;
+
+        // Scene Optimization Patches
+        public bool cacheGameObjectReferences = false;
+        public bool optimizeEventProcessing = false;
+        public bool optimizeEffectRemoval = false;
+        public bool optimizeMissIndicators = false;
+        public bool optimizeEditorMouseDetection = false;
+        public bool optimizeEditorEventIndicators = false;
+
+        // Loading Optimization Patches
+        public bool optimizeTextureLoading = false;
+        public bool batchCreateDecorations = false;
+        public int decorationBatchSize = 10;
+        public bool cacheFloorEvents = false;
+        public bool asyncDestroyEffects = false;
+        public bool optimizeMoveTrackTweens = false;
+        public bool batchMoveDecorations = false;
     }
 
     public class UISettings
