@@ -95,7 +95,5 @@
   "JudgeText_TooLate": "过晚",
   "JudgeText_Multipress": "多重输入",
   "JudgeText_FailMiss": "失败(错过)",
-  "JudgeText_FailOverload": "失败(过载)",
-  "AppearanceSettings": "外观设置",
-  "EnableAllAngleRoundedCorners": "启用全角度圆角转角"
+  "JudgeText_FailOverload": "失败(过载)"
 }

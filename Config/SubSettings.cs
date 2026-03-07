@@ -72,11 +72,6 @@ namespace Iridium.Config
         AlwaysOn
     }
 
-    public class AppearanceSettings
-    {
-        public bool enableAllAngleRoundedCorners = false;
-    }
-
     public class HitSoundSettings
     {
         public bool enableHitSoundPitch = false;

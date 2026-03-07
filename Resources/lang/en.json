@@ -95,7 +95,5 @@
   "JudgeText_TooLate": "Too Late",
   "JudgeText_Multipress": "Multipress",
   "JudgeText_FailMiss": "Fail (Miss)",
-  "JudgeText_FailOverload": "Fail (Overload)",
-  "AppearanceSettings": "Appearance Settings",
-  "EnableAllAngleRoundedCorners": "Enable All-Angle Rounded Corners"
+  "JudgeText_FailOverload": "Fail (Overload)"
 }
