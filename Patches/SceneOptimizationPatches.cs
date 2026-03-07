@@ -476,7 +476,7 @@ namespace Iridium.Patches
             {
                 _reusableColliderList.Clear();
                 _reusableGameObjectList.Clear();
-                _floorMeshCache.Clear();
+                // ConditionalWeakTable 不需要手动清理
 
                 Main.Logger?.Log("[SceneOptimization] Cleaned up scnEditor caches");
             }
@@ -515,7 +515,7 @@ namespace Iridium.Patches
             _reusableColliderList.Clear();
             _reusableGameObjectList.Clear();
             _reusableEffectList.Clear();
-            _floorMeshCache.Clear();
+            // ConditionalWeakTable 不需要手动清理
 
             Main.Logger?.Log("[SceneOptimization] All caches cleared");
         }
