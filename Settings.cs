@@ -176,10 +176,20 @@ namespace Iridium
                 GUILayout.Label("⚙️ " + Localization.Get("CorePerformanceOptimizations"), UIUtils.LabelStyle);
                 GUILayout.Space(4);
 
-                optimizer.optimizePlanetPhysics = UIUtils.M3Switch(optimizer.optimizePlanetPhysics, Localization.Get("OptimizePlanetPhysics"));
                 optimizer.optimizeFloorMeshCache = UIUtils.M3Switch(optimizer.optimizeFloorMeshCache, Localization.Get("OptimizeFloorMeshCache"));
                 optimizer.optimizeFloorMeshBatchUpdate = UIUtils.M3Switch(optimizer.optimizeFloorMeshBatchUpdate, Localization.Get("OptimizeFloorMeshBatchUpdate"));
                 optimizer.optimizePlanetAngleCalculation = UIUtils.M3Switch(optimizer.optimizePlanetAngleCalculation, Localization.Get("OptimizePlanetAngleCalculation"));
+
+                GUILayout.Space(8);
+                GUILayout.Label("🚀 " + Localization.Get("AggressivePerformanceOptimizations"), UIUtils.LabelStyle);
+                GUILayout.Space(4);
+
+                optimizer.optimizeMoveTrackEventTweens = UIUtils.M3Switch(optimizer.optimizeMoveTrackEventTweens, Localization.Get("OptimizeMoveTrackEventTweens"));
+                optimizer.optimizeRecolorTrackEventTweens = UIUtils.M3Switch(optimizer.optimizeRecolorTrackEventTweens, Localization.Get("OptimizeRecolorTrackEventTweens"));
+                optimizer.optimizeMoveDecorationEventTweens = UIUtils.M3Switch(optimizer.optimizeMoveDecorationEventTweens, Localization.Get("OptimizeMoveDecorationEventTweens"));
+                optimizer.optimizeFloorUpdateCulling = UIUtils.M3Switch(optimizer.optimizeFloorUpdateCulling, Localization.Get("OptimizeFloorUpdateCulling"));
+                optimizer.optimizeFloorLateUpdate = UIUtils.M3Switch(optimizer.optimizeFloorLateUpdate, Localization.Get("OptimizeFloorLateUpdate"));
+                optimizer.optimizeDecorationManagerUpdate = UIUtils.M3Switch(optimizer.optimizeDecorationManagerUpdate, Localization.Get("OptimizeDecorationManagerUpdate"));
 
                 GUILayout.Space(4);
 

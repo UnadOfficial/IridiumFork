@@ -111,8 +111,14 @@
   "OptimizeMoveTrackTweens": "Optimize MoveTrack Tweens (Reduce GC)",
   "BatchMoveDecorations": "Batch MoveDecorations (Better Performance)",
   "CorePerformanceOptimizations": "Core Performance Optimizations (Experimental)",
-  "OptimizePlanetPhysics": "Optimize Planet Physics (NonAlloc API)",
   "OptimizeFloorMeshCache": "Optimize FloorMesh Cache (StringBuilder)",
   "OptimizeFloorMeshBatchUpdate": "Optimize FloorMesh Batch Update (Frame Distribution)",
-  "OptimizePlanetAngleCalculation": "Optimize Planet Angle Calculation (Incremental)"
+  "OptimizePlanetAngleCalculation": "Optimize Planet Angle Calculation (Incremental)",
+  "AggressivePerformanceOptimizations": "Aggressive Performance (May Change Behavior)",
+  "OptimizeMoveTrackEventTweens": "Optimize MoveTrack EventTweens (Cache LINQ)",
+  "OptimizeRecolorTrackEventTweens": "Optimize RecolorTrack EventTweens (Cache LINQ)",
+  "OptimizeMoveDecorationEventTweens": "Optimize MoveDecoration EventTweens (Cache)",
+  "OptimizeFloorUpdateCulling": "Optimize Floor Update (Culling)",
+  "OptimizeFloorLateUpdate": "Optimize Floor LateUpdate (Dirty Flags)",
+  "OptimizeDecorationManagerUpdate": "Optimize Decoration Manager (Spatial Partition)"
 }

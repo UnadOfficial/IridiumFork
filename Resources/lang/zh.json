@@ -111,8 +111,14 @@
   "OptimizeMoveTrackTweens": "优化 MoveTrack 动画 (减少 GC)",
   "BatchMoveDecorations": "批量移动装饰物 (提升性能)",
   "CorePerformanceOptimizations": "核心性能优化 (实验性)",
-  "OptimizePlanetPhysics": "优化行星物理 (NonAlloc API)",
   "OptimizeFloorMeshCache": "优化地板网格缓存 (StringBuilder)",
   "OptimizeFloorMeshBatchUpdate": "优化地板网格批量更新 (分帧)",
-  "OptimizePlanetAngleCalculation": "优化行星角度计算 (增量更新)"
+  "OptimizePlanetAngleCalculation": "优化行星角度计算 (增量更新)",
+  "AggressivePerformanceOptimizations": "激进性能优化 (可能改变行为)",
+  "OptimizeMoveTrackEventTweens": "优化移动轨道事件动画 (缓存LINQ)",
+  "OptimizeRecolorTrackEventTweens": "优化重新设置轨道颜色事件动画 (缓存LINQ)",
+  "OptimizeMoveDecorationEventTweens": "优化移动装饰物事件动画 (缓存)",
+  "OptimizeFloorUpdateCulling": "优化地板更新 (视锥剔除)",
+  "OptimizeFloorLateUpdate": "优化地板延迟更新 (脏标记)",
+  "OptimizeDecorationManagerUpdate": "优化装饰物管理器 (空间分区)"
 }
