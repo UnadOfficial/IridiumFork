@@ -39,6 +39,12 @@ namespace Iridium.Config
         public bool asyncDestroyEffects = false;
         public bool optimizeMoveTrackTweens = false;
         public bool batchMoveDecorations = false;
+
+        // Core Performance Patches
+        public bool optimizePlanetPhysics = false;
+        public bool optimizeFloorMeshCache = false;
+        public bool optimizeFloorMeshBatchUpdate = false;
+        public bool optimizePlanetAngleCalculation = false;
     }
 
     public class UISettings
