@@ -52,6 +52,14 @@ namespace Iridium.Config
         public bool optimizeFloorUpdateCulling = false;
         public bool optimizeFloorLateUpdate = false;
         public bool optimizeDecorationManagerUpdate = false;
+
+        // Core System Patches
+        public bool optimizeConductorUpdate = false;
+        public bool optimizeCameraUpdate = false;
+        public bool optimizeInputSystem = false;
+        public bool optimizeUITextUpdate = false;
+        public bool optimizeStringCache = false;
+        public bool optimizeDOTweenCleanup = false;
     }
 
     public class UISettings

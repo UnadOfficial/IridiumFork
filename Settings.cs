@@ -191,6 +191,17 @@ namespace Iridium
                 optimizer.optimizeFloorLateUpdate = UIUtils.M3Switch(optimizer.optimizeFloorLateUpdate, Localization.Get("OptimizeFloorLateUpdate"));
                 optimizer.optimizeDecorationManagerUpdate = UIUtils.M3Switch(optimizer.optimizeDecorationManagerUpdate, Localization.Get("OptimizeDecorationManagerUpdate"));
 
+                GUILayout.Space(8);
+                GUILayout.Label("⚡ " + Localization.Get("CoreSystemOptimizations"), UIUtils.LabelStyle);
+                GUILayout.Space(4);
+
+                optimizer.optimizeConductorUpdate = UIUtils.M3Switch(optimizer.optimizeConductorUpdate, Localization.Get("OptimizeConductorUpdate"));
+                optimizer.optimizeCameraUpdate = UIUtils.M3Switch(optimizer.optimizeCameraUpdate, Localization.Get("OptimizeCameraUpdate"));
+                optimizer.optimizeInputSystem = UIUtils.M3Switch(optimizer.optimizeInputSystem, Localization.Get("OptimizeInputSystem"));
+                optimizer.optimizeUITextUpdate = UIUtils.M3Switch(optimizer.optimizeUITextUpdate, Localization.Get("OptimizeUITextUpdate"));
+                optimizer.optimizeStringCache = UIUtils.M3Switch(optimizer.optimizeStringCache, Localization.Get("OptimizeStringCache"));
+                optimizer.optimizeDOTweenCleanup = UIUtils.M3Switch(optimizer.optimizeDOTweenCleanup, Localization.Get("OptimizeDOTweenCleanup"));
+
                 GUILayout.Space(4);
 
                 // Error states
