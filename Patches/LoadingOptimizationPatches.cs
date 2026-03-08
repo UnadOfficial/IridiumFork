@@ -34,6 +34,7 @@ namespace Iridium.Patches
 
         /// <summary>
         /// 装饰物批处理创建 - 分帧加载避免卡顿
+        /// 注意：此功能已禁用，因为会导致装饰物显示异常
         /// </summary>
         [HarmonyPatch(typeof(scnGame), "UpdateDecorationObjects")]
         public static class DecorationBatchCreationPatch
@@ -41,104 +42,13 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static bool Prefix(scnGame __instance, bool reloadDecorations)
             {
+                // 暂时禁用此功能，因为分帧加载会导致装饰物显示异常
                 if (!Main.Settings.optimizer.batchCreateDecorations) return true;
-                if (!reloadDecorations) return true;
 
-                try
-                {
-                    // 停止之前的批处理
-                    if (_batchCreationCoroutine != null)
-                    {
-                        __instance.StopCoroutine(_batchCreationCoroutine);
-                        _batchCreationCoroutine = null;
-                    }
-
-                    // 启动批处理协程
-                    _batchCreationCoroutine = __instance.StartCoroutine(
-                        BatchCreateDecorations(__instance)
-                    );
-
-                    return false; // 跳过原方法
-                }
-                catch (Exception e)
-                {
-                    Main.Logger?.Error($"[LoadingOptimization] Batch creation failed: {e}");
-                    return true; // 失败时使用原方法
-                }
-            }
-
-            private static IEnumerator BatchCreateDecorations(scnGame game)
-            {
-                _isBatchCreating = true;
-
-                // 使用反射或直接访问 scnGame 的字段
-                var decManagerField = AccessTools.Field(typeof(scnGame), "decManager");
-                var decorationsField = AccessTools.Field(typeof(scnGame), "decorations");
-                var eventsField = AccessTools.Field(typeof(scnGame), "events");
-                var imgHolderField = AccessTools.Field(typeof(scnGame), "imgHolder");
-
-                if (decManagerField == null || decorationsField == null)
-                {
-                    Main.Logger?.Error("[LoadingOptimization] Failed to access scnGame fields");
-                    _isBatchCreating = false;
-                    yield break;
-                }
-
-                var decManager = decManagerField.GetValue(game) as scrDecorationManager;
-                var decorations = decorationsField.GetValue(game) as List<LevelEvent>;
-                var events = eventsField?.GetValue(game) as List<LevelEvent>;
-                var imgHolder = imgHolderField?.GetValue(game) as TextureManager;
-
-                if (decManager == null || decorations == null)
-                {
-                    Main.Logger?.Error("[LoadingOptimization] Failed to get decoration manager or decorations");
-                    _isBatchCreating = false;
-                    yield break;
-                }
-
-                decManager.ClearDecorations();
-
-                int batchSize = Main.Settings.optimizer.decorationBatchSize;
-                int count = 0;
-
-                foreach (var decoration in decorations)
-                {
-                    decManager.CreateDecoration(decoration, out _, -1);
-                    count++;
-
-                    // 每批次后暂停一帧
-                    if (count % batchSize == 0)
-                    {
-                        yield return null;
-                    }
-                }
-
-                // 处理 MoveDecorations 事件中的图片
-                if (events != null && imgHolder != null)
-                {
-                    foreach (var evt in events)
-                    {
-                        if (evt.eventType == LevelEventType.MoveDecorations)
-                        {
-                            string imagePath = evt.GetString("image");
-                            if (!string.IsNullOrEmpty(imagePath))
-                            {
-                                imgHolder.AddSprite(imagePath, imagePath, out _);
-                                count++;
-
-                                if (count % batchSize == 0)
-                                {
-                                    yield return null;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                _isBatchCreating = false;
-                _batchCreationCoroutine = null;
-
-                Main.Logger?.Log($"[LoadingOptimization] Batch created {count} decorations");
+                // 即使启用也返回 true，让原方法执行
+                // TODO: 需要找到更好的实现方式
+                Main.Logger?.Warning("[LoadingOptimization] Batch decoration creation is currently disabled due to rendering issues");
+                return true;
             }
         }
 
@@ -189,6 +99,8 @@ namespace Iridium.Patches
             [HarmonyPostfix]
             public static void Postfix()
             {
+                if (!Main.Settings.optimizer.cacheFloorEvents) return;
+
                 // 清理缓存
                 _floorEventsCache = null;
             }
@@ -342,6 +254,9 @@ namespace Iridium.Patches
             [HarmonyPostfix]
             public static void Postfix()
             {
+                // 只在启用优化时才清理
+                if (!Main.Settings.optimizer.enableOptimizer) return;
+
                 _floorEventsCache?.Clear();
                 _floorEventsCache = null;
                 _isBatchCreating = false;
