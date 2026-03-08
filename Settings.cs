@@ -172,6 +172,15 @@ namespace Iridium
                 optimizer.optimizeMoveTrackTweens = UIUtils.M3Switch(optimizer.optimizeMoveTrackTweens, Localization.Get("OptimizeMoveTrackTweens"));
                 optimizer.batchMoveDecorations = UIUtils.M3Switch(optimizer.batchMoveDecorations, Localization.Get("BatchMoveDecorations"));
 
+                GUILayout.Space(8);
+                GUILayout.Label("⚙️ " + Localization.Get("CorePerformanceOptimizations"), UIUtils.LabelStyle);
+                GUILayout.Space(4);
+
+                optimizer.optimizePlanetPhysics = UIUtils.M3Switch(optimizer.optimizePlanetPhysics, Localization.Get("OptimizePlanetPhysics"));
+                optimizer.optimizeFloorMeshCache = UIUtils.M3Switch(optimizer.optimizeFloorMeshCache, Localization.Get("OptimizeFloorMeshCache"));
+                optimizer.optimizeFloorMeshBatchUpdate = UIUtils.M3Switch(optimizer.optimizeFloorMeshBatchUpdate, Localization.Get("OptimizeFloorMeshBatchUpdate"));
+                optimizer.optimizePlanetAngleCalculation = UIUtils.M3Switch(optimizer.optimizePlanetAngleCalculation, Localization.Get("OptimizePlanetAngleCalculation"));
+
                 GUILayout.Space(4);
 
                 // Error states

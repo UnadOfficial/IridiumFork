@@ -75,6 +75,15 @@ namespace Iridium.Patches
                 }
             }
 
+            // --- Core Performance Patches ---
+            foreach (var type in typeof(CorePerformancePatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            {
+                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
+                {
+                    _definitions.Add(new PatchDef(type, optCond));
+                }
+            }
+
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
             _definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));

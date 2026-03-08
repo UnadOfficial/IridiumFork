@@ -109,5 +109,10 @@
   "CacheFloorEvents": "Cache Floor Events (Faster Event Processing)",
   "AsyncDestroyEffects": "Async Destroy Effects (Reduce Blocking)",
   "OptimizeMoveTrackTweens": "Optimize MoveTrack Tweens (Reduce GC)",
-  "BatchMoveDecorations": "Batch MoveDecorations (Better Performance)"
+  "BatchMoveDecorations": "Batch MoveDecorations (Better Performance)",
+  "CorePerformanceOptimizations": "Core Performance Optimizations (Experimental)",
+  "OptimizePlanetPhysics": "Optimize Planet Physics (NonAlloc API)",
+  "OptimizeFloorMeshCache": "Optimize FloorMesh Cache (StringBuilder)",
+  "OptimizeFloorMeshBatchUpdate": "Optimize FloorMesh Batch Update (Frame Distribution)",
+  "OptimizePlanetAngleCalculation": "Optimize Planet Angle Calculation (Incremental)"
 }

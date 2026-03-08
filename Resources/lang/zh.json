@@ -109,5 +109,10 @@
   "CacheFloorEvents": "缓存地板事件 (加快事件处理)",
   "AsyncDestroyEffects": "异步销毁特效 (减少阻塞)",
   "OptimizeMoveTrackTweens": "优化 MoveTrack 动画 (减少 GC)",
-  "BatchMoveDecorations": "批量移动装饰物 (提升性能)"
+  "BatchMoveDecorations": "批量移动装饰物 (提升性能)",
+  "CorePerformanceOptimizations": "核心性能优化 (实验性)",
+  "OptimizePlanetPhysics": "优化行星物理 (NonAlloc API)",
+  "OptimizeFloorMeshCache": "优化地板网格缓存 (StringBuilder)",
+  "OptimizeFloorMeshBatchUpdate": "优化地板网格批量更新 (分帧)",
+  "OptimizePlanetAngleCalculation": "优化行星角度计算 (增量更新)"
 }
