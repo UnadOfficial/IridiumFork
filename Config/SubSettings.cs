@@ -41,10 +41,17 @@ namespace Iridium.Config
         public bool batchMoveDecorations = false;
 
         // Core Performance Patches
-        public bool optimizePlanetPhysics = false;
         public bool optimizeFloorMeshCache = false;
         public bool optimizeFloorMeshBatchUpdate = false;
         public bool optimizePlanetAngleCalculation = false;
+
+        // Aggressive Performance Patches (may change behavior)
+        public bool optimizeMoveTrackEventTweens = false;
+        public bool optimizeRecolorTrackEventTweens = false;
+        public bool optimizeMoveDecorationEventTweens = false;
+        public bool optimizeFloorUpdateCulling = false;
+        public bool optimizeFloorLateUpdate = false;
+        public bool optimizeDecorationManagerUpdate = false;
     }
 
     public class UISettings

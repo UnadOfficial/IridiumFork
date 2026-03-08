@@ -26,66 +26,6 @@ namespace Iridium.Patches
 
         #endregion
 
-        #region Physics Optimization
-
-        /// <summary>
-        /// 优化 scrPlanet.Update 中的 Physics2D.OverlapCircleAll
-        /// 使用 NonAlloc 版本避免 GC 分配
-        /// </summary>
-        [HarmonyPatch(typeof(scrPlanet), "Update")]
-        public static class PlanetPhysicsOptimizationPatch
-        {
-            [HarmonyPrefix]
-            public static bool Prefix(scrPlanet __instance)
-            {
-                if (!Main.Settings.optimizer.optimizePlanetPhysics) return true;
-
-                try
-                {
-                    // 只对可命中的行星执行碰撞检测
-                    if (!__instance.isChosen) return false;
-
-                    // 使用 NonAlloc 版本避免 GC
-                    int hitCount = Physics2D.OverlapCircleNonAlloc(
-                        __instance.transform.position,
-                        0.3f,
-                        _overlapResults
-                    );
-
-                    for (int i = 0; i < hitCount; i++)
-                    {
-                        var collider = _overlapResults[i];
-                        if (collider == null) continue;
-
-                        if (collider.gameObject.CompareTag("HitDecoration"))
-                        {
-                            // 使用缓存避免重复 GetComponent
-                            if (!_decorationCache.TryGetValue(collider, out var decoration))
-                            {
-                                decoration = collider.transform.parent?.GetComponent<scrDecoration>();
-                                if (decoration != null)
-                                    _decorationCache[collider] = decoration;
-                            }
-
-                            if (decoration != null && decoration.useHitbox)
-                            {
-                                __instance.controller.FailAction();
-                            }
-                        }
-                    }
-
-                    return false; // 跳过原方法
-                }
-                catch (Exception e)
-                {
-                    Main.Logger?.Error($"[CorePerformance] Planet physics optimization failed: {e}");
-                    return true;
-                }
-            }
-        }
-
-        #endregion
-
         #region FloorMesh Optimization
 
         /// <summary>
