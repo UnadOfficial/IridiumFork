@@ -295,6 +295,9 @@ namespace Iridium.Patches
             [HarmonyPostfix]
             public static void Postfix()
             {
+                // 只在启用优化时才清理
+                if (!Main.Settings.optimizer.enableOptimizer) return;
+
                 _cachedFlash = null;
                 _cachedDecorationManager = null;
                 _cachedCameraComponent = null;
@@ -474,6 +477,9 @@ namespace Iridium.Patches
             [HarmonyPostfix]
             public static void Postfix()
             {
+                // 只在启用优化时才清理
+                if (!Main.Settings.optimizer.enableOptimizer) return;
+
                 _reusableColliderList.Clear();
                 _reusableGameObjectList.Clear();
                 // ConditionalWeakTable 不需要手动清理
