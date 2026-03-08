@@ -172,36 +172,6 @@ namespace Iridium
                 optimizer.optimizeMoveTrackTweens = UIUtils.M3Switch(optimizer.optimizeMoveTrackTweens, Localization.Get("OptimizeMoveTrackTweens"));
                 optimizer.batchMoveDecorations = UIUtils.M3Switch(optimizer.batchMoveDecorations, Localization.Get("BatchMoveDecorations"));
 
-                GUILayout.Space(8);
-                GUILayout.Label("⚙️ " + Localization.Get("CorePerformanceOptimizations"), UIUtils.LabelStyle);
-                GUILayout.Space(4);
-
-                optimizer.optimizeFloorMeshCache = UIUtils.M3Switch(optimizer.optimizeFloorMeshCache, Localization.Get("OptimizeFloorMeshCache"));
-                optimizer.optimizeFloorMeshBatchUpdate = UIUtils.M3Switch(optimizer.optimizeFloorMeshBatchUpdate, Localization.Get("OptimizeFloorMeshBatchUpdate"));
-                optimizer.optimizePlanetAngleCalculation = UIUtils.M3Switch(optimizer.optimizePlanetAngleCalculation, Localization.Get("OptimizePlanetAngleCalculation"));
-
-                GUILayout.Space(8);
-                GUILayout.Label("🚀 " + Localization.Get("AggressivePerformanceOptimizations"), UIUtils.LabelStyle);
-                GUILayout.Space(4);
-
-                optimizer.optimizeMoveTrackEventTweens = UIUtils.M3Switch(optimizer.optimizeMoveTrackEventTweens, Localization.Get("OptimizeMoveTrackEventTweens"));
-                optimizer.optimizeRecolorTrackEventTweens = UIUtils.M3Switch(optimizer.optimizeRecolorTrackEventTweens, Localization.Get("OptimizeRecolorTrackEventTweens"));
-                optimizer.optimizeMoveDecorationEventTweens = UIUtils.M3Switch(optimizer.optimizeMoveDecorationEventTweens, Localization.Get("OptimizeMoveDecorationEventTweens"));
-                optimizer.optimizeFloorUpdateCulling = UIUtils.M3Switch(optimizer.optimizeFloorUpdateCulling, Localization.Get("OptimizeFloorUpdateCulling"));
-                optimizer.optimizeFloorLateUpdate = UIUtils.M3Switch(optimizer.optimizeFloorLateUpdate, Localization.Get("OptimizeFloorLateUpdate"));
-                optimizer.optimizeDecorationManagerUpdate = UIUtils.M3Switch(optimizer.optimizeDecorationManagerUpdate, Localization.Get("OptimizeDecorationManagerUpdate"));
-
-                GUILayout.Space(8);
-                GUILayout.Label("⚡ " + Localization.Get("CoreSystemOptimizations"), UIUtils.LabelStyle);
-                GUILayout.Space(4);
-
-                optimizer.optimizeConductorUpdate = UIUtils.M3Switch(optimizer.optimizeConductorUpdate, Localization.Get("OptimizeConductorUpdate"));
-                optimizer.optimizeCameraUpdate = UIUtils.M3Switch(optimizer.optimizeCameraUpdate, Localization.Get("OptimizeCameraUpdate"));
-                optimizer.optimizeInputSystem = UIUtils.M3Switch(optimizer.optimizeInputSystem, Localization.Get("OptimizeInputSystem"));
-                optimizer.optimizeUITextUpdate = UIUtils.M3Switch(optimizer.optimizeUITextUpdate, Localization.Get("OptimizeUITextUpdate"));
-                optimizer.optimizeStringCache = UIUtils.M3Switch(optimizer.optimizeStringCache, Localization.Get("OptimizeStringCache"));
-                optimizer.optimizeDOTweenCleanup = UIUtils.M3Switch(optimizer.optimizeDOTweenCleanup, Localization.Get("OptimizeDOTweenCleanup"));
-
                 GUILayout.Space(4);
 
                 // Error states
