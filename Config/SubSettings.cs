@@ -39,27 +39,6 @@ namespace Iridium.Config
         public bool asyncDestroyEffects = false;
         public bool optimizeMoveTrackTweens = false;
         public bool batchMoveDecorations = false;
-
-        // Core Performance Patches
-        public bool optimizeFloorMeshCache = false;
-        public bool optimizeFloorMeshBatchUpdate = false;
-        public bool optimizePlanetAngleCalculation = false;
-
-        // Aggressive Performance Patches (may change behavior)
-        public bool optimizeMoveTrackEventTweens = false;
-        public bool optimizeRecolorTrackEventTweens = false;
-        public bool optimizeMoveDecorationEventTweens = false;
-        public bool optimizeFloorUpdateCulling = false;
-        public bool optimizeFloorLateUpdate = false;
-        public bool optimizeDecorationManagerUpdate = false;
-
-        // Core System Patches
-        public bool optimizeConductorUpdate = false;
-        public bool optimizeCameraUpdate = false;
-        public bool optimizeInputSystem = false;
-        public bool optimizeUITextUpdate = false;
-        public bool optimizeStringCache = false;
-        public bool optimizeDOTweenCleanup = false;
     }
 
     public class UISettings
