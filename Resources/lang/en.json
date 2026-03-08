@@ -120,5 +120,12 @@
   "OptimizeMoveDecorationEventTweens": "Optimize MoveDecoration EventTweens (Cache)",
   "OptimizeFloorUpdateCulling": "Optimize Floor Update (Culling)",
   "OptimizeFloorLateUpdate": "Optimize Floor LateUpdate (Dirty Flags)",
-  "OptimizeDecorationManagerUpdate": "Optimize Decoration Manager (Spatial Partition)"
+  "OptimizeDecorationManagerUpdate": "Optimize Decoration Manager (Spatial Partition)",
+  "CoreSystemOptimizations": "Core System Optimizations",
+  "OptimizeConductorUpdate": "Optimize Audio Conductor (Threshold Update)",
+  "OptimizeCameraUpdate": "Optimize Camera (Skip Unchanged Frames)",
+  "OptimizeInputSystem": "Optimize Input System (Frame Cache)",
+  "OptimizeUITextUpdate": "Optimize UI Text (Skip Unchanged)",
+  "OptimizeStringCache": "Optimize String Cache (Number Pool)",
+  "OptimizeDOTweenCleanup": "Optimize DOTween Cleanup (Auto GC)"
 }

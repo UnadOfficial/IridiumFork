@@ -120,5 +120,12 @@
   "OptimizeMoveDecorationEventTweens": "优化移动装饰物事件动画 (缓存)",
   "OptimizeFloorUpdateCulling": "优化地板更新 (视锥剔除)",
   "OptimizeFloorLateUpdate": "优化地板延迟更新 (脏标记)",
-  "OptimizeDecorationManagerUpdate": "优化装饰物管理器 (空间分区)"
+  "OptimizeDecorationManagerUpdate": "优化装饰物管理器 (空间分区)",
+  "CoreSystemOptimizations": "核心系统优化",
+  "OptimizeConductorUpdate": "优化音频同步 (阈值更新)",
+  "OptimizeCameraUpdate": "优化相机 (跳过未变化帧)",
+  "OptimizeInputSystem": "优化输入系统 (帧缓存)",
+  "OptimizeUITextUpdate": "优化UI文本 (跳过未变化)",
+  "OptimizeStringCache": "优化字符串缓存 (数字池)",
+  "OptimizeDOTweenCleanup": "优化DOTween清理 (自动GC)"
 }
