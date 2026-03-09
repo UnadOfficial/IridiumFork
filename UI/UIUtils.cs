@@ -40,8 +40,8 @@ namespace Iridium.UI
         private static readonly Color SurfaceVariant = new(0.20f, 0.16f, 0.18f);    // 变体表面
 
         // 文字颜色
-        private static readonly Color OnSurface = new(0.95f, 0.92f, 0.94f);        // 主文字
-        private static readonly Color OnSurfaceVariant = new(0.75f, 0.70f, 0.73f); // 次要文字
+        private static readonly Color OnSurface = new(1.0f, 1.0f, 1.0f);           // 主文字 - 纯白
+        private static readonly Color OnSurfaceVariant = new(0.85f, 0.85f, 0.85f); // 次要文字 - 浅灰
 
         // 辅助色
         private static readonly Color Outline = new(0.35f, 0.30f, 0.33f);          // 边框
