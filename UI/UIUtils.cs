@@ -3,211 +3,301 @@ using UnityEngine;
 
 namespace Iridium.UI
 {
+    /// <summary>
+    /// Material Design 3 风格 UI 工具类
+    /// 粉色主题 + 深色背景
+    /// </summary>
     public static class UIUtils
     {
+        #region 样式缓存
         private static GUIStyle? _cardStyle;
+        private static GUIStyle? _cardHighStyle;
         private static GUIStyle? _headerStyle;
+        private static GUIStyle? _subHeaderStyle;
         private static GUIStyle? _buttonStyle;
+        private static GUIStyle? _buttonPrimaryStyle;
         private static GUIStyle? _labelStyle;
+        private static GUIStyle? _labelSecondaryStyle;
         private static GUIStyle? _textFieldStyle;
         private static GUIStyle? _infoBoxStyle;
         private static GUIStyle? _warningBoxStyle;
         private static GUIStyle? _colorPickerLabelStyle;
+        private static GUIStyle? _sectionDividerStyle;
         private static readonly System.Collections.Generic.Dictionary<string, Texture2D> _textureCache = [];
+        #endregion
 
+        #region 颜色定义 - Material Design 3 Pink Theme
+        // 主色调 - 粉色系
+        private static readonly Color Primary = new(1.0f, 0.6f, 0.75f);           // 粉色主色
+        private static readonly Color PrimaryContainer = new(0.4f, 0.15f, 0.25f); // 粉色容器
+        private static readonly Color OnPrimary = new(0.2f, 0.05f, 0.15f);        // 粉色上的文字
+        private static readonly Color OnPrimaryContainer = new(1.0f, 0.85f, 0.9f); // 粉色容器上的文字
+
+        // 表面颜色 - 深色主题
+        private static readonly Color Surface = new(0.08f, 0.06f, 0.08f);           // 最底层背景
+        private static readonly Color SurfaceContainer = new(0.11f, 0.09f, 0.11f);  // 卡片背景
+        private static readonly Color SurfaceContainerHigh = new(0.15f, 0.12f, 0.14f); // 高亮卡片
+        private static readonly Color SurfaceVariant = new(0.20f, 0.16f, 0.18f);    // 变体表面
+
+        // 文字颜色
+        private static readonly Color OnSurface = new(0.95f, 0.92f, 0.94f);        // 主文字
+        private static readonly Color OnSurfaceVariant = new(0.75f, 0.70f, 0.73f); // 次要文字
+
+        // 辅助色
+        private static readonly Color Outline = new(0.35f, 0.30f, 0.33f);          // 边框
+        private static readonly Color OutlineVariant = new(0.25f, 0.20f, 0.22f);   // 变体边框
+
+        // 信息色
+        private static readonly Color InfoContainer = new(0.15f, 0.20f, 0.30f);
+        private static readonly Color OnInfoContainer = new(0.75f, 0.85f, 1.0f);
+        private static readonly Color ErrorContainer = new(0.35f, 0.12f, 0.15f);
+        private static readonly Color OnErrorContainer = new(1.0f, 0.75f, 0.78f);
+        #endregion
+
+        #region 公共样式属性
         public static GUIStyle CardStyle => _cardStyle ?? throw new InvalidOperationException("UI not initialized");
+        public static GUIStyle CardHighStyle => _cardHighStyle ?? throw new InvalidOperationException("UI not initialized");
         public static GUIStyle HeaderStyle => _headerStyle ?? throw new InvalidOperationException("UI not initialized");
+        public static GUIStyle SubHeaderStyle => _subHeaderStyle ?? throw new InvalidOperationException("UI not initialized");
         public static GUIStyle ButtonStyle => _buttonStyle ?? throw new InvalidOperationException("UI not initialized");
+        public static GUIStyle ButtonPrimaryStyle => _buttonPrimaryStyle ?? throw new InvalidOperationException("UI not initialized");
         public static GUIStyle LabelStyle => _labelStyle ?? throw new InvalidOperationException("UI not initialized");
+        public static GUIStyle LabelSecondaryStyle => _labelSecondaryStyle ?? throw new InvalidOperationException("UI not initialized");
         public static GUIStyle TextFieldStyle => _textFieldStyle ?? throw new InvalidOperationException("UI not initialized");
+        #endregion
 
+        /// <summary>
+        /// 初始化所有样式
+        /// </summary>
         public static void InitializeStyles()
         {
             if (_cardStyle != null) return;
 
-            // Android 14 / Material 3 Dark Palette
-            Color surfaceContainer = new(0.13f, 0.13f, 0.15f);
-            Color primary = new(0.66f, 0.76f, 1.0f);
-            Color onSurface = new(0.88f, 0.88f, 0.9f);
-            Color surfaceContainerHigh = new(0.17f, 0.17f, 0.19f);
-            Color errorContainer = new(0.35f, 0.1f, 0.1f);
-            Color onErrorContainer = new(1.0f, 0.7f, 0.7f);
-            Color infoContainer = new(0.1f, 0.2f, 0.35f);
-            Color onInfoContainer = new(0.7f, 0.85f, 1.0f);
-
+            // 卡片样式 - 大圆角
             _cardStyle = new GUIStyle(GUI.skin.box)
             {
-                padding = new RectOffset(12, 12, 12, 12),
-                margin = new RectOffset(0, 0, 6, 6),
-                normal = { background = GetCachedRoundedTex(128, 128, 12, surfaceContainer) }
+                padding = new RectOffset(16, 16, 16, 16),
+                margin = new RectOffset(0, 0, 8, 8),
+                normal = { background = GetCachedRoundedTex(128, 128, 16, SurfaceContainer) }
             };
 
+            // 高亮卡片样式
+            _cardHighStyle = new GUIStyle(GUI.skin.box)
+            {
+                padding = new RectOffset(16, 16, 16, 16),
+                margin = new RectOffset(0, 0, 8, 8),
+                normal = { background = GetCachedRoundedTex(128, 128, 16, SurfaceContainerHigh) }
+            };
+
+            // 标题样式
             _headerStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 16,
+                fontSize = 18,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = Primary },
+                margin = new RectOffset(0, 0, 0, 12)
+            };
+
+            // 子标题样式
+            _subHeaderStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 14,
                 fontStyle = FontStyle.Normal,
-                normal = { textColor = primary },
+                normal = { textColor = Primary },
                 margin = new RectOffset(0, 0, 0, 8)
             };
 
+            // 标签样式
             _labelStyle = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 13,
-                normal = { textColor = onSurface },
+                normal = { textColor = OnSurface },
                 alignment = TextAnchor.MiddleLeft
             };
 
+            // 次要标签样式
+            _labelSecondaryStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 12,
+                normal = { textColor = OnSurfaceVariant },
+                alignment = TextAnchor.MiddleLeft
+            };
+
+            // 按钮样式 - 普通按钮
             _buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 12,
-                fixedHeight = 28,
-                padding = new RectOffset(12, 12, 0, 0),
-                normal = { background = GetCachedRoundedTex(64, 64, 8, surfaceContainerHigh), textColor = primary },
-                hover = { background = GetCachedRoundedTex(64, 64, 8, primary * 0.2f), textColor = Color.white },
-                active = { background = GetCachedRoundedTex(64, 64, 8, primary), textColor = Color.black }
+                fontSize = 13,
+                fixedHeight = 36,
+                padding = new RectOffset(16, 16, 0, 0),
+                alignment = TextAnchor.MiddleCenter,
+                normal = { background = GetCachedRoundedTex(64, 64, 18, SurfaceVariant), textColor = OnSurface },
+                hover = { background = GetCachedRoundedTex(64, 64, 18, SurfaceContainerHigh), textColor = Color.white },
+                active = { background = GetCachedRoundedTex(64, 64, 18, PrimaryContainer), textColor = OnPrimaryContainer }
             };
 
+            // 主要按钮样式
+            _buttonPrimaryStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 13,
+                fixedHeight = 36,
+                padding = new RectOffset(16, 16, 0, 0),
+                alignment = TextAnchor.MiddleCenter,
+                normal = { background = GetCachedRoundedTex(64, 64, 18, Primary), textColor = OnPrimary },
+                hover = { background = GetCachedRoundedTex(64, 64, 18, new Color(1.0f, 0.7f, 0.82f)), textColor = OnPrimary },
+                active = { background = GetCachedRoundedTex(64, 64, 18, new Color(0.9f, 0.5f, 0.68f)), textColor = OnPrimary }
+            };
+
+            // 输入框样式
             _textFieldStyle = new GUIStyle(GUI.skin.textField)
             {
-                fontSize = 12,
-                fixedHeight = 24,
+                fontSize = 13,
+                fixedHeight = 36,
                 alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(8, 8, 0, 0),
-                // 提高非 Hover 状态下的亮度，并增加微弱的边框感（通过颜色对比）
-                normal = { background = GetCachedRoundedTex(64, 64, 4, new Color(0.25f, 0.25f, 0.28f)), textColor = onSurface },
-                hover = { background = GetCachedRoundedTex(64, 64, 4, new Color(0.35f, 0.35f, 0.4f)), textColor = Color.white },
-                focused = { background = GetCachedRoundedTex(64, 64, 4, new Color(0.4f, 0.4f, 0.45f)), textColor = Color.white }
+                padding = new RectOffset(12, 12, 0, 0),
+                normal = { background = GetCachedRoundedTex(64, 64, 12, SurfaceVariant), textColor = OnSurface },
+                hover = { background = GetCachedRoundedTex(64, 64, 12, SurfaceContainerHigh), textColor = Color.white },
+                focused = { background = GetCachedRoundedTex(64, 64, 12, SurfaceContainerHigh), textColor = Color.white }
             };
 
+            // 信息框样式
             _infoBoxStyle = new GUIStyle(GUI.skin.box)
             {
-                padding = new RectOffset(10, 10, 8, 8),
-                margin = new RectOffset(0, 0, 4, 4),
+                padding = new RectOffset(12, 12, 10, 10),
+                margin = new RectOffset(0, 0, 6, 6),
                 alignment = TextAnchor.MiddleLeft,
                 fontSize = 12,
-                normal = { background = GetCachedRoundedTex(64, 64, 8, infoContainer), textColor = onInfoContainer }
+                normal = { background = GetCachedRoundedTex(64, 64, 12, InfoContainer), textColor = OnInfoContainer }
             };
 
+            // 警告框样式
             _warningBoxStyle = new GUIStyle(GUI.skin.box)
             {
-                padding = new RectOffset(10, 10, 8, 8),
-                margin = new RectOffset(0, 0, 4, 4),
+                padding = new RectOffset(12, 12, 10, 10),
+                margin = new RectOffset(0, 0, 6, 6),
                 alignment = TextAnchor.MiddleLeft,
                 fontSize = 12,
-                normal = { background = GetCachedRoundedTex(64, 64, 8, errorContainer), textColor = onErrorContainer }
+                normal = { background = GetCachedRoundedTex(64, 64, 12, ErrorContainer), textColor = OnErrorContainer }
             };
 
+            // 颜色选择器标签
             _colorPickerLabelStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 11,
+                fontSize = 12,
                 alignment = TextAnchor.MiddleCenter,
-                normal = { textColor = onSurface }
+                normal = { textColor = OnSurface }
+            };
+
+            // 分隔线样式
+            _sectionDividerStyle = new GUIStyle
+            {
+                fixedHeight = 1,
+                margin = new RectOffset(0, 0, 12, 12),
+                normal = { background = MakeSolidTex(1, 1, OutlineVariant) }
             };
         }
 
-        public static Color ColorPicker(Color color)
+        /// <summary>
+        /// 绘制分隔线
+        /// </summary>
+        public static void DrawDivider()
         {
-            GUILayout.BeginVertical();
-            
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("R", _colorPickerLabelStyle, GUILayout.Width(15));
-            color.r = GUILayout.HorizontalSlider(color.r, 0f, 1f, GUILayout.ExpandWidth(true));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("G", _colorPickerLabelStyle, GUILayout.Width(15));
-            color.g = GUILayout.HorizontalSlider(color.g, 0f, 1f, GUILayout.ExpandWidth(true));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("B", _colorPickerLabelStyle, GUILayout.Width(15));
-            color.b = GUILayout.HorizontalSlider(color.b, 0f, 1f, GUILayout.ExpandWidth(true));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("A", _colorPickerLabelStyle, GUILayout.Width(15));
-            color.a = GUILayout.HorizontalSlider(color.a, 0f, 1f, GUILayout.ExpandWidth(true));
-            GUILayout.EndHorizontal();
-
-            // Preview color
-            Rect previewRect = GUILayoutUtility.GetRect(120, 12, GUILayout.ExpandWidth(true));
-            GUI.color = color;
-            GUI.DrawTexture(previewRect, GetCachedRoundedTex(64, 64, 4, Color.white));
-            GUI.color = Color.white;
-            
-            GUILayout.EndVertical();
-            
-            return color;
+            GUILayout.Box("", _sectionDividerStyle, GUILayout.ExpandWidth(true));
         }
 
+        /// <summary>
+        /// 绘制信息框
+        /// </summary>
         public static void DrawInfoBox(string text, bool isError = false)
         {
             GUILayout.Box(text, isError ? _warningBoxStyle : _infoBoxStyle, GUILayout.ExpandWidth(true));
         }
 
+        /// <summary>
+        /// Material Design 3 Switch 开关
+        /// </summary>
         public static bool M3Switch(bool value, string label)
         {
-            GUILayout.BeginHorizontal(GUILayout.Height(32));
-            if (!string.IsNullOrEmpty(label)) GUILayout.Label(label, _labelStyle, GUILayout.ExpandWidth(true));
+            GUILayout.BeginHorizontal(GUILayout.Height(40));
             
-            Color trackColor = value ? new(0.66f, 0.76f, 1.0f) : new(0.28f, 0.28f, 0.31f);
-            Color thumbColor = value ? new(0.0f, 0.2f, 0.4f) : new(0.55f, 0.55f, 0.58f);
+            if (!string.IsNullOrEmpty(label))
+            {
+                GUILayout.Label(label, _labelStyle, GUILayout.ExpandWidth(true));
+            }
 
-            Rect rect = GUILayoutUtility.GetRect(40, 24, GUILayout.Width(40), GUILayout.Height(24));
-            
+            // Switch 尺寸
+            float trackWidth = 52;
+            float trackHeight = 32;
+            float thumbSize = 24;
+
+            Rect rect = GUILayoutUtility.GetRect(trackWidth, trackHeight, GUILayout.Width(trackWidth), GUILayout.Height(trackHeight));
+
+            // 轨道颜色 - 选中时更亮的粉色
+            Color trackColor = value 
+                ? new Color(1.0f, 0.65f, 0.8f)  // 选中：粉色轨道
+                : new Color(0.25f, 0.22f, 0.24f); // 未选中：深灰
+
+            // 绘制轨道
             GUI.color = trackColor;
-            GUI.DrawTexture(rect, GetCachedRoundedTex(64, 32, 16, Color.white));
+            GUI.DrawTexture(rect, GetCachedRoundedTex(64, 40, 20, Color.white));
+            GUI.color = Color.white;
+
+            // 滑块位置和颜色
+            float thumbX = value ? rect.x + rect.width - thumbSize - 4 : rect.x + 4;
+            Rect thumbRect = new(thumbX, rect.y + (trackHeight - thumbSize) / 2, thumbSize, thumbSize);
             
-            float thumbSize = 18;
-            float thumbX = value ? rect.x + rect.width - thumbSize - 3 : rect.x + 3;
-            Rect thumbRect = new(thumbX, rect.y + (rect.height - thumbSize) / 2, thumbSize, thumbSize);
+            Color thumbColor = value 
+                ? new Color(0.95f, 0.45f, 0.65f)  // 选中：深粉拇指
+                : new Color(0.65f, 0.60f, 0.62f); // 未选中：灰色拇指
+            
             GUI.color = thumbColor;
             GUI.DrawTexture(thumbRect, GetCachedRoundedTex(32, 32, 16, Color.white));
-            
             GUI.color = Color.white;
+
+            // 点击检测
             if (GUI.Button(rect, "", GUIStyle.none)) value = !value;
-            
+
             GUILayout.EndHorizontal();
             return value;
         }
-        
+
+        /// <summary>
+        /// Material Design 3 分段按钮
+        /// </summary>
         public static int M3SegmentedButton(int selectedIndex, string[] options)
         {
             GUILayout.BeginHorizontal();
+            
             for (int i = 0; i < options.Length; i++)
             {
                 bool isSelected = selectedIndex == i;
-                Color primary = new(0.66f, 0.76f, 1.0f);
-                Color onSurfaceVariant = new(0.75f, 0.75f, 0.78f);
-                Color surfaceVariant = new(0.24f, 0.24f, 0.26f);
-                
-                GUIStyle segmentStyle = new(ButtonStyle)
+
+                GUIStyle segmentStyle = new(GUI.skin.button)
                 {
-                    fixedHeight = 30,
-                    margin = new RectOffset(0, 0, 0, 0),
-                    fontSize = 11,
+                    fixedHeight = 40,
+                    margin = new RectOffset(i == 0 ? 0 : 1, i == options.Length - 1 ? 0 : 1, 0, 0),
+                    fontSize = 12,
                     alignment = TextAnchor.MiddleCenter,
-                    normal = { 
-                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? primary : surfaceVariant), 
-                        textColor = isSelected ? Color.black : onSurfaceVariant 
+                    normal = {
+                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? Primary : SurfaceVariant),
+                        textColor = isSelected ? OnPrimary : OnSurfaceVariant
                     },
                     hover = {
-                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? primary : new Color(0.3f, 0.3f, 0.33f)),
-                        textColor = isSelected ? Color.black : Color.white
+                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? new Color(1.0f, 0.7f, 0.82f) : SurfaceContainerHigh),
+                        textColor = isSelected ? OnPrimary : Color.white
                     }
                 };
 
-                // Round corners for ends
-                float r = 15;
-                if (i == 0) 
+                // 两端圆角
+                float r = 20;
+                if (i == 0)
                 {
-                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : surfaceVariant, true, false, true, false);
-                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : new Color(0.3f, 0.3f, 0.33f), true, false, true, false);
+                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? Primary : SurfaceVariant, true, false, true, false);
+                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? new Color(1.0f, 0.7f, 0.82f) : SurfaceContainerHigh, true, false, true, false);
                 }
-                else if (i == options.Length - 1) 
+                else if (i == options.Length - 1)
                 {
-                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : surfaceVariant, false, true, false, true);
-                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? primary : new Color(0.3f, 0.3f, 0.33f), false, true, false, true);
+                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? Primary : SurfaceVariant, false, true, false, true);
+                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? new Color(1.0f, 0.7f, 0.82f) : SurfaceContainerHigh, false, true, false, true);
                 }
 
                 if (GUILayout.Button(options[i], segmentStyle, GUILayout.ExpandWidth(true)))
@@ -215,13 +305,56 @@ namespace Iridium.UI
                     selectedIndex = i;
                 }
             }
+            
             GUILayout.EndHorizontal();
             return selectedIndex;
         }
 
+        /// <summary>
+        /// 颜色选择器
+        /// </summary>
+        public static Color ColorPicker(Color color)
+        {
+            GUILayout.BeginVertical();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("R", _colorPickerLabelStyle, GUILayout.Width(20));
+            color.r = GUILayout.HorizontalSlider(color.r, 0f, 1f, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("G", _colorPickerLabelStyle, GUILayout.Width(20));
+            color.g = GUILayout.HorizontalSlider(color.g, 0f, 1f, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("B", _colorPickerLabelStyle, GUILayout.Width(20));
+            color.b = GUILayout.HorizontalSlider(color.b, 0f, 1f, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("A", _colorPickerLabelStyle, GUILayout.Width(20));
+            color.a = GUILayout.HorizontalSlider(color.a, 0f, 1f, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+
+            // 预览
+            Rect previewRect = GUILayoutUtility.GetRect(120, 16, GUILayout.ExpandWidth(true));
+            GUI.color = color;
+            GUI.DrawTexture(previewRect, GetCachedRoundedTex(64, 64, 8, Color.white));
+            GUI.color = Color.white;
+
+            GUILayout.EndVertical();
+
+            return color;
+        }
+
+        #region 纹理生成
+        /// <summary>
+        /// 获取缓存的圆角纹理
+        /// </summary>
         public static Texture2D GetCachedRoundedTex(int width, int height, float radius, Color col, bool tl = true, bool tr = true, bool bl = true, bool br = true)
         {
-            string key = $"{width}_{height}_{radius}_{col.r}_{col.g}_{col.b}_{col.a}_{tl}{tr}{bl}{br}";
+            string key = $"{width}_{height}_{radius}_{col.r:F3}_{col.g:F3}_{col.b:F3}_{col.a:F3}_{tl}{tr}{bl}{br}";
             if (_textureCache.TryGetValue(key, out Texture2D tex) && tex != null) return tex;
 
             tex = MakeRoundedTex(width, height, radius, col, tl, tr, bl, br);
@@ -230,6 +363,9 @@ namespace Iridium.UI
             return tex;
         }
 
+        /// <summary>
+        /// 生成圆角纹理
+        /// </summary>
         private static Texture2D MakeRoundedTex(int width, int height, float radius, Color col, bool tl = true, bool tr = true, bool bl = true, bool br = true)
         {
             Texture2D tex = new(width, height);
@@ -242,14 +378,30 @@ namespace Iridium.UI
                     float dx = -1, dy = -1;
                     bool isCornerRegion = false;
 
-                    // Top-Left
-                    if (tl && x < radius && y >= height - radius) { dx = radius - x; dy = radius - (height - 1 - y); isCornerRegion = true; }
-                    // Top-Right
-                    else if (tr && x >= width - radius && y >= height - radius) { dx = radius - (width - 1 - x); dy = radius - (height - 1 - y); isCornerRegion = true; }
-                    // Bottom-Left
-                    else if (bl && x < radius && y < radius) { dx = radius - x; dy = radius - y; isCornerRegion = true; }
-                    // Bottom-Right
-                    else if (br && x >= width - radius && y < radius) { dx = radius - (width - 1 - x); dy = radius - y; isCornerRegion = true; }
+                    if (tl && x < radius && y >= height - radius) 
+                    { 
+                        dx = radius - x; 
+                        dy = radius - (height - 1 - y); 
+                        isCornerRegion = true; 
+                    }
+                    else if (tr && x >= width - radius && y >= height - radius) 
+                    { 
+                        dx = radius - (width - 1 - x); 
+                        dy = radius - (height - 1 - y); 
+                        isCornerRegion = true; 
+                    }
+                    else if (bl && x < radius && y < radius) 
+                    { 
+                        dx = radius - x; 
+                        dy = radius - y; 
+                        isCornerRegion = true; 
+                    }
+                    else if (br && x >= width - radius && y < radius) 
+                    { 
+                        dx = radius - (width - 1 - x); 
+                        dy = radius - y; 
+                        isCornerRegion = true; 
+                    }
 
                     if (isCornerRegion)
                     {
@@ -276,6 +428,9 @@ namespace Iridium.UI
             return tex;
         }
 
+        /// <summary>
+        /// 生成纯色纹理
+        /// </summary>
         public static Texture2D MakeSolidTex(int width, int height, Color col)
         {
             Texture2D tex = new(width, height);
@@ -285,5 +440,6 @@ namespace Iridium.UI
             tex.Apply();
             return tex;
         }
+        #endregion
     }
 }
