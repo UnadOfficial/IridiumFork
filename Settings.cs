@@ -90,7 +90,7 @@ namespace Iridium
                 {
                     language = lang;
                 }
-                if (lang != langs[langs.Length - 1]) GUILayout.Space(4);
+                if (lang != langs[langs.Count - 1]) GUILayout.Space(4);
             }
             
             GUILayout.EndHorizontal();
