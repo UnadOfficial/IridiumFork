@@ -111,23 +111,93 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
         }
 
+        /// <summary>
+        /// 更新所有patch（仅用于初始化或全量更新）
+        /// </summary>
         public static void UpdateAllPatches()
         {
             if (_harmony == null) return;
 
             foreach (var def in _definitions)
             {
-                bool shouldBeActive = CalculateEffectiveStatus(def);
-                bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
+                UpdateSinglePatch(def);
+            }
+        }
 
-                if (trackedActive != shouldBeActive)
+        /// <summary>
+        /// 按类型更新单个patch - 用于增量更新
+        /// </summary>
+        public static void UpdatePatchByType(Type patchType)
+        {
+            if (_harmony == null) return;
+
+            var def = _definitions.Find(d => d.Type == patchType);
+            if (def != null)
+            {
+                UpdateSinglePatch(def);
+            }
+        }
+
+        /// <summary>
+        /// 更新所有优化器相关的patch（当 enableOptimizer 改变时调用）
+        /// </summary>
+        public static void UpdateOptimizerPatches()
+        {
+            if (_harmony == null) return;
+
+            // 优化器相关的 patch 类型
+            var optimizerParentTypes = new HashSet<Type>
+            {
+                typeof(OptimizerPatches),
+                typeof(TrackOptimizationPatches),
+                typeof(SceneOptimizationPatches),
+                typeof(LoadingOptimizationPatches)
+            };
+
+            foreach (var def in _definitions)
+            {
+                // 检查是否是优化器相关的 patch
+                bool isOptimizerPatch = optimizerParentTypes.Contains(def.Type) ||
+                    (def.Type.DeclaringType != null && optimizerParentTypes.Contains(def.Type.DeclaringType));
+
+                if (isOptimizerPatch)
                 {
-                    Main.Logger?.Log($"[PatchManager] {def.Name} status changed: {trackedActive} -> {shouldBeActive}");
-                    if (shouldBeActive) ApplyPatch(def.Type);
-                    else RemovePatch(def.Type);
-
-                    _activePatches[def.Type] = shouldBeActive;
+                    UpdateSinglePatch(def);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 更新满足条件的patch - 用于批量增量更新
+        /// </summary>
+        public static void UpdatePatchesByCondition(Func<Type, bool> predicate)
+        {
+            if (_harmony == null) return;
+
+            foreach (var def in _definitions)
+            {
+                if (predicate(def.Type))
+                {
+                    UpdateSinglePatch(def);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 更新单个patch定义
+        /// </summary>
+        private static void UpdateSinglePatch(PatchDef def)
+        {
+            bool shouldBeActive = CalculateEffectiveStatus(def);
+            bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
+
+            if (trackedActive != shouldBeActive)
+            {
+                Main.Logger?.Log($"[PatchManager] {def.Name} status changed: {trackedActive} -> {shouldBeActive}");
+                if (shouldBeActive) ApplyPatch(def.Type);
+                else RemovePatch(def.Type);
+
+                _activePatches[def.Type] = shouldBeActive;
             }
         }
 
