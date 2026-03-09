@@ -75,6 +75,7 @@
   "OptimizeMoveDecorations": "优化 移动装饰物 逻辑",
   "OptimizeFloorMesh": "优化 砖块渲染(FloorMesh)性能 (实验性)",
   "OptimizeFilters": "优化滤镜性能 (显著减少 CPU 占用)",
+  "GameOptimizations": "游戏优化",
   "FirstRunTitle": "温馨提示",
   "FirstRunMessage": "Iridium 是一款优化模组，但仍存在不稳定的情况。如果游戏出现问题，请考虑先禁用它。",
   "Understand": "我知道了",

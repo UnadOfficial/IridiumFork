@@ -75,6 +75,7 @@
   "OptimizeMoveDecorations": "Optimize MoveDecorations Logic",
   "OptimizeFloorMesh": "Optimize FloorMesh Rendering (Experimental)",
   "OptimizeFilters": "Optimize Filter Performance (Reduce CPU Usage)",
+  "GameOptimizations": "Game Optimizations",
   "FirstRunTitle": "Tips",
   "FirstRunMessage": "Iridium is an optimization mod, but it still has unstable situations. If there are problems with the game, please consider disabling it first.",
   "Understand": "Understand",
