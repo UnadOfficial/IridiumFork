@@ -35,9 +35,9 @@ namespace Iridium.UI
 
         // 表面颜色 - 深色主题
         private static readonly Color Surface = new(0.08f, 0.06f, 0.08f);           // 最底层背景
-        private static readonly Color SurfaceContainer = new(0.11f, 0.09f, 0.11f);  // 卡片背景
-        private static readonly Color SurfaceContainerHigh = new(0.15f, 0.12f, 0.14f); // 高亮卡片
-        private static readonly Color SurfaceVariant = new(0.20f, 0.16f, 0.18f);    // 变体表面
+        private static readonly Color SurfaceContainer = new(0.14f, 0.12f, 0.14f);  // 卡片背景
+        private static readonly Color SurfaceContainerHigh = new(0.18f, 0.15f, 0.17f); // 高亮卡片
+        private static readonly Color SurfaceVariant = new(0.22f, 0.18f, 0.20f);    // 变体表面
 
         // 文字颜色
         private static readonly Color OnSurface = new(1.0f, 1.0f, 1.0f);           // 主文字 - 纯白
@@ -48,8 +48,8 @@ namespace Iridium.UI
         private static readonly Color OutlineVariant = new(0.25f, 0.20f, 0.22f);   // 变体边框
 
         // 信息色
-        private static readonly Color InfoContainer = new(0.15f, 0.20f, 0.30f);
-        private static readonly Color OnInfoContainer = new(0.75f, 0.85f, 1.0f);
+        private static readonly Color InfoContainer = new(0.20f, 0.18f, 0.22f);
+        private static readonly Color OnInfoContainer = new(1.0f, 0.9f, 0.95f);
         private static readonly Color ErrorContainer = new(0.35f, 0.12f, 0.15f);
         private static readonly Color OnErrorContainer = new(1.0f, 0.75f, 0.78f);
         #endregion
@@ -130,9 +130,9 @@ namespace Iridium.UI
                 fixedHeight = 36,
                 padding = new RectOffset(16, 16, 0, 0),
                 alignment = TextAnchor.MiddleCenter,
-                normal = { background = GetCachedRoundedTex(64, 64, 18, SurfaceVariant), textColor = OnSurface },
-                hover = { background = GetCachedRoundedTex(64, 64, 18, SurfaceContainerHigh), textColor = Color.white },
-                active = { background = GetCachedRoundedTex(64, 64, 18, PrimaryContainer), textColor = OnPrimaryContainer }
+                normal = { background = GetCachedRoundedTex(64, 64, 18, new Color(0.28f, 0.25f, 0.28f)), textColor = new Color(0.9f, 0.9f, 0.9f) },
+                hover = { background = GetCachedRoundedTex(64, 64, 18, new Color(0.35f, 0.32f, 0.36f)), textColor = Color.white },
+                active = { background = GetCachedRoundedTex(64, 64, 18, new Color(0.22f, 0.20f, 0.24f)), textColor = Color.white }
             };
 
             // 主要按钮样式
@@ -144,7 +144,7 @@ namespace Iridium.UI
                 alignment = TextAnchor.MiddleCenter,
                 normal = { background = GetCachedRoundedTex(64, 64, 18, Primary), textColor = OnPrimary },
                 hover = { background = GetCachedRoundedTex(64, 64, 18, new Color(1.0f, 0.7f, 0.82f)), textColor = OnPrimary },
-                active = { background = GetCachedRoundedTex(64, 64, 18, new Color(0.9f, 0.5f, 0.68f)), textColor = OnPrimary }
+                active = { background = GetCachedRoundedTex(64, 64, 18, new Color(0.9f, 0.5f, 0.68f)), textColor = Color.white }
             };
 
             // 输入框样式
@@ -154,9 +154,9 @@ namespace Iridium.UI
                 fixedHeight = 36,
                 alignment = TextAnchor.MiddleLeft,
                 padding = new RectOffset(12, 12, 0, 0),
-                normal = { background = GetCachedRoundedTex(64, 64, 12, SurfaceVariant), textColor = OnSurface },
-                hover = { background = GetCachedRoundedTex(64, 64, 12, SurfaceContainerHigh), textColor = Color.white },
-                focused = { background = GetCachedRoundedTex(64, 64, 12, SurfaceContainerHigh), textColor = Color.white }
+                normal = { background = GetCachedRoundedTex(64, 64, 12, new Color(0.20f, 0.18f, 0.22f)), textColor = new Color(0.95f, 0.95f, 0.95f) },
+                hover = { background = GetCachedRoundedTex(64, 64, 12, new Color(0.25f, 0.22f, 0.26f)), textColor = Color.white },
+                focused = { background = GetCachedRoundedTex(64, 64, 12, new Color(0.32f, 0.25f, 0.28f)), textColor = Color.white }
             };
 
             // 信息框样式
@@ -212,11 +212,31 @@ namespace Iridium.UI
             GUILayout.Box(text, isError ? _warningBoxStyle : _infoBoxStyle, GUILayout.ExpandWidth(true));
         }
 
+        #region 性能优化：静态颜色缓存
+        private static Color? _trackColorOn;
+        private static Color? _thumbColorOn;
+        private static Color? _trackColorOff;
+        private static Color? _thumbColorOff;
+        
+        private static void EnsureColorsInitialized()
+        {
+            if (_trackColorOn == null)
+            {
+                _trackColorOn = new Color(1.0f, 0.65f, 0.8f);
+                _thumbColorOn = new Color(0.95f, 0.45f, 0.65f);
+                _trackColorOff = new Color(0.40f, 0.38f, 0.42f);
+                _thumbColorOff = new Color(0.50f, 0.48f, 0.52f);
+            }
+        }
+        #endregion
+
         /// <summary>
         /// Material Design 3 Switch 开关
         /// </summary>
         public static bool M3Switch(bool value, string label)
         {
+            EnsureColorsInitialized();
+            
             GUILayout.BeginHorizontal(GUILayout.Height(40));
             
             if (!string.IsNullOrEmpty(label))
@@ -232,9 +252,7 @@ namespace Iridium.UI
             Rect rect = GUILayoutUtility.GetRect(trackWidth, trackHeight, GUILayout.Width(trackWidth), GUILayout.Height(trackHeight));
 
             // 轨道颜色 - 选中时更亮的粉色
-            Color trackColor = value 
-                ? new Color(1.0f, 0.65f, 0.8f)  // 选中：粉色轨道
-                : new Color(0.25f, 0.22f, 0.24f); // 未选中：深灰
+            Color trackColor = value ? _trackColorOn!.Value : _trackColorOff!.Value;
 
             // 绘制轨道
             GUI.color = trackColor;
@@ -245,9 +263,7 @@ namespace Iridium.UI
             float thumbX = value ? rect.x + rect.width - thumbSize - 4 : rect.x + 4;
             Rect thumbRect = new(thumbX, rect.y + (trackHeight - thumbSize) / 2, thumbSize, thumbSize);
             
-            Color thumbColor = value 
-                ? new Color(0.95f, 0.45f, 0.65f)  // 选中：深粉拇指
-                : new Color(0.65f, 0.60f, 0.62f); // 未选中：灰色拇指
+            Color thumbColor = value ? _thumbColorOn!.Value : _thumbColorOff!.Value;
             
             GUI.color = thumbColor;
             GUI.DrawTexture(thumbRect, GetCachedRoundedTex(32, 32, 16, Color.white));
@@ -278,26 +294,38 @@ namespace Iridium.UI
                     fontSize = 12,
                     alignment = TextAnchor.MiddleCenter,
                     normal = {
-                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? Primary : SurfaceVariant),
-                        textColor = isSelected ? OnPrimary : OnSurfaceVariant
+                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? Primary : new Color(0.20f, 0.18f, 0.22f)),
+                        textColor = isSelected ? OnPrimary : new Color(0.85f, 0.85f, 0.85f)
                     },
                     hover = {
-                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? new Color(1.0f, 0.7f, 0.82f) : SurfaceContainerHigh),
+                        background = GetCachedRoundedTex(64, 64, 0, isSelected ? new Color(1.0f, 0.7f, 0.82f) : new Color(0.25f, 0.22f, 0.26f)),
                         textColor = isSelected ? OnPrimary : Color.white
                     }
                 };
 
                 // 两端圆角
                 float r = 20;
+                Color unselectedNormal = new Color(0.20f, 0.18f, 0.22f);
+                Color unselectedHover = new Color(0.25f, 0.22f, 0.26f);
+                
                 if (i == 0)
                 {
-                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? Primary : SurfaceVariant, true, false, true, false);
-                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? new Color(1.0f, 0.7f, 0.82f) : SurfaceContainerHigh, true, false, true, false);
+                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? Primary : unselectedNormal, true, false, true, false);
+                    segmentStyle.normal.textColor = isSelected ? OnPrimary : new Color(0.85f, 0.85f, 0.85f);
+                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? new Color(1.0f, 0.7f, 0.82f) : unselectedHover, true, false, true, false);
                 }
                 else if (i == options.Length - 1)
                 {
-                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? Primary : SurfaceVariant, false, true, false, true);
-                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? new Color(1.0f, 0.7f, 0.82f) : SurfaceContainerHigh, false, true, false, true);
+                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? Primary : unselectedNormal, false, true, false, true);
+                    segmentStyle.normal.textColor = isSelected ? OnPrimary : new Color(0.85f, 0.85f, 0.85f);
+                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? new Color(1.0f, 0.7f, 0.82f) : unselectedHover, false, true, false, true);
+                }
+                // 中间按钮
+                else
+                {
+                    segmentStyle.normal.background = GetCachedRoundedTex(64, 64, r, isSelected ? Primary : unselectedNormal);
+                    segmentStyle.normal.textColor = isSelected ? OnPrimary : new Color(0.85f, 0.85f, 0.85f);
+                    segmentStyle.hover.background = GetCachedRoundedTex(64, 64, r, isSelected ? new Color(1.0f, 0.7f, 0.82f) : unselectedHover);
                 }
 
                 if (GUILayout.Button(options[i], segmentStyle, GUILayout.ExpandWidth(true)))
@@ -354,7 +382,11 @@ namespace Iridium.UI
         /// </summary>
         public static Texture2D GetCachedRoundedTex(int width, int height, float radius, Color col, bool tl = true, bool tr = true, bool bl = true, bool br = true)
         {
-            string key = $"{width}_{height}_{radius}_{col.r:F3}_{col.g:F3}_{col.b:F3}_{col.a:F3}_{tl}{tr}{bl}{br}";
+            // 性能优化：使用整数和简化的颜色值作为key
+            int colorKey = (int)(col.r * 255) << 24 | (int)(col.g * 255) << 16 | (int)(col.b * 255) << 8 | (int)(col.a * 255);
+            int cornerKey = (tl ? 1 : 0) | (tr ? 2 : 0) | (bl ? 4 : 0) | (br ? 8 : 0);
+            string key = $"{width}x{height}_r{radius}_c{colorKey}_{cornerKey}";
+            
             if (_textureCache.TryGetValue(key, out Texture2D tex) && tex != null) return tex;
 
             tex = MakeRoundedTex(width, height, radius, col, tl, tr, bl, br);
@@ -369,6 +401,9 @@ namespace Iridium.UI
         private static Texture2D MakeRoundedTex(int width, int height, float radius, Color col, bool tl = true, bool tr = true, bool bl = true, bool br = true)
         {
             Texture2D tex = new(width, height);
+            tex.filterMode = FilterMode.Point;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            
             Color[] pix = new Color[width * height];
 
             for (int y = 0; y < height; y++)
@@ -424,7 +459,7 @@ namespace Iridium.UI
             }
 
             tex.SetPixels(pix);
-            tex.Apply();
+            tex.Apply(false, false);
             return tex;
         }
 
@@ -434,10 +469,13 @@ namespace Iridium.UI
         public static Texture2D MakeSolidTex(int width, int height, Color col)
         {
             Texture2D tex = new(width, height);
+            tex.filterMode = FilterMode.Point;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            
             Color[] pix = new Color[width * height];
             for (int i = 0; i < pix.Length; i++) pix[i] = col;
             tex.SetPixels(pix);
-            tex.Apply();
+            tex.Apply(false, false);
             return tex;
         }
         #endregion
