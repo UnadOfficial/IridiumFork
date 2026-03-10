@@ -68,27 +68,6 @@ namespace Iridium.Patches
         }
 
         /// <summary>
-        /// 优化 scnGame.decorationManager 属性访问
-        /// </summary>
-        [HarmonyPatch(typeof(scnGame), "decorationManager", MethodType.Getter)]
-        public static class DecorationManagerCachePatch
-        {
-            [HarmonyPrefix]
-            public static bool Prefix(ref scrDecorationManager __result)
-            {
-                if (!Main.Settings.optimizer.cacheGameObjectReferences) return true;
-
-                if (_cachedDecorationManager != null)
-                {
-                    __result = _cachedDecorationManager;
-                    return false;
-                }
-
-                return true;
-            }
-        }
-
-        /// <summary>
         /// 优化 scnGame.Update - 只在相机参数变化时更新
         /// </summary>
         [HarmonyPatch(typeof(scnGame), "Update")]
@@ -210,79 +189,6 @@ namespace Iridium.Patches
             public static List<LevelEvent>? GetEventsByType(LevelEventType type)
             {
                 return _eventsByType.TryGetValue(type, out var list) ? list : null;
-            }
-        }
-
-        /// <summary>
-        /// 优化 RemoveAllEffects - 使用无分配的 GetComponents 重载
-        /// </summary>
-        [HarmonyPatch(typeof(scnGame), "RemoveAllEffects")]
-        public static class RemoveEffectsOptimizationPatch
-        {
-            [HarmonyPrefix]
-            public static bool Prefix(List<scrFloor> floors)
-            {
-                if (!Main.Settings.optimizer.optimizeEffectRemoval) return true;
-
-                try
-                {
-                    foreach (var floor in floors)
-                    {
-                        if (floor == null) continue;
-
-                        _reusableEffectList.Clear();
-                        floor.GetComponents(_reusableEffectList); // 无分配版本
-
-                        foreach (var effect in _reusableEffectList)
-                        {
-                            if (effect != null)
-                                UnityEngine.Object.DestroyImmediate(effect);
-                        }
-                    }
-                    return false;
-                }
-                catch (Exception e)
-                {
-                    Main.Logger?.Error($"[SceneOptimization] RemoveEffects failed: {e}");
-                    return true;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 优化 FindGameObjectsWithTag("MissIndicator") 调用
-        /// </summary>
-        [HarmonyPatch(typeof(scnGame), "DestroyMissIndicators")]
-        public static class DestroyMissIndicatorsPatch
-        {
-            private static readonly List<GameObject> _missIndicators = new(50);
-
-            [HarmonyPrefix]
-            public static bool Prefix()
-            {
-                if (!Main.Settings.optimizer.optimizeMissIndicators) return true;
-
-                try
-                {
-                    // 使用缓存列表而不是每次 FindGameObjectsWithTag
-                    _missIndicators.Clear();
-
-                    // 注意：这里仍需要 Find，但我们可以维护一个列表
-                    // 更好的方案是在创建时就加入列表，但这需要 Patch 创建逻辑
-                    var found = GameObject.FindGameObjectsWithTag("MissIndicator");
-                    foreach (var obj in found)
-                    {
-                        if (obj != null)
-                            UnityEngine.Object.Destroy(obj);
-                    }
-
-                    return false;
-                }
-                catch (Exception e)
-                {
-                    Main.Logger?.Error($"[SceneOptimization] DestroyMissIndicators failed: {e}");
-                    return true;
-                }
             }
         }
 
@@ -465,26 +371,6 @@ namespace Iridium.Patches
                 }
 
                 return null;
-            }
-        }
-
-        /// <summary>
-        /// 清理 Editor 缓存
-        /// </summary>
-        [HarmonyPatch(typeof(scnEditor), "OnDestroy")]
-        public static class ScnEditorCleanupPatch
-        {
-            [HarmonyPostfix]
-            public static void Postfix()
-            {
-                // 只在启用优化时才清理
-                if (!Main.Settings.optimizer.enableOptimizer) return;
-
-                _reusableColliderList.Clear();
-                _reusableGameObjectList.Clear();
-                // ConditionalWeakTable 不需要手动清理
-
-                Main.Logger?.Log("[SceneOptimization] Cleaned up scnEditor caches");
             }
         }
 

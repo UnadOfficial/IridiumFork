@@ -4,6 +4,8 @@ using UnityEngine;
 using Iridium.UI;
 using Iridium.Config;
 using Iridium.Patches;
+using System.IO;
+using System.Linq;
 
 namespace Iridium
 {
@@ -11,8 +13,8 @@ namespace Iridium
     {
         public string language = "en";
         public bool firstRun = true;
-        public string? lastVersion = null;
-        public string? lastUpgradeMessageSeen_106_beta5 = null;
+        public string? lastVersion = null; // 用于跟踪版本升级
+        public string? lastUpgradeMessageSeen_106_beta5 = null; // 记录用户最后看过的特定升级提示 ID
         
         public OptimizerSettings optimizer = new();
         public UISettings ui = new();
@@ -24,475 +26,492 @@ namespace Iridium
 
         private string? _defaultLobbyMusicPathCache;
         private string? _fastLobbyMusicPathCache;
+        
+        // 性能优化：跟踪帧数
+        private static int _lastFrameCount = -1;
 
         public void OnGUI(UnityModManager.ModEntry modEntry)
         {
+            // 性能优化：只在必要时初始化样式
             UIUtils.InitializeStyles();
+            
+            // 性能优化：只在第一帧或需要时执行某些检查
+            if (Time.frameCount != _lastFrameCount)
+            {
+                _lastFrameCount = Time.frameCount;
+            }
 
             _defaultLobbyMusicPathCache ??= lobbyMusic.defaultMusicPath;
             _fastLobbyMusicPathCache ??= lobbyMusic.fastMusicPath;
 
-            // 顶部：语言选择
-            DrawLanguageSection();
-
-            GUILayout.Space(4);
-
-            // 三列布局
             GUILayout.BeginHorizontal();
 
-            // === 左列：核心优化 ===
-            GUILayout.BeginVertical(GUILayout.Width(320));
-            DrawOptimizerSection();
-            DrawMemorySection();
-            GUILayout.EndVertical();
+            // --- Left Column ---
+            GUILayout.BeginVertical(GUILayout.Width(420));
 
-            GUILayout.Space(8);
-
-            // === 中列：UI 和外观 ===
-            GUILayout.BeginVertical(GUILayout.Width(320));
-            DrawUISection();
-            DrawLobbyMusicSection();
-            GUILayout.EndVertical();
-
-            GUILayout.Space(8);
-
-            // === 右列：高级设置 ===
-            GUILayout.BeginVertical(GUILayout.Width(320));
-            DrawCompatibilitySection();
-            DrawHitSoundSection();
-            DrawJudgeTextSection();
-            GUILayout.EndVertical();
-
-            GUILayout.EndHorizontal();
-
-            // 底部版本信息
-            GUILayout.Space(8);
-            DrawVersionInfo();
-
-            if (GUI.changed)
-            {
-                Save(modEntry);
-            }
-        }
-
-        private void DrawLanguageSection()
-        {
+            // Language Selection Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
-            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("Language"), UIUtils.HeaderStyle);
             
+            GUILayout.BeginHorizontal();
             var langs = Localization.AvailableLanguages;
             foreach (var lang in langs)
             {
                 bool isCurrent = language == lang;
-                GUIStyle btnStyle = isCurrent ? UIUtils.ButtonPrimaryStyle : UIUtils.ButtonStyle;
+                if (isCurrent) GUI.color = new(1.0f, 0.6f, 0.75f);
                 string displayName = Localization.GetDisplayName(lang);
-                if (GUILayout.Button(displayName.ToUpper(), btnStyle, GUILayout.Height(32), GUILayout.ExpandWidth(true)))
+                if (GUILayout.Button(displayName.ToUpper(), UIUtils.ButtonStyle, GUILayout.Width(100)))
                 {
                     language = lang;
                 }
-                if (lang != langs[langs.Count - 1]) GUILayout.Space(4);
+                GUI.color = Color.white;
+                GUILayout.Space(6);
             }
-            
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
-        }
 
-        private void DrawOptimizerSection()
-        {
+            GUILayout.Space(8);
+
+            // CompressDecorations Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
+            
+            GUILayout.BeginHorizontal();
             GUILayout.Label(Localization.Get("EnableOptimizer"), UIUtils.HeaderStyle);
-
-            bool newEnable = UIUtils.M3Switch(optimizer.enableOptimizer, "");
-            if (newEnable != optimizer.enableOptimizer)
+            GUILayout.FlexibleSpace();
+            bool newEnableOptimizer = UIUtils.M3Switch(optimizer.enableOptimizer, "");
+            if (newEnableOptimizer != optimizer.enableOptimizer)
             {
-                optimizer.enableOptimizer = newEnable;
-                if (optimizer.enableOptimizer && optimizer.disableShadows) 
-                    QualitySettings.shadows = ShadowQuality.Disable;
-                else 
-                    QualitySettings.shadows = ShadowQuality.All;
-                PatchManager.UpdateOptimizerPatches();
+                optimizer.enableOptimizer = newEnableOptimizer;
+                if (optimizer.enableOptimizer && optimizer.disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
+                else QualitySettings.shadows = ShadowQuality.All;
+                // 只更新优化器相关的 patch，不遍历所有
+                Iridium.Patches.PatchManager.UpdateOptimizerPatches();
             }
+            GUILayout.EndHorizontal();
 
             if (optimizer.enableOptimizer)
             {
-                if (OptimizerPatches.savedVRAM_MB > 0.1f)
+                GUILayout.Space(8);
+                
+                if (Iridium.Patches.OptimizerPatches.savedVRAM_MB > 0.1f)
                 {
-                    UIUtils.DrawInfoBox("✨ " + Localization.Get("SavedMemoryMsg", OptimizerPatches.savedVRAM_MB.ToString("F2")));
+                    UIUtils.DrawInfoBox("✨ " + Localization.Get("SavedMemoryMsg", Iridium.Patches.OptimizerPatches.savedVRAM_MB.ToString("F2")));
+                    GUILayout.Space(8);
                 }
 
-                // 图像压缩设置
-                DrawCompactSwitch(ref optimizer.dontShowSavedMemory, Localization.Get("ShowSavedMemory"), true);
-                DrawCompactSwitch(ref optimizer.dontCompress, Localization.Get("CompressImage"), true);
-                DrawCompactSwitch(ref optimizer.dontResizeMultipleOf4, Localization.Get("MultipleOf4"), true);
+                bool showSavedMemory = UIUtils.M3Switch(!optimizer.dontShowSavedMemory, Localization.Get("ShowSavedMemory"));
+                if (showSavedMemory == optimizer.dontShowSavedMemory)
+                {
+                    optimizer.dontShowSavedMemory = !showSavedMemory;
+                }
+
+                bool compressImage = UIUtils.M3Switch(!optimizer.dontCompress, Localization.Get("CompressImage"));
+                if (compressImage == optimizer.dontCompress)
+                {
+                    optimizer.dontCompress = !compressImage;
+                }
+
+                bool multipleOf4 = UIUtils.M3Switch(!optimizer.dontResizeMultipleOf4, Localization.Get("MultipleOf4"));
+                if (multipleOf4 == optimizer.dontResizeMultipleOf4)
+                {
+                    optimizer.dontResizeMultipleOf4 = !multipleOf4;
+                }
                 
                 if (optimizer.dontCompress) optimizer.dontResizeMultipleOf4 = true;
 
-                // 压缩比例
-                GUILayout.BeginHorizontal(GUILayout.Height(36));
+                GUILayout.Space(8);
+                GUILayout.BeginHorizontal(GUILayout.Height(28));
                 GUILayout.Label(Localization.Get("DivideImageBy"), UIUtils.LabelStyle);
                 GUILayout.FlexibleSpace();
-                string divideByStr = GUILayout.TextField(optimizer.divideBy.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(60));
+                string divideByStr = GUILayout.TextField(optimizer.divideBy.ToString("F1"), 5, UIUtils.TextFieldStyle, GUILayout.Width(50));
                 if (double.TryParse(divideByStr, out double newDivideBy)) optimizer.divideBy = newDivideBy;
                 GUILayout.EndHorizontal();
 
-                DrawCompactSwitch(ref optimizer.dontResizeCollider, Localization.Get("DontResizeCollider"), true);
-
-                bool newShadows = UIUtils.M3Switch(optimizer.disableShadows, Localization.Get("DisableShadows"));
-                if (newShadows != optimizer.disableShadows)
+                GUILayout.Space(4);
+                optimizer.dontResizeCollider = UIUtils.M3Switch(optimizer.dontResizeCollider, Localization.Get("DontResizeCollider"));
+                
+                bool newDisableShadows = UIUtils.M3Switch(optimizer.disableShadows, Localization.Get("DisableShadows"));
+                if (newDisableShadows != optimizer.disableShadows)
                 {
-                    optimizer.disableShadows = newShadows;
-                    if (optimizer.enableOptimizer && optimizer.disableShadows) 
-                        QualitySettings.shadows = ShadowQuality.Disable;
-                    else 
-                        QualitySettings.shadows = ShadowQuality.All;
+                    optimizer.disableShadows = newDisableShadows;
+                    if (optimizer.enableOptimizer && optimizer.disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
+                    else QualitySettings.shadows = ShadowQuality.All;
                 }
 
-                UIUtils.DrawDivider();
+                optimizer.optimizeDecorationUpdate = UIUtils.M3Switch(optimizer.optimizeDecorationUpdate, Localization.Get("OptimizeDecorationUpdate"));
+                optimizer.optimizeTileUpdate = UIUtils.M3Switch(optimizer.optimizeTileUpdate, Localization.Get("OptimizeTileUpdate"));
+                optimizer.optimizeMoveTrack = UIUtils.M3Switch(optimizer.optimizeMoveTrack, Localization.Get("OptimizeMoveTrack"));
+                optimizer.optimizeRecolorTrack = UIUtils.M3Switch(optimizer.optimizeRecolorTrack, Localization.Get("OptimizeRecolorTrack"));
+                optimizer.skipEventIfPaused = UIUtils.M3Switch(optimizer.skipEventIfPaused, Localization.Get("SkipEventIfPaused"));
+                optimizer.optimizeEventIcons = UIUtils.M3Switch(optimizer.optimizeEventIcons, Localization.Get("OptimizeEventIcons"));
+                optimizer.optimizeScnGameUpdate = UIUtils.M3Switch(optimizer.optimizeScnGameUpdate, Localization.Get("OptimizeScnGameUpdate"));
+                optimizer.optimizeMoveDecorations = UIUtils.M3Switch(optimizer.optimizeMoveDecorations, Localization.Get("OptimizeMoveDecorations"));
+                optimizer.optimizeFloorMesh = UIUtils.M3Switch(optimizer.optimizeFloorMesh, Localization.Get("OptimizeFloorMesh"));
+                optimizer.optimizeFilters = UIUtils.M3Switch(optimizer.optimizeFilters, Localization.Get("OptimizeFilters"));
+                optimizer.fastLoading = UIUtils.M3Switch(optimizer.fastLoading, Localization.Get("FastLoading"));
 
-                // 游戏优化
-                GUILayout.Label(Localization.Get("GameOptimizations"), UIUtils.SubHeaderStyle);
-                DrawCompactSwitch(ref optimizer.optimizeDecorationUpdate, Localization.Get("OptimizeDecorationUpdate"));
-                DrawCompactSwitch(ref optimizer.optimizeTileUpdate, Localization.Get("OptimizeTileUpdate"));
-                DrawCompactSwitch(ref optimizer.optimizeMoveTrack, Localization.Get("OptimizeMoveTrack"));
-                DrawCompactSwitch(ref optimizer.optimizeRecolorTrack, Localization.Get("OptimizeRecolorTrack"));
-                DrawCompactSwitch(ref optimizer.skipEventIfPaused, Localization.Get("SkipEventIfPaused"));
-                DrawCompactSwitch(ref optimizer.optimizeEventIcons, Localization.Get("OptimizeEventIcons"));
-                DrawCompactSwitch(ref optimizer.optimizeScnGameUpdate, Localization.Get("OptimizeScnGameUpdate"));
-                DrawCompactSwitch(ref optimizer.optimizeMoveDecorations, Localization.Get("OptimizeMoveDecorations"));
-                DrawCompactSwitch(ref optimizer.optimizeFloorMesh, Localization.Get("OptimizeFloorMesh"));
-                DrawCompactSwitch(ref optimizer.optimizeFilters, Localization.Get("OptimizeFilters"));
-                DrawCompactSwitch(ref optimizer.fastLoading, Localization.Get("FastLoading"));
+                GUILayout.Space(8);
+                GUILayout.Label("🎯 " + Localization.Get("SceneOptimizations"), UIUtils.LabelStyle);
+                GUILayout.Space(4);
 
-                UIUtils.DrawDivider();
+                optimizer.cacheGameObjectReferences = UIUtils.M3Switch(optimizer.cacheGameObjectReferences, Localization.Get("CacheGameObjectReferences"));
+                optimizer.optimizeEventProcessing = UIUtils.M3Switch(optimizer.optimizeEventProcessing, Localization.Get("OptimizeEventProcessing"));
+                optimizer.optimizeEditorMouseDetection = UIUtils.M3Switch(optimizer.optimizeEditorMouseDetection, Localization.Get("OptimizeEditorMouseDetection"));
+                optimizer.optimizeEditorEventIndicators = UIUtils.M3Switch(optimizer.optimizeEditorEventIndicators, Localization.Get("OptimizeEditorEventIndicators"));
 
-                // 场景优化
-                GUILayout.Label(Localization.Get("SceneOptimizations"), UIUtils.SubHeaderStyle);
-                DrawCompactSwitch(ref optimizer.cacheGameObjectReferences, Localization.Get("CacheGameObjectReferences"));
-                DrawCompactSwitch(ref optimizer.optimizeEventProcessing, Localization.Get("OptimizeEventProcessing"));
-                DrawCompactSwitch(ref optimizer.optimizeEffectRemoval, Localization.Get("OptimizeEffectRemoval"));
-                DrawCompactSwitch(ref optimizer.optimizeMissIndicators, Localization.Get("OptimizeMissIndicators"));
-                DrawCompactSwitch(ref optimizer.optimizeEditorMouseDetection, Localization.Get("OptimizeEditorMouseDetection"));
-                DrawCompactSwitch(ref optimizer.optimizeEditorEventIndicators, Localization.Get("OptimizeEditorEventIndicators"));
+                GUILayout.Space(8);
+                GUILayout.Label("⚡ " + Localization.Get("LoadingOptimizations"), UIUtils.LabelStyle);
+                GUILayout.Space(4);
 
-                UIUtils.DrawDivider();
+                optimizer.cacheFloorEvents = UIUtils.M3Switch(optimizer.cacheFloorEvents, Localization.Get("CacheFloorEvents"));
+                optimizer.optimizeMoveTrackTweens = UIUtils.M3Switch(optimizer.optimizeMoveTrackTweens, Localization.Get("OptimizeMoveTrackTweens"));
+                optimizer.batchMoveDecorations = UIUtils.M3Switch(optimizer.batchMoveDecorations, Localization.Get("BatchMoveDecorations"));
 
-                // 加载优化
-                GUILayout.Label(Localization.Get("LoadingOptimizations"), UIUtils.SubHeaderStyle);
-                DrawCompactSwitch(ref optimizer.batchCreateDecorations, Localization.Get("BatchCreateDecorations"));
+                GUILayout.Space(4);
 
-                if (optimizer.batchCreateDecorations)
+                // Error states
+                if (typeof(Notification).GetMethod("SetupNotification", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic) == null)
                 {
-                    GUILayout.BeginHorizontal(GUILayout.Height(36));
-                    GUILayout.Space(16);
-                    GUILayout.Label(Localization.Get("DecorationBatchSize"), UIUtils.LabelSecondaryStyle);
-                    GUILayout.FlexibleSpace();
-                    string batchSizeStr = GUILayout.TextField(optimizer.decorationBatchSize.ToString(), 3, UIUtils.TextFieldStyle, GUILayout.Width(50));
-                    if (int.TryParse(batchSizeStr, out int newBatchSize))
-                        optimizer.decorationBatchSize = Mathf.Clamp(newBatchSize, 1, 100);
-                    GUILayout.EndHorizontal();
+                    GUILayout.Space(4);
+                    UIUtils.DrawInfoBox("⚠ " + Localization.Get("MethodNotFound", "Notification.SetupNotification"), true);
+                    optimizer.dontShowSavedMemory = true;
                 }
-
-                DrawCompactSwitch(ref optimizer.cacheFloorEvents, Localization.Get("CacheFloorEvents"));
-                DrawCompactSwitch(ref optimizer.asyncDestroyEffects, Localization.Get("AsyncDestroyEffects"));
-                DrawCompactSwitch(ref optimizer.optimizeMoveTrackTweens, Localization.Get("OptimizeMoveTrackTweens"));
-                DrawCompactSwitch(ref optimizer.batchMoveDecorations, Localization.Get("BatchMoveDecorations"));
-
-                // 错误提示
-                DrawErrorWarnings();
+                if (typeof(scrVisualDecoration).GetProperty("spriteUnscaledSize", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public) == null)
+                {
+                    GUILayout.Space(4);
+                    UIUtils.DrawInfoBox("⚠ " + Localization.Get("PropertyNotFound", "scrVisualDecoration.spriteUnscaledSize"), true);
+                    optimizer.dontResizeCollider = true;
+                }
             }
-
             GUILayout.EndVertical();
-        }
 
-        private void DrawMemorySection()
-        {
+            GUILayout.Space(8);
+
+            // Memory Optimization Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.BeginHorizontal();
             GUILayout.Label(Localization.Get("MemorySettings"), UIUtils.HeaderStyle);
             GUILayout.FlexibleSpace();
-            
-            bool newEnable = UIUtils.M3Switch(memory.enableMemoryOptimization, "");
-            if (newEnable != memory.enableMemoryOptimization)
+            bool newEnableMemory = UIUtils.M3Switch(memory.enableMemoryOptimization, "");
+            if (newEnableMemory != memory.enableMemoryOptimization)
             {
-                memory.enableMemoryOptimization = newEnable;
-                PatchManager.UpdatePatchByType(typeof(MiscPatches.SmartGCPatch));
+                memory.enableMemoryOptimization = newEnableMemory;
+                // 更新 SmartGCPatch（因为它依赖于 enableMemoryOptimization 和 enableSmartGC）
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.MiscPatches.SmartGCPatch));
             }
             GUILayout.EndHorizontal();
 
             if (memory.enableMemoryOptimization)
             {
-                bool newSmartGC = UIUtils.M3Switch(memory.enableSmartGC, Localization.Get("EnableSmartGC"));
-                if (newSmartGC != memory.enableSmartGC)
+                GUILayout.Space(8);
+                
+                // 定时清理
+                bool newEnableSmartGC = UIUtils.M3Switch(memory.enableSmartGC, Localization.Get("EnableSmartGC"));
+                if (newEnableSmartGC != memory.enableSmartGC)
                 {
-                    memory.enableSmartGC = newSmartGC;
-                    PatchManager.UpdatePatchByType(typeof(MiscPatches.SmartGCPatch));
+                    memory.enableSmartGC = newEnableSmartGC;
+                    // 只更新 SmartGCPatch
+                    Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.MiscPatches.SmartGCPatch));
                 }
-
                 if (memory.enableSmartGC)
                 {
-                    GUILayout.BeginHorizontal(GUILayout.Height(36));
-                    GUILayout.Space(16);
-                    GUILayout.Label(Localization.Get("GCInterval"), UIUtils.LabelSecondaryStyle);
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Space(24);
+                    GUILayout.Label(Localization.Get("GCInterval"), UIUtils.LabelStyle);
                     GUILayout.FlexibleSpace();
                     string intervalStr = GUILayout.TextField(memory.gcInterval.ToString("F0"), 4, UIUtils.TextFieldStyle, GUILayout.Width(50));
-                    if (float.TryParse(intervalStr, out float newInterval)) 
-                        memory.gcInterval = Mathf.Clamp(newInterval, 10f, 3600f);
+                    if (float.TryParse(intervalStr, out float newInterval)) memory.gcInterval = Mathf.Clamp(newInterval, 10f, 3600f);
                     GUILayout.EndHorizontal();
 
                     GUILayout.BeginHorizontal();
-                    GUILayout.Space(16);
+                    GUILayout.Space(24);
                     memory.gcInGame = UIUtils.M3Switch(memory.gcInGame, Localization.Get("GCInGame"));
                     GUILayout.EndHorizontal();
                 }
             }
-
             GUILayout.EndVertical();
-        }
 
-        private void DrawUISection()
-        {
+            GUILayout.EndVertical(); // End Left Column
+
+            GUILayout.Space(16);
+
+            // --- Right Column ---
+            GUILayout.BeginVertical(GUILayout.Width(420));
+
+            // UI Adjustments Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.Label(Localization.Get("UISettings"), UIUtils.HeaderStyle);
-
+            GUILayout.Space(8);
             bool newRemoveNews = UIUtils.M3Switch(ui.removeNews, Localization.Get("RemoveNews"));
             if (newRemoveNews != ui.removeNews)
             {
                 ui.removeNews = newRemoveNews;
-                PatchManager.UpdatePatchByType(typeof(MiscPatches.RemoveNewsPatch));
-                MiscPatches.RemoveNewsPatch.UpdateNews();
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.MiscPatches.RemoveNewsPatch));
+                Iridium.Patches.MiscPatches.RemoveNewsPatch.UpdateNews();
             }
-
             bool newHideBeta = UIUtils.M3Switch(ui.hideBetaWatermark, Localization.Get("HideBetaWatermark"));
             if (newHideBeta != ui.hideBetaWatermark)
             {
                 ui.hideBetaWatermark = newHideBeta;
-                PatchManager.UpdatePatchByType(typeof(MiscPatches.HideBetaWatermarkPatch));
-                MiscPatches.RefreshBetaWatermark();
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.MiscPatches.HideBetaWatermarkPatch));
+                Iridium.Patches.MiscPatches.RefreshBetaWatermark();
             }
-
             bool newForceDifficulty = UIUtils.M3Switch(ui.forceDifficultyUI, Localization.Get("ForceDifficultyUI"));
             if (newForceDifficulty != ui.forceDifficultyUI)
             {
                 ui.forceDifficultyUI = newForceDifficulty;
-                PatchManager.UpdatePatchByType(typeof(MiscPatches.ForceDifficultyUIPatch));
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.MiscPatches.ForceDifficultyUIPatch));
             }
-
             ui.alwaysCountdown = UIUtils.M3Switch(ui.alwaysCountdown, Localization.Get("AlwaysCountdown"));
 
             bool newMoveAutoplay = UIUtils.M3Switch(ui.moveAutoplayText, Localization.Get("MoveAutoplayText"));
             if (newMoveAutoplay != ui.moveAutoplayText)
             {
                 ui.moveAutoplayText = newMoveAutoplay;
-                PatchManager.UpdatePatchByType(typeof(MiscPatches.AutoplayTextPositionPatch));
-                MiscPatches.RefreshAutoplayTextPosition();
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.MiscPatches.AutoplayTextPositionPatch));
+                Iridium.Patches.MiscPatches.RefreshAutoplayTextPosition();
             }
 
             if (ui.moveAutoplayText)
             {
-                GUILayout.BeginHorizontal(GUILayout.Height(28));
-                GUILayout.Label("X:", UIUtils.LabelSecondaryStyle, GUILayout.Width(24));
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("X:", GUILayout.Width(20));
                 ui.autoplayTextX = GUILayout.HorizontalSlider(ui.autoplayTextX, -Screen.width / 2f, Screen.width / 2f);
-                GUILayout.Label(ui.autoplayTextX.ToString("F0"), UIUtils.LabelSecondaryStyle, GUILayout.Width(36));
+                GUILayout.Label(ui.autoplayTextX.ToString("F0"), UIUtils.LabelStyle, GUILayout.Width(40));
                 GUILayout.EndHorizontal();
 
-                GUILayout.BeginHorizontal(GUILayout.Height(28));
-                GUILayout.Label("Y:", UIUtils.LabelSecondaryStyle, GUILayout.Width(24));
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Y:", GUILayout.Width(20));
                 ui.autoplayTextY = GUILayout.HorizontalSlider(ui.autoplayTextY, -Screen.height / 2f, Screen.height / 2f);
-                GUILayout.Label(ui.autoplayTextY.ToString("F0"), UIUtils.LabelSecondaryStyle, GUILayout.Width(36));
+                GUILayout.Label(ui.autoplayTextY.ToString("F0"), UIUtils.LabelStyle, GUILayout.Width(40));
                 GUILayout.EndHorizontal();
 
-                if (GUI.changed) MiscPatches.RefreshAutoplayTextPosition();
+                if (GUI.changed)
+                {
+                    Iridium.Patches.MiscPatches.RefreshAutoplayTextPosition();
+                }
             }
-
-            bool newCircleArc = UIUtils.M3Switch(ui.enableCircleArc, Localization.Get("EnableCircleArc"));
-            if (newCircleArc != ui.enableCircleArc)
+            
+            GUILayout.Space(8);
+            bool newEnableCircleArc = UIUtils.M3Switch(ui.enableCircleArc, Localization.Get("EnableCircleArc"));
+            if (newEnableCircleArc != ui.enableCircleArc)
             {
-                ui.enableCircleArc = newCircleArc;
-                PatchManager.UpdatePatchByType(typeof(MiscPatches.CircleArcPatch));
+                ui.enableCircleArc = newEnableCircleArc;
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.MiscPatches.CircleArcPatch));
             }
-            if (ui.enableCircleArc) 
-                UIUtils.DrawInfoBox("⚠ " + Localization.Get("RestartRequired"));
-
+            if (ui.enableCircleArc) UIUtils.DrawInfoBox("⚠ " + Localization.Get("RestartRequired"), true);
+                
             GUILayout.EndVertical();
-        }
 
-        private void DrawLobbyMusicSection()
-        {
+            GUILayout.Space(8);
+
+            // Level Select Settings Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.BeginHorizontal();
             GUILayout.Label(Localization.Get("LevelSelectSettings"), UIUtils.HeaderStyle);
             GUILayout.FlexibleSpace();
-            
-            bool newEnable = UIUtils.M3Switch(lobbyMusic.enableLobbyMusicPatch, "");
-            if (newEnable != lobbyMusic.enableLobbyMusicPatch)
+            bool newEnableLobbyMusic = UIUtils.M3Switch(lobbyMusic.enableLobbyMusicPatch, "");
+            if (newEnableLobbyMusic != lobbyMusic.enableLobbyMusicPatch)
             {
-                lobbyMusic.enableLobbyMusicPatch = newEnable;
-                PatchManager.UpdatePatchByType(typeof(MiscPatches.LobbyMusicPatch));
+                lobbyMusic.enableLobbyMusicPatch = newEnableLobbyMusic;
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.MiscPatches.LobbyMusicPatch));
                 if (lobbyMusic.enableLobbyMusicPatch)
-                    MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                {
+                    Iridium.Patches.MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                }
             }
             GUILayout.EndHorizontal();
 
             if (lobbyMusic.enableLobbyMusicPatch)
             {
+                GUILayout.Space(8);
                 lobbyMusic.enableCustomBpm = UIUtils.M3Switch(lobbyMusic.enableCustomBpm, Localization.Get("EnableCustomBpm"));
-                
                 if (lobbyMusic.enableCustomBpm)
                 {
-                    GUILayout.BeginHorizontal(GUILayout.Height(36));
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
                     GUILayout.Label(Localization.Get("CustomBpm"), UIUtils.LabelStyle);
                     GUILayout.FlexibleSpace();
                     string bpmStr = GUILayout.TextField(lobbyMusic.customBpm.ToString("F1"), 6, UIUtils.TextFieldStyle, GUILayout.Width(60));
-                    if (float.TryParse(bpmStr, out float newBpm)) 
-                        lobbyMusic.customBpm = Mathf.Max(1f, newBpm);
+                    if (float.TryParse(bpmStr, out float newBpm)) lobbyMusic.customBpm = Mathf.Max(1f, newBpm);
                     GUILayout.EndHorizontal();
                 }
 
+                GUILayout.Space(4);
                 lobbyMusic.fastMusic = UIUtils.M3Switch(lobbyMusic.fastMusic, Localization.Get("LobbyFastMusic"));
 
                 bool newCustomMusic = UIUtils.M3Switch(lobbyMusic.customMusic, Localization.Get("LobbyCustomMusic"));
                 if (newCustomMusic != lobbyMusic.customMusic)
                 {
                     lobbyMusic.customMusic = newCustomMusic;
-                    MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                    Iridium.Patches.MiscPatches.LobbyMusicPatch.ReloadFromSettings();
                 }
 
                 if (lobbyMusic.customMusic)
                 {
-                    GUILayout.BeginHorizontal(GUILayout.Height(36));
-                    GUILayout.Label(Localization.Get("LobbyDefaultMusicPath"), UIUtils.LabelSecondaryStyle, GUILayout.Width(100));
-                    _defaultLobbyMusicPathCache = GUILayout.TextField(_defaultLobbyMusicPathCache ?? "", UIUtils.TextFieldStyle);
-                    if (GUILayout.Button(Localization.Get("Apply"), UIUtils.ButtonStyle, GUILayout.Width(60)))
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Label(Localization.Get("LobbyDefaultMusicPath"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    _defaultLobbyMusicPathCache = GUILayout.TextField(_defaultLobbyMusicPathCache ?? string.Empty, UIUtils.TextFieldStyle, GUILayout.Width(260));
+                    GUILayout.Space(6);
+                    bool canApplyDefaultPath = (_defaultLobbyMusicPathCache ?? string.Empty) != lobbyMusic.defaultMusicPath;
+                    GUI.enabled = canApplyDefaultPath;
+                    if (GUILayout.Button(Localization.Get("Apply"), UIUtils.ButtonStyle, GUILayout.Width(70)))
                     {
-                        lobbyMusic.defaultMusicPath = (_defaultLobbyMusicPathCache ?? "").Trim();
-                        MiscPatches.LobbyMusicPatch.StartLoad(true, lobbyMusic.defaultMusicPath);
+                        lobbyMusic.defaultMusicPath = (_defaultLobbyMusicPathCache ?? string.Empty).Trim();
+                        Iridium.Patches.MiscPatches.LobbyMusicPatch.StartLoad(true, lobbyMusic.defaultMusicPath);
                     }
+                    GUI.enabled = true;
                     GUILayout.EndHorizontal();
 
-                    GUILayout.BeginHorizontal(GUILayout.Height(36));
-                    GUILayout.Label(Localization.Get("LobbyFastMusicPath"), UIUtils.LabelSecondaryStyle, GUILayout.Width(100));
-                    _fastLobbyMusicPathCache = GUILayout.TextField(_fastLobbyMusicPathCache ?? "", UIUtils.TextFieldStyle);
-                    if (GUILayout.Button(Localization.Get("Apply"), UIUtils.ButtonStyle, GUILayout.Width(60)))
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Label(Localization.Get("LobbyFastMusicPath"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    _fastLobbyMusicPathCache = GUILayout.TextField(_fastLobbyMusicPathCache ?? string.Empty, UIUtils.TextFieldStyle, GUILayout.Width(260));
+                    GUILayout.Space(6);
+                    bool canApplyFastPath = (_fastLobbyMusicPathCache ?? string.Empty) != lobbyMusic.fastMusicPath;
+                    GUI.enabled = canApplyFastPath;
+                    if (GUILayout.Button(Localization.Get("Apply"), UIUtils.ButtonStyle, GUILayout.Width(70)))
                     {
-                        lobbyMusic.fastMusicPath = (_fastLobbyMusicPathCache ?? "").Trim();
-                        MiscPatches.LobbyMusicPatch.StartLoad(false, lobbyMusic.fastMusicPath);
+                        lobbyMusic.fastMusicPath = (_fastLobbyMusicPathCache ?? string.Empty).Trim();
+                        Iridium.Patches.MiscPatches.LobbyMusicPatch.StartLoad(false, lobbyMusic.fastMusicPath);
                     }
+                    GUI.enabled = true;
                     GUILayout.EndHorizontal();
 
-                    if (GUILayout.Button(Localization.Get("LobbyReloadMusic"), UIUtils.ButtonStyle, GUILayout.Height(32)))
-                        MiscPatches.LobbyMusicPatch.ReloadFromSettings();
-                        
+                    GUILayout.Space(6);
+                    if (GUILayout.Button(Localization.Get("LobbyReloadMusic"), UIUtils.ButtonStyle, GUILayout.Width(140)))
+                    {
+                        Iridium.Patches.MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                    }
                     UIUtils.DrawInfoBox(Localization.Get("LobbyMusicHint"));
                 }
             }
-
             GUILayout.EndVertical();
-        }
 
-        private void DrawCompatibilitySection()
-        {
+            GUILayout.Space(8);
+
+            // Compatibility & Fixes Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.Label(Localization.Get("CompatibilitySettings"), UIUtils.HeaderStyle);
-
-            bool newPauseFix = UIUtils.M3Switch(compatibility.enableLegacyPauseFix, Localization.Get("EnableLegacyPauseFix"));
-            if (newPauseFix != compatibility.enableLegacyPauseFix)
+            GUILayout.Space(8);
+            bool newLegacyPauseFix = UIUtils.M3Switch(compatibility.enableLegacyPauseFix, Localization.Get("EnableLegacyPauseFix"));
+            if (newLegacyPauseFix != compatibility.enableLegacyPauseFix)
             {
-                compatibility.enableLegacyPauseFix = newPauseFix;
-                PatchManager.UpdatePatchByType(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play));
-                PatchManager.UpdatePatchByType(typeof(CompatibilityPatches.LegacyPauseFixPatch_Apply));
+                compatibility.enableLegacyPauseFix = newLegacyPauseFix;
+                // 更新两个相关的 patch
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.CompatibilityPatches.LegacyPauseFixPatch_Play));
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.CompatibilityPatches.LegacyPauseFixPatch_Apply));
             }
-
-            bool newNoFail = UIUtils.M3Switch(compatibility.enableNoFailTooEarly, Localization.Get("EnableNoFailTooEarly"));
-            if (newNoFail != compatibility.enableNoFailTooEarly)
+            bool newNoFailTooEarly = UIUtils.M3Switch(compatibility.enableNoFailTooEarly, Localization.Get("EnableNoFailTooEarly"));
+            if (newNoFailTooEarly != compatibility.enableNoFailTooEarly)
             {
-                compatibility.enableNoFailTooEarly = newNoFail;
-                PatchManager.UpdatePatchByType(typeof(CompatibilityPatches.NoFailTooEarlyPatch));
+                compatibility.enableNoFailTooEarly = newNoFailTooEarly;
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.CompatibilityPatches.NoFailTooEarlyPatch));
             }
-
-            bool newForceAngle = UIUtils.M3Switch(compatibility.forceAngleData, Localization.Get("ForceAngleData"));
-            if (newForceAngle != compatibility.forceAngleData)
+            
+            GUILayout.Space(12);
+            GUILayout.Label(Localization.Get("LegacyLevelBehavior"), UIUtils.SubHeaderStyle, GUILayout.Height(24));
+            
+            // 将 forceAngleData 移出子容器，使其与上方的开关对齐
+            bool newForceAngleData = UIUtils.M3Switch(compatibility.forceAngleData, Localization.Get("ForceAngleData"));
+            if (newForceAngleData != compatibility.forceAngleData)
             {
-                compatibility.forceAngleData = newForceAngle;
-                PatchManager.UpdatePatchByType(typeof(JsonPatches.ForceAngleDataPatch));
+                compatibility.forceAngleData = newForceAngleData;
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.JsonPatches.ForceAngleDataPatch));
             }
-
-            UIUtils.DrawDivider();
-
-            GUILayout.Label(Localization.Get("LegacyLevelBehavior"), UIUtils.SubHeaderStyle);
-
-            GUILayout.Label(Localization.Get("LegacyFlashMode"), UIUtils.LabelSecondaryStyle);
-            var newFlashMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyFlashMode,
-                [Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn")]);
 
             GUILayout.Space(4);
-            GUILayout.Label(Localization.Get("LegacyCamRelativeToMode"), UIUtils.LabelSecondaryStyle);
-            var newCamRelMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyCamRelativeToMode,
+            
+            GUIStyle subContainerStyle = new()
+            {
+                normal = { background = UIUtils.GetCachedRoundedTex(64, 64, 8, new Color(0.28f, 0.25f, 0.28f)) }, 
+                padding = new RectOffset(12, 12, 12, 12),
+                margin = new RectOffset(0, 0, 4, 4)
+            };
+            GUILayout.BeginVertical(subContainerStyle); // Sub-container
+            
+            GUILayout.Label(Localization.Get("LegacyFlashMode"), UIUtils.SubHeaderStyle);
+            GUILayout.Space(2);
+            var newFlashMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyFlashMode, 
                 [Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn")]);
-
+            
+            GUILayout.Space(10);
+            GUILayout.Label(Localization.Get("LegacyCamRelativeToMode"), UIUtils.SubHeaderStyle);
+            GUILayout.Space(2);
+            var newCamRelMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyCamRelativeToMode, 
+                [Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn")]);
+            
+            // 检查 legacyFlashMode 或 legacyCamRelativeToMode 是否改变
             if (newFlashMode != compatibility.legacyFlashMode || newCamRelMode != compatibility.legacyCamRelativeToMode)
             {
                 compatibility.legacyFlashMode = newFlashMode;
                 compatibility.legacyCamRelativeToMode = newCamRelMode;
-                PatchManager.UpdatePatchByType(typeof(JsonPatches.LegacyBehaviorPatch));
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.JsonPatches.LegacyBehaviorPatch));
             }
+            
+            GUILayout.EndVertical(); // End Sub-container
+            GUILayout.EndVertical(); // End Compatibility & Fixes Card
 
-            GUILayout.EndVertical();
-        }
+            GUILayout.Space(8);
 
-        private void DrawHitSoundSection()
-        {
+            // Hit Sound Settings Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.BeginHorizontal();
             GUILayout.Label(Localization.Get("HitSoundSettings"), UIUtils.HeaderStyle);
             GUILayout.FlexibleSpace();
-            
-            bool newEnable = UIUtils.M3Switch(hitSound.enableHitSoundPitch, "");
-            if (newEnable != hitSound.enableHitSoundPitch)
+            bool newEnableHitSound = UIUtils.M3Switch(hitSound.enableHitSoundPitch, "");
+            if (newEnableHitSound != hitSound.enableHitSoundPitch)
             {
-                hitSound.enableHitSoundPitch = newEnable;
-                PatchManager.UpdatePatchByType(typeof(HitSoundPatch));
+                hitSound.enableHitSoundPitch = newEnableHitSound;
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.HitSoundPatch));
             }
             GUILayout.EndHorizontal();
-
+            
             if (hitSound.enableHitSoundPitch)
             {
+                GUILayout.Space(8);
                 UIUtils.DrawInfoBox(Localization.Get("EnableHitSoundPitch"));
             }
-
             GUILayout.EndVertical();
-        }
 
-        private void DrawJudgeTextSection()
-        {
+            GUILayout.Space(8);
+
+            // Judge Text Settings Card
             GUILayout.BeginVertical(UIUtils.CardStyle);
             GUILayout.BeginHorizontal();
             GUILayout.Label(Localization.Get("JudgeTextSettings"), UIUtils.HeaderStyle);
             GUILayout.FlexibleSpace();
-            
-            bool newEnable = UIUtils.M3Switch(judgeText.enableJudgeTextCustomization, "");
-            if (newEnable != judgeText.enableJudgeTextCustomization)
+            bool newEnableJudgeText = UIUtils.M3Switch(judgeText.enableJudgeTextCustomization, "");
+            if (newEnableJudgeText != judgeText.enableJudgeTextCustomization)
             {
-                judgeText.enableJudgeTextCustomization = newEnable;
-                PatchManager.UpdatePatchByType(typeof(JudgeTextPatches.HitTextMeshInitPatch));
-                PatchManager.UpdatePatchByType(typeof(JudgeTextPatches.HitTextMeshShowPatch));
-                PatchManager.UpdatePatchByType(typeof(JudgeTextPatches.ResetTimingOnRewindPatch));
+                judgeText.enableJudgeTextCustomization = newEnableJudgeText;
+                // 更新所有 JudgeText 相关的 patch
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.JudgeTextPatches.HitTextMeshInitPatch));
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.JudgeTextPatches.HitTextMeshShowPatch));
+                Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.JudgeTextPatches.ResetTimingOnRewindPatch));
             }
             GUILayout.EndHorizontal();
 
             if (judgeText.enableJudgeTextCustomization)
             {
+                GUILayout.Space(8);
+                
                 bool newShowAsOffset = UIUtils.M3Switch(judgeText.showAsOffset, Localization.Get("ShowAsOffset"));
                 if (newShowAsOffset != judgeText.showAsOffset)
                 {
                     judgeText.showAsOffset = newShowAsOffset;
-                    PatchManager.UpdatePatchByType(typeof(JudgeTextPatches.HitTextMeshShowPatch));
+                    // showAsOffset 只影响 HitTextMeshShowPatch
+                    Iridium.Patches.PatchManager.UpdatePatchByType(typeof(Iridium.Patches.JudgeTextPatches.HitTextMeshShowPatch));
                 }
-
-                UIUtils.DrawDivider();
-
-                GUI.enabled = !judgeText.showAsOffset;
-                GUILayout.Label(Localization.Get("CustomJudgeText"), UIUtils.SubHeaderStyle);
-
+                
+                GUILayout.Space(8);
+                
+                // 自定义文本区域
+                GUI.enabled = !judgeText.showAsOffset; // 如果显示为偏移，则禁用自定义文本输入
+                
+                GUILayout.Label(Localization.Get("CustomJudgeText"), UIUtils.LabelStyle);
+                GUILayout.Space(4);
+                
                 DrawJudgeTextInput("TooEarly", ref judgeText.tooEarly);
                 DrawJudgeTextInput("VeryEarly", ref judgeText.veryEarly);
                 DrawJudgeTextInput("EarlyPerfect", ref judgeText.earlyPerfect);
@@ -503,59 +522,55 @@ namespace Iridium
                 DrawJudgeTextInput("Multipress", ref judgeText.multipress);
                 DrawJudgeTextInput("FailMiss", ref judgeText.failMiss);
                 DrawJudgeTextInput("FailOverload", ref judgeText.failOverload);
+                
                 GUI.enabled = true;
-
-                if (GUILayout.Button(Localization.Get("ResetJudgeText"), UIUtils.ButtonStyle, GUILayout.Height(32)))
+                
+                GUILayout.Space(8);
+                if (GUILayout.Button(Localization.Get("ResetJudgeText"), UIUtils.ButtonStyle, GUILayout.Width(120)))
+                {
                     judgeText.ResetToDefault();
+                }
             }
-
             GUILayout.EndVertical();
-        }
 
-        private void DrawVersionInfo()
-        {
-            GUIStyle versionStyle = new(UIUtils.LabelSecondaryStyle)
+            GUILayout.EndVertical(); // End Right Column
+
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(16);
+            
+            // Version Info
+            GUIStyle versionStyle = new(UIUtils.LabelStyle)
             {
-                alignment = TextAnchor.MiddleRight
+                alignment = TextAnchor.MiddleRight,
+                normal = { textColor = new Color(0.5f, 0.5f, 0.5f, 0.5f) }
             };
             GUILayout.Label($"Iridium {VersionManager.GetFullVersionString()}", versionStyle);
-        }
 
-        private void DrawCompactSwitch(ref bool value, string label, bool invert = false)
-        {
-            bool actualValue = invert ? !value : value;
-            bool newValue = UIUtils.M3Switch(actualValue, label);
-            if (invert) value = !newValue;
-            else value = newValue;
-        }
-
-        private void DrawErrorWarnings()
-        {
-            if (typeof(Notification).GetMethod("SetupNotification", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic) == null)
-            {
-                UIUtils.DrawInfoBox("⚠ " + Localization.Get("MethodNotFound", "Notification.SetupNotification"), true);
-                optimizer.dontShowSavedMemory = true;
+            if (GUI.changed)
+            {            
+                Save(modEntry);
+                // patch 更新已在各设置改变时即时处理，无需再遍历所有
             }
-            if (typeof(scrVisualDecoration).GetProperty("spriteUnscaledSize", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public) == null)
-            {
-                UIUtils.DrawInfoBox("⚠ " + Localization.Get("PropertyNotFound", "scrVisualDecoration.spriteUnscaledSize"), true);
-                optimizer.dontResizeCollider = true;
-            }
-        }
-
-        private void DrawJudgeTextInput(string key, ref string value)
-        {
-            GUILayout.BeginHorizontal(GUILayout.Height(28));
-            GUILayout.Label(Localization.Get($"JudgeText_{key}"), UIUtils.LabelSecondaryStyle, GUILayout.Width(90));
-            GUILayout.FlexibleSpace();
-            string newValue = GUILayout.TextField(value, 20, UIUtils.TextFieldStyle, GUILayout.Width(100));
-            if (newValue != value) value = newValue;
-            GUILayout.EndHorizontal();
         }
 
         public override void Save(UnityModManager.ModEntry modEntry)
         {
             Save(this, modEntry);
         }
+
+        private void DrawJudgeTextInput(string key, ref string value)
+        {
+            GUILayout.BeginHorizontal(GUILayout.Height(24));
+            GUILayout.Label(Localization.Get($"JudgeText_{key}"), UIUtils.LabelStyle, GUILayout.Width(100));
+            GUILayout.FlexibleSpace();
+            string newValue = GUILayout.TextField(value, 20, UIUtils.TextFieldStyle, GUILayout.Width(120));
+            if (newValue != value)
+            {
+                value = newValue;
+            }
+            GUILayout.EndHorizontal();
+        }
+
     }
 }

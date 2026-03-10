@@ -23,34 +23,9 @@ namespace Iridium.Patches
 
         // 装饰物批处理状态
         private static bool _isBatchCreating = false;
-        private static Coroutine? _batchCreationCoroutine = null;
 
         // 事件预处理缓存
         private static Dictionary<int, List<LevelEvent>>? _floorEventsCache = null;
-
-        #endregion
-
-        #region Decoration Batch Creation
-
-        /// <summary>
-        /// 装饰物批处理创建 - 分帧加载避免卡顿
-        /// 注意：此功能已禁用，因为会导致装饰物显示异常
-        /// </summary>
-        [HarmonyPatch(typeof(scnGame), "UpdateDecorationObjects")]
-        public static class DecorationBatchCreationPatch
-        {
-            [HarmonyPrefix]
-            public static bool Prefix(scnGame __instance, bool reloadDecorations)
-            {
-                // 暂时禁用此功能，因为分帧加载会导致装饰物显示异常
-                if (!Main.Settings.optimizer.batchCreateDecorations) return true;
-
-                // 即使启用也返回 true，让原方法执行
-                // TODO: 需要找到更好的实现方式
-                Main.Logger?.Warning("[LoadingOptimization] Batch decoration creation is currently disabled due to rendering issues");
-                return true;
-            }
-        }
 
         #endregion
 
@@ -109,44 +84,6 @@ namespace Iridium.Patches
             public static List<LevelEvent>? GetCachedEvents(int floorIndex)
             {
                 return _floorEventsCache?.TryGetValue(floorIndex, out var list) == true ? list : null;
-            }
-        }
-
-        /// <summary>
-        /// 替换 DestroyImmediate 为 Destroy - 避免同步销毁卡顿
-        /// </summary>
-        [HarmonyPatch(typeof(scnGame), "RemoveAllEffects")]
-        public static class AsyncDestroyEffectsPatch
-        {
-            [HarmonyPrefix]
-            public static bool Prefix(List<scrFloor> floors)
-            {
-                if (!Main.Settings.optimizer.asyncDestroyEffects) return true;
-
-                try
-                {
-                    foreach (var floor in floors)
-                    {
-                        if (floor == null) continue;
-
-                        var effects = floor.GetComponents<ffxPlusBase>();
-                        foreach (var effect in effects)
-                        {
-                            if (effect != null)
-                            {
-                                // 使用异步销毁而非 DestroyImmediate
-                                UnityEngine.Object.Destroy(effect);
-                            }
-                        }
-                    }
-
-                    return false;
-                }
-                catch (Exception e)
-                {
-                    Main.Logger?.Error($"[LoadingOptimization] Async destroy failed: {e}");
-                    return true;
-                }
             }
         }
 
@@ -260,7 +197,6 @@ namespace Iridium.Patches
                 _floorEventsCache?.Clear();
                 _floorEventsCache = null;
                 _isBatchCreating = false;
-                _batchCreationCoroutine = null;
 
                 TweenPoolManager.ClearPool();
 
