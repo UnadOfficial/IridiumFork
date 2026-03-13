@@ -13,7 +13,7 @@ namespace Iridium
     public static class VersionManager
     {
         public static VersionType Type => VersionType.Prerelease;
-        public const int MinorVersion = 2;
+        public const int MinorVersion = 3;
 
         public static string GetFullVersionString()
         {
