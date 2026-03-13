@@ -23,6 +23,7 @@ namespace Iridium.Config
         public bool optimizeScnGameUpdate = false;
         public bool optimizeMoveDecorations = false;
         public bool optimizeFloorMesh = false;
+        public bool optimizeFfxDecorations = false; // 新增：优化 ffx 装饰物更新
 
         // Scene Optimization Patches
         public bool cacheGameObjectReferences = false;

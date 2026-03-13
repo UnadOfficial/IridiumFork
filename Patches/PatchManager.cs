@@ -57,6 +57,15 @@ namespace Iridium.Patches
             }
             _definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
 
+            // --- Ffx Optimization Patches ---
+            foreach (var type in typeof(FfxOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            {
+                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
+                {
+                    _definitions.Add(new PatchDef(type, optCond));
+                }
+            }
+
             // --- Scene Optimization Patches ---
             foreach (var type in typeof(SceneOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             {
