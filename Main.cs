@@ -109,8 +109,11 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModEnabled"));
 
+                // 启动异步 Patch 管理器
+                Iridium.Patches.AsyncPatchManager.Start();
+
                 // Strategy: Load only what's needed (lazy loading)
-                Iridium.Patches.PatchManager.UpdateAllPatches();
+                Iridium.Patches.AsyncPatchManager.UpdateAllPatchesAsync();
 
                 if (Main.Settings.optimizer.enableOptimizer)
                 {
@@ -131,6 +134,10 @@ namespace Iridium
             else
             {
                 Logger?.Log(Localization.Get("ModDisabled"));
+
+                // 停止异步 Patch 管理器
+                Iridium.Patches.AsyncPatchManager.Stop();
+
                 Iridium.Patches.PatchManager.UnpatchAll();
 
                 if (_uiObject != null)
