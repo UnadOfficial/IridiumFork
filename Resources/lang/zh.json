@@ -150,5 +150,6 @@
   "PatchManagerUsingFallback": "使用回退方法移除 {0}",
   "PatchManagerSuccessRemove": "成功移除 {0}",
   "PatchManagerFailedRemove": "移除 {0} 失败: {1}",
-  "PatchManagerUnpatchedAll": "已移除所有补丁"
+  "PatchManagerUnpatchedAll": "已移除所有补丁",
+  "OptimizeFfxDecorations": "优化 Ffx 装饰物 (减少更新频率)"
 }

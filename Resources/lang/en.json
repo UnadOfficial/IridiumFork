@@ -150,5 +150,6 @@
   "PatchManagerUsingFallback": "Using fallback method to remove {0}",
   "PatchManagerSuccessRemove": "Successfully removed {0}",
   "PatchManagerFailedRemove": "Failed to remove {0}: {1}",
-  "PatchManagerUnpatchedAll": "Unpatched all"
+  "PatchManagerUnpatchedAll": "Unpatched all",
+  "OptimizeFfxDecorations": "Optimize Ffx Decorations (Reduce Update Frequency)"
 }
