@@ -1,4 +1,4 @@
-![Scratch Compiler](https://socialify.git.ci/Xbodwf/Iridium/image?custom_description=An+optimized+mod+for+ADOFAI&custom_language=csharp&description=1&font=Lexend&forks=1&issues=1&language=1&name=1&pulls=1&stargazers=1&theme=Auto)
+![Iridium](https://socialify.git.ci/Xbodwf/Iridium/image?custom_description=An+optimized+mod+for+ADOFAI&custom_language=csharp&description=1&font=Lexend&forks=1&issues=1&language=1&name=1&pulls=1&stargazers=1&theme=Auto)
 
 
 # Iridium
@@ -85,3 +85,15 @@ dotnet build
 ## Developing Environment
 - IDE: Visual Studio 2022 / Rider 2025.3
 - ADOFAI 2.9.7~2.9.8
+
+## Special Thanks
+感谢他们的贡献:
+
+<a href="https://github.com/Xbodwf/Iridium/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Xbodwf/Iridium&max=200&columns=14" />
+</a>
+
+一些其他贡献者:（排名不分先后）
+[
+101%밀카사는](https://github.com/yubanyuyi)
+[-2](https://space.bilibili.com/1243523532)
