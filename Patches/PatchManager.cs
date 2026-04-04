@@ -84,6 +84,15 @@ namespace Iridium.Patches
                 }
             }
 
+            // --- DOTween Optimization Patches ---
+            foreach (var type in typeof(DOTweenOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            {
+                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
+                {
+                    _definitions.Add(new PatchDef(type, () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.optimizeDOTweenGlobal));
+                }
+            }
+
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
             _definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));
@@ -161,7 +170,8 @@ namespace Iridium.Patches
                 typeof(OptimizerPatches),
                 typeof(TrackOptimizationPatches),
                 typeof(SceneOptimizationPatches),
-                typeof(LoadingOptimizationPatches)
+                typeof(LoadingOptimizationPatches),
+                typeof(DOTweenOptimizationPatches)
             };
 
             foreach (var def in _definitions)

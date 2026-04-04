@@ -35,6 +35,13 @@ namespace Iridium.Config
         public bool cacheFloorEvents = false;
         public bool optimizeMoveTrackTweens = false;
         public bool batchMoveDecorations = false;
+
+        // DOTween Optimization Patches
+        public bool optimizeDOTweenGlobal = false;
+        public int dotweenTweenerCapacity = 500;
+        public int dotweenSequenceCapacity = 100;
+        public bool dotweenDefaultRecyclable = true;
+        public bool dotweenDisableSafeMode = false;
     }
 
     public class UISettings
