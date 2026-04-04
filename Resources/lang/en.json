@@ -151,5 +151,11 @@
   "PatchManagerSuccessRemove": "Successfully removed {0}",
   "PatchManagerFailedRemove": "Failed to remove {0}: {1}",
   "PatchManagerUnpatchedAll": "Unpatched all",
-  "OptimizeFfxDecorations": "Optimize Ffx Decorations (Reduce Update Frequency)"
+  "OptimizeFfxDecorations": "Optimize Ffx Decorations (Reduce Update Frequency)",
+  "DOTweenOptimizations": "DOTween Optimizations",
+  "EnableDOTweenOptimization": "Enable DOTween Optimization",
+  "TweenerCapacity": "Tweener Capacity",
+  "SequenceCapacity": "Sequence Capacity",
+  "DOTweenDefaultRecyclable": "Default Recyclable",
+  "DOTweenDisableSafeMode": "Disable Safe Mode (Higher Performance)"
 }

@@ -343,6 +343,62 @@ namespace Iridium
                 optimizer.optimizeMoveTrackTweens = UIUtils.M3Switch(optimizer.optimizeMoveTrackTweens, Localization.Get("OptimizeMoveTrackTweens"));
                 optimizer.batchMoveDecorations = UIUtils.M3Switch(optimizer.batchMoveDecorations, Localization.Get("BatchMoveDecorations"));
 
+                UILayout.DrawSettingGroupTitle(Localization.Get("DOTweenOptimizations"));
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Localization.Get("EnableDOTweenOptimization"), UIUtils.LabelStyle);
+                GUILayout.FlexibleSpace();
+                bool newOptimizeDOTween = UIUtils.M3Switch(optimizer.optimizeDOTweenGlobal, "");
+                if (newOptimizeDOTween != optimizer.optimizeDOTweenGlobal)
+                {
+                    optimizer.optimizeDOTweenGlobal = newOptimizeDOTween;
+                    Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    // 更新所有优化器补丁（包括DOTween优化）
+                    Iridium.Patches.AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                }
+                GUILayout.EndHorizontal();
+
+                if (optimizer.optimizeDOTweenGlobal)
+                {
+                    GUILayout.Space(8);
+
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Label(Localization.Get("TweenerCapacity"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    string tweenerCapStr = GUILayout.TextField(optimizer.dotweenTweenerCapacity.ToString(), 5, UIUtils.TextFieldStyle, GUILayout.Width(60));
+                    if (int.TryParse(tweenerCapStr, out int newTweenerCap))
+                    {
+                        optimizer.dotweenTweenerCapacity = Mathf.Clamp(newTweenerCap, 200, 2000);
+                        Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    }
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Label(Localization.Get("SequenceCapacity"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    string seqCapStr = GUILayout.TextField(optimizer.dotweenSequenceCapacity.ToString(), 5, UIUtils.TextFieldStyle, GUILayout.Width(60));
+                    if (int.TryParse(seqCapStr, out int newSeqCap))
+                    {
+                        optimizer.dotweenSequenceCapacity = Mathf.Clamp(newSeqCap, 50, 500);
+                        Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    }
+                    GUILayout.EndHorizontal();
+
+                    bool newRecyclable = UIUtils.M3Switch(optimizer.dotweenDefaultRecyclable, Localization.Get("DOTweenDefaultRecyclable"));
+                    if (newRecyclable != optimizer.dotweenDefaultRecyclable)
+                    {
+                        optimizer.dotweenDefaultRecyclable = newRecyclable;
+                        Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    }
+
+                    bool newDisableSafeMode = UIUtils.M3Switch(optimizer.dotweenDisableSafeMode, Localization.Get("DOTweenDisableSafeMode"));
+                    if (newDisableSafeMode != optimizer.dotweenDisableSafeMode)
+                    {
+                        optimizer.dotweenDisableSafeMode = newDisableSafeMode;
+                        Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    }
+                }
+
                 GUILayout.Space(8);
 
                 // Error states
