@@ -158,5 +158,8 @@
   "SequenceCapacity": "Sequence Capacity",
   "DOTweenDefaultRecyclable": "Default Recyclable",
   "DOTweenDisableSafeMode": "Disable Safe Mode (Higher Performance)",
-  "DOTweenOptimizationRestartRequired": "To fully restore after disabling, please restart the game"
+  "DOTweenOptimizationRestartRequired": "To fully restore after disabling, please restart the game",
+  "ExtremeOptimizations": "Extreme Optimizations",
+  "EnableExtremeOptimization": "Enable Extreme Optimization (Frame Spreading)",
+  "MaxTweensPerFrame": "Max Tweens Per Frame"
 }

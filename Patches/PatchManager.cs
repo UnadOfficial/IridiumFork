@@ -88,6 +88,15 @@ namespace Iridium.Patches
             // 注意：DOTween优化现在不使用任何HarmonyPatch，只使用运行时配置
             // 所以不需要注册任何补丁
 
+            // --- Extreme Optimization Patches ---
+            foreach (var type in typeof(ExtremeOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            {
+                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
+                {
+                    _definitions.Add(new PatchDef(type, () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization));
+                }
+            }
+
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
             _definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));
@@ -165,7 +174,8 @@ namespace Iridium.Patches
                 typeof(OptimizerPatches),
                 typeof(TrackOptimizationPatches),
                 typeof(SceneOptimizationPatches),
-                typeof(LoadingOptimizationPatches)
+                typeof(LoadingOptimizationPatches),
+                typeof(ExtremeOptimizationPatches)
             };
 
             foreach (var def in _definitions)
