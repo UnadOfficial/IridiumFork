@@ -352,9 +352,19 @@ namespace Iridium
                 if (newOptimizeDOTween != optimizer.optimizeDOTweenGlobal)
                 {
                     optimizer.optimizeDOTweenGlobal = newOptimizeDOTween;
-                    Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
-                    // 更新所有优化器补丁（包括DOTween优化）
-                    Iridium.Patches.AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                    
+                    if (newOptimizeDOTween)
+                    {
+                        // 启用：应用优化设置
+                        Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    }
+                    else
+                    {
+                        // 禁用：恢复默认设置
+                        Iridium.Patches.DOTweenOptimizationPatches.ResetRuntimeSettings();
+                    }
+                    
+                    // 注意：DOTween优化现在不使用补丁，不需要更新补丁列表
                 }
                 GUILayout.EndHorizontal();
 
@@ -398,6 +408,12 @@ namespace Iridium
                         Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
                     }
                 }
+
+                // 提示信息
+                GUILayout.Space(4);
+                GUI.contentColor = Color.yellow;
+                GUILayout.Label(Localization.Get("DOTweenOptimizationRestartRequired"), UIUtils.LabelStyle);
+                GUI.contentColor = Color.white;
 
                 GUILayout.Space(8);
 

@@ -157,5 +157,6 @@
   "TweenerCapacity": "Tweener 容量",
   "SequenceCapacity": "Sequence 容量",
   "DOTweenDefaultRecyclable": "默认可复用",
-  "DOTweenDisableSafeMode": "禁用安全模式 (更高性能)"
+  "DOTweenDisableSafeMode": "禁用安全模式 (更高性能)",
+  "DOTweenOptimizationRestartRequired": "关闭此功能后若想完全恢复，请重启游戏"
 }

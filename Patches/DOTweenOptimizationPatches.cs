@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using ADOFAI;
 using DG.Tweening;
 using HarmonyLib;
@@ -11,13 +7,24 @@ using UnityEngine;
 namespace Iridium.Patches
 {
  /// <summary>
- /// DOTween优化补丁 - 使用HarmonyTranspiler优化DOTween性能和复用机制
- /// 注意：由于TweenManager是internal类，我们只能优化DOTween的public API
+ /// DOTween优化补丁 - 使用安全的配置方式优化DOTween性能
+ /// 注意：只使用配置方式，不使用任何运行时反射或Transpiler
+ /// 功能完全可开关，关闭时恢复默认设置
  /// </summary>
  public static class DOTweenOptimizationPatches
  {
+ private static bool _isInitialized = false;
+ private static bool _capacityHasBeenSet = false; // 容量是否已设置（只能设置一次）
+
  #region Runtime Settings
 
+ /// <summary>
+ /// 应用DOTween运行时设置（安全模式）
+ /// 注意：
+ /// - 容量设置只在第一次调用时应用（DOTween限制：只能增加不能减少容量）
+ /// - 其他设置（可复用、安全模式）可以动态改变
+ /// - 如果之前已经设置过容量，再次调用不会改变容量
+ /// </summary>
  public static void ApplyRuntimeSettings()
  {
  if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeDOTweenGlobal)
@@ -27,271 +34,129 @@ namespace Iridium.Patches
 
  try
  {
+ // 容量设置：只在第一次时应用（DOTween限制）
+ if (!_capacityHasBeenSet)
+ {
  int tweeners = Math.Max(200, Main.Settings.optimizer.dotweenTweenerCapacity);
  int sequences = Math.Max(50, Main.Settings.optimizer.dotweenSequenceCapacity);
 
  DOTween.SetTweensCapacity(tweeners, sequences);
- DOTween.defaultRecyclable = Main.Settings.optimizer.dotweenDefaultRecyclable;
- DOTween.useSafeMode = !Main.Settings.optimizer.dotweenDisableSafeMode;
+ _capacityHasBeenSet = true;
 
- if (!Debug.isDebugBuild)
- {
- DOTween.logBehaviour = LogBehaviour.ErrorsOnly;
+ Main.Logger?.Log($"[DOTweenOptimization] Capacity set: {tweeners}/{sequences}");
  }
 
- Main.Logger?.Log($"[DOTweenOptimization] Applied settings: cap={tweeners}/{sequences}, recyclable={DOTween.defaultRecyclable}, safeMode={DOTween.useSafeMode}");
+ // 可以动态改变的设置
+ DOTween.defaultRecyclable = Main.Settings.optimizer.dotweenDefaultRecyclable;
+
+ // 保守设置：只在生产环境禁用安全模式
+ if (!Debug.isDebugBuild && Main.Settings.optimizer.dotweenDisableSafeMode)
+ {
+ DOTween.useSafeMode = false;
+ DOTween.logBehaviour = LogBehaviour.ErrorsOnly;
+ }
+ else
+ {
+ DOTween.useSafeMode = true;
+ DOTween.logBehaviour = LogBehaviour.Default;
+ }
+
+ _isInitialized = true;
  }
  catch (Exception e)
  {
  Main.Logger?.Error($"[DOTweenOptimization] Failed to apply settings: {e}");
+ _isInitialized = false;
+ }
+ }
+
+ /// <summary>
+ /// 重置DOTween设置到默认值
+ /// 注意：
+ /// - 容量不会恢复到默认值（DOTween限制：容量只能增加不能减少）
+ /// - 其他设置（可复用、安全模式等）会恢复到默认值
+ /// - 这样可以完全禁用优化效果
+ /// </summary>
+ public static void ResetRuntimeSettings()
+ {
+ try
+ {
+ // 恢复可动态改变的设置
+ DOTween.defaultRecyclable = false;
+ DOTween.useSafeMode = true;
+ DOTween.logBehaviour = LogBehaviour.Default;
+
+ _isInitialized = false;
+
+ Main.Logger?.Log("[DOTweenOptimization] Settings reset (capacity preserved due to DOTween limitation)");
+ }
+ catch (Exception e)
+ {
+ Main.Logger?.Error($"[DOTweenOptimization] Failed to reset settings: {e}");
  }
  }
 
  #endregion
 
- #region DOTween.To Optimization - 优化Tween创建
+ #region Performance Monitoring - 性能监控（仅统计，不修改行为）
+
+ private static int _lastReportTime = -1;
 
  /// <summary>
- /// 优化DOTween.To的创建逻辑
- /// 减少创建开销，优化参数传递
+ /// 定期报告DOTween状态（仅用于监控，在主线程安全执行）
  /// </summary>
- [HarmonyPatch]
- public static class DOTweenToTranspilerPatch
+ public static void MonitorDOTweenStatus()
  {
- static MethodBase TargetMethod()
+ if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeDOTweenGlobal)
  {
- // 使用表达式树获取所有DOTween.To方法的重载
- var toMethods = typeof(DOTween).GetMethods(BindingFlags.Public | BindingFlags.Static)
- .Where(m => m.Name == "To" && m.GetParameters().Length >= 4)
- .FirstOrDefault();
-
- return toMethods;
+ return;
  }
 
- static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
- {
- var codes = new List<CodeInstruction>(instructions);
+ if (!_isInitialized) return;
 
- // 优化策略：
- // 1. 减少不必要的类型检查
- // 2. 优化默认值设置
- // 3. 确保正确设置recyclable属性
+ // 使用时间而不是帧数，避免在UI线程外执行
+ int currentTime = Environment.TickCount;
+ if (currentTime - _lastReportTime < 30000) return; // 每30秒报告一次
 
- for (int i = 0; i < codes.Count; i++)
+ _lastReportTime = currentTime;
+
+ try
  {
- // 查找SetRecyclable调用，确保默认值被正确应用
- if (codes[i].opcode == OpCodes.Callvirt &&
-     codes[i].operand is MethodInfo mi &&
-     mi.Name == "SetRecyclable")
- {
- // 检查是否使用了DOTween.defaultRecyclable
- // 如果没有，插入对defaultRecyclable的引用
- i++;
+ // 仅报告状态，不做任何修改
+ int activeTweens = DOTween.TotalPlayingTweens();
+ Main.Logger?.Log($"[DOTweenOptimization] Status: Active={activeTweens}");
  }
- }
-
- return codes;
+ catch (Exception e)
+ {
+ Main.Logger?.Error($"[DOTweenOptimization] Monitor failed: {e}");
  }
  }
 
  #endregion
 
- #region DOTween.Sequence Optimization - 优化Sequence创建
+ #region Safe Tween Helper - 安全的Tween辅助方法
 
  /// <summary>
- /// 优化Sequence的创建逻辑
+ /// 安全地设置Tween的属性
  /// </summary>
- [HarmonyPatch(typeof(DOTween), "Sequence", new Type[] { })]
- public static class DOTweenSequenceTranspilerPatch
+ public static Tween SetTweenProperties(Tween tween)
  {
- static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+ if (tween == null) return null;
+
+ try
  {
- var codes = new List<CodeInstruction>(instructions);
-
- // 优化策略：
- // 1. 确保Sequence默认为recyclable
- // 2. 优化初始化逻辑
-
- for (int i = 0; i < codes.Count; i++)
- {
- // 查找SetRecyclable调用
- if (codes[i].opcode == OpCodes.Callvirt && 
-     codes[i].operand is MethodInfo mi && 
-     mi.Name == "SetRecyclable")
- {
- // 确保使用defaultRecyclable值
- i++;
- }
- }
-
- return codes;
- }
- }
-
- #endregion
-
- #region Tween.Kill Optimization - 优化Tween销毁
-
- /// <summary>
- /// 优化Tween.Kill方法，减少不必要的清理操作
- /// </summary>
- [HarmonyPatch(typeof(Tween), "Kill", new Type[] { typeof(bool) })]
- public static class TweenKillTranspilerPatch
- {
- static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
- {
- var codes = new List<CodeInstruction>(instructions);
-
- // 优化策略：
- // 1. 添加条件检查，避免重复kill
- // 2. 优化回调调用顺序
-
- for (int i = 0; i < codes.Count; i++)
- {
- // 查找active属性的访问
- if (codes[i].opcode == OpCodes.Ldfld &&
-     codes[i].operand is FieldInfo fi &&
-     fi.Name == "active")
- {
- // 优化：使用更快的检查方式
- i++;
- }
- }
-
- return codes;
- }
- }
-
- #endregion
-
- #region Tween.SetAs Optimization - 优化配置设置
-
- /// <summary>
- /// 优化Tween.SetAs方法，减少重复的属性设置
- /// </summary>
- [HarmonyPatch(typeof(Tween), "SetAs", new Type[] { typeof(Tween) })]
- public static class TweenSetAsTranspilerPatch
- {
- static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
- {
- var codes = new List<CodeInstruction>(instructions);
-
- // 优化策略：
- // 1. 缓存属性值，避免重复查找
- // 2. 批量设置属性
-
- for (int i = 0; i < codes.Count; i++)
- {
- // 查找属性设置
- if (codes[i].opcode == OpCodes.Callvirt &&
-     codes[i].operand is MethodInfo mi &&
-     mi.Name == "SetAutoKill")
- {
- // 优化：合并相邻的属性设置
- i++;
- }
- }
-
- return codes;
- }
- }
-
- #endregion
-
- #region Smart Tween Pool Management - 智能Tween池管理
-
- /// <summary>
- /// 智能Tween池管理器
- /// 跟踪活跃的Tween，避免过度创建
- /// </summary>
- private static class SmartTweenPool
- {
- private static readonly Dictionary<int, TweenInfo> _activeTweens = new Dictionary<int, TweenInfo>();
- private static int _lastCleanupFrame = -1;
- private static int _cleanupInterval = 300; // 每5秒清理一次
-
- public static void RegisterTween(Tween tween)
- {
- if (tween == null || tween.id == null) return;
-
- int tweenId = tween.GetHashCode();
- _activeTweens[tweenId] = new TweenInfo
- {
- tween = tween,
- creationFrame = Time.frameCount,
- type = tween.GetType().Name
- };
- }
-
- public static void UnregisterTween(Tween tween)
- {
- if (tween == null || tween.id == null) return;
-
- int tweenId = tween.GetHashCode();
- _activeTweens.Remove(tweenId);
- }
-
- public static void Cleanup()
- {
- int currentFrame = Time.frameCount;
- if (currentFrame - _lastCleanupFrame < _cleanupInterval) return;
-
- _lastCleanupFrame = currentFrame;
-
- // 清理已完成的Tween
- var keysToRemove = new List<int>();
- foreach (var kvp in _activeTweens)
- {
- if (kvp.Value.tween == null || !kvp.Value.tween.active)
- {
- keysToRemove.Add(kvp.Key);
- }
- }
-
- foreach (var key in keysToRemove)
- {
- _activeTweens.Remove(key);
- }
-
- // 报告统计信息
  if (Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.optimizeDOTweenGlobal)
  {
- Main.Logger?.Log($"[DOTweenOptimization] Pool stats: Active={_activeTweens.Count}, Cleaned={keysToRemove.Count}");
+ // 只设置可复用，不修改其他关键属性
+ tween.SetRecyclable(true);
  }
  }
-
- private struct TweenInfo
+ catch (Exception e)
  {
- public Tween tween;
- public int creationFrame;
- public string type;
- }
+ Main.Logger?.Error($"[DOTweenOptimization] Failed to set tween properties: {e}");
  }
 
- #endregion
-
- #region Performance Monitoring - 性能监控
-
- private static int _tweensCreated = 0;
- private static int _tweensKilled = 0;
- private static int _lastReportFrame = -1;
-
- public static void UpdateStats()
- {
- if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeDOTweenGlobal) return;
-
- int currentFrame = Time.frameCount;
- if (currentFrame - _lastReportFrame < 600) return; // 每10秒报告一次
-
- _lastReportFrame = currentFrame;
-
- Main.Logger?.Log($"[DOTweenOptimization] Stats: Created={_tweensCreated}, Killed={_tweensKilled}");
-
- _tweensCreated = 0;
- _tweensKilled = 0;
-
- // 触发池清理
- SmartTweenPool.Cleanup();
+ return tween;
  }
 
  #endregion
