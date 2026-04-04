@@ -415,6 +415,39 @@ namespace Iridium
                 GUILayout.Label(Localization.Get("DOTweenOptimizationRestartRequired"), UIUtils.LabelStyle);
                 GUI.contentColor = Color.white;
 
+                UILayout.DrawSettingGroupTitle(Localization.Get("ExtremeOptimizations"));
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Localization.Get("EnableExtremeOptimization"), UIUtils.LabelStyle);
+                GUILayout.FlexibleSpace();
+                bool newEnableExtreme = UIUtils.M3Switch(optimizer.enableExtremeOptimization, "");
+                if (newEnableExtreme != optimizer.enableExtremeOptimization)
+                {
+                    optimizer.enableExtremeOptimization = newEnableExtreme;
+                    Iridium.Patches.AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                }
+                GUILayout.EndHorizontal();
+
+                if (optimizer.enableExtremeOptimization)
+                {
+                    GUILayout.Space(8);
+
+                    GUILayout.BeginHorizontal(GUILayout.Height(28));
+                    GUILayout.Label(Localization.Get("MaxTweensPerFrame"), UIUtils.LabelStyle);
+                    GUILayout.FlexibleSpace();
+                    string maxTweensStr = GUILayout.TextField(optimizer.maxTweensPerFrame.ToString(), 5, UIUtils.TextFieldStyle, GUILayout.Width(60));
+                    if (int.TryParse(maxTweensStr, out int newMaxTweens))
+                    {
+                        optimizer.maxTweensPerFrame = Mathf.Clamp(newMaxTweens, 50, 500);
+                    }
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.Space(4);
+                    GUI.contentColor = Color.cyan;
+                    GUILayout.Label("极端优化：分帧处理大量并发事件，避免单帧卡顿", UIUtils.LabelStyle);
+                    GUI.contentColor = Color.white;
+                }
+
                 GUILayout.Space(8);
 
                 // Error states
