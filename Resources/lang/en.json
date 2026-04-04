@@ -157,5 +157,6 @@
   "TweenerCapacity": "Tweener Capacity",
   "SequenceCapacity": "Sequence Capacity",
   "DOTweenDefaultRecyclable": "Default Recyclable",
-  "DOTweenDisableSafeMode": "Disable Safe Mode (Higher Performance)"
+  "DOTweenDisableSafeMode": "Disable Safe Mode (Higher Performance)",
+  "DOTweenOptimizationRestartRequired": "To fully restore after disabling, please restart the game"
 }

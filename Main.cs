@@ -118,6 +118,11 @@ namespace Iridium
                 if (Main.Settings.optimizer.enableOptimizer)
                 {
                     Iridium.Patches.OptimizerPatches.ResetDecorOptimization(true);
+                    // 如果DOTween优化已启用，应用设置
+                    if (Main.Settings.optimizer.optimizeDOTweenGlobal)
+                    {
+                        Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    }
                 }
 
                 // 如果需要显示弹窗，创建UI对象
