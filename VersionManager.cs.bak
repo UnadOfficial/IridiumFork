@@ -7,7 +7,7 @@ namespace Iridium
         Hotfix,
         Release,
         Beta,
-        NightlyBeta,
+        NightlyBeta
         Prerelease
     }
 
