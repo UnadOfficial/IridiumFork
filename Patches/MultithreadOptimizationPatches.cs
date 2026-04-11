@@ -40,10 +40,7 @@ namespace Iridium.Patches
                     if (resized != null)
                     {
                         // 在主线程替换纹理
-                        Main.RunOnMainThread(() =>
-                        {
-                            UnityEngine.Object.DestroyImmediate(texture);
-                        });
+                        Main.DestroyImmediate(texture);
                     }
                 }
                 catch (Exception e)

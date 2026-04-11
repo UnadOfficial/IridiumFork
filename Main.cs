@@ -3,6 +3,7 @@ using HarmonyLib;
 using UnityEngine;
 using UnityModManagerNet;
 using Iridium.UI;
+using System.Threading.Tasks;
 
 namespace Iridium
 {
@@ -63,42 +64,37 @@ namespace Iridium
             return true;
         }
 
-        private static readonly System.Collections.Generic.Queue<System.Action> _actionQueue = new();
-        private static readonly object _queueLock = new();
+        private static readonly System.Collections.Concurrent.ConcurrentQueue<System.Action> _actionQueue = new();
+        private static volatile System.Collections.Concurrent.ConcurrentQueue<Object> _destroyImmObj = new();
 
         public static void RunOnMainThread(System.Action action)
         {
-            lock (_queueLock)
-            {
-                _actionQueue.Enqueue(action);
-            }
+            _actionQueue.Enqueue(action);
+        }
+
+        public static void DestroyImmediate(Object obj)
+        {
+            _destroyImmObj.Enqueue(obj);
         }
 
         private static void OnUpdate(UnityModManager.ModEntry modEntry, float dt)
         {
-            if (_actionQueue.Count > 0)
+            while (_destroyImmObj.TryDequeue(out var obj))
             {
-                System.Collections.Generic.List<System.Action> actions = new();
-                lock (_queueLock)
+                Object.DestroyImmediate(obj);
+            }
+            while (_actionQueue.TryDequeue(out var action))
+            {
+                try
                 {
-                    while (_actionQueue.Count > 0)
-                    {
-                        actions.Add(_actionQueue.Dequeue());
-                    }
+                    action?.Invoke();
                 }
-
-                foreach (var action in actions)
+                catch (System.Exception e)
                 {
-                    try
-                    {
-                        action.Invoke();
-                    }
-                    catch (System.Exception e)
-                    {
-                        Logger?.Log($"[Main] Error in main thread action: {e}");
-                    }
+                    Logger?.Log($"[Main] Error in main thread action: {e}");
                 }
             }
+            Logger.TaskRun();
         }
 
         private static GameObject? _uiObject;
