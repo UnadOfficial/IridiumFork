@@ -169,11 +169,11 @@ namespace Iridium.Patches
                     }
 
                     // 完成后通知主线程刷新 UI
-                    Main.RunOnMainThread(() =>
-                    {
+                    // Main.RunOnMainThread(() =>
+                    // {
                         // 这里可以触发 UI 刷新，但由于 OnGUI 会自动刷新，所以不需要额外操作
                         Main.Logger?.Log(Localization.Get("AsyncPatchCompleted"));
-                    });
+                    // });
                 }
                 catch (Exception ex)
                 {

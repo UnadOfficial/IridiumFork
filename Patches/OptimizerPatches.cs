@@ -1,16 +1,17 @@
+using ADOFAI;
+using DG.Tweening;
+using HarmonyLib;
+using Iridium.UI;
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using ADOFAI;
-using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityModManagerNet;
-using DG.Tweening;
-using Iridium.UI;
+using static PauseMenu;
 
 namespace Iridium.Patches
 {
@@ -197,7 +198,7 @@ namespace Iridium.Patches
                             if (Main.IsMainThread)
                                 UnityEngine.Object.DestroyImmediate(oldTex);
                             else
-                                Main.RunOnMainThread(() => UnityEngine.Object.DestroyImmediate(oldTex));
+                                Main.DestroyImmediate(oldTex);
 
                             __result = optimized;
                             resized = true;
