@@ -5,95 +5,52 @@
 
 An optimized mod for A Dance of Fire and Ice, focusing on performance, visual customization, and compatibility.
 
-[简体中文](#简体中文) | [English](#english-description)
+[Chinese](README_zh-CN.md)
 
 ---
 
-## 简体中文
+## English
 
 > [!IMPORTANT]
-> Iridium 旨在通过更好的内存管理、极致的性能优化和现代化的视觉调整来提升您的《冰与火之舞》体验。
+> Iridium is designed to enhance your "A Dance of Fire and Ice" experience through better memory management, extreme performance optimization, and modern visual adjustments.
 
-### 通用部署
-1.首先去Releases下载最新稳定发行版。如果您想体验新功能，可以下载最新的beta或者prerelease.
+### General Deployment
+1. First, go to Releases to download the latest stable release. If you want to experience new features, you can download the latest beta or prerelease.
 
-2.确保您已安装UnityModManager
+2. Ensure that you have UnityModManager installed.
 
 > [!WARNING]
-> 为了您使用Iridium的稳定性,建议使用0.27.0.0以上版本的UMM
+> For the stability of Iridium, it is recommended to use UMM version 0.27.0.0 or higher.
 
-3.解压下载好的文件 到 游戏目录(与`A Dance of Fire And Ice_Data`同级)/Mods/Iridium (不存在就创建)
 
-4.启动游戏。若游戏已运行，重启游戏。
+3. Extract the downloaded files to: `Game Directory (same level as A Dance of Fire And Ice_Data)/Mods/Iridium` (Create the folder if it does not exist).
 
-### 构建部署。
+4. Launch the game. If the game is already running, restart it.
 
-1.首先确保您已安装.NET SDK.
+> [!Caution]
+> Unless it is a specially tuned version of the mod released by maintainers for older versions of the game, do not attempt to run Iridium on older ADOFAI versions (<=2.9.7). We do not guarantee functional stability or compatibility in such cases.
 
-2.克隆本项目
+### Build and Deployment
+
+1. First, ensure you have the .NET SDK installed.
+
+2. Clone this project:
 ```bash
 git clone https://github.com/Xbodwf/Iridium.git Iridium
 cd Iridium
 ```
-3.在[Iridium.csproj](Iridium.csproj)中设定游戏目录
+3. Set your game directory in [Iridium.csproj](Iridium.csproj).
 
-4.使用dotnet构建并部署到游戏
+4. Use dotnet to build and deploy to the game:
 ```bash
 dotnet build
 ```
-
-## English Description
-
-> [!IMPORTANT]
-> Iridium is designed to elevate your ADOFAI experience through better memory management, extreme performance optimization, and modern visual enhancements.
-
-### Universal Deployment
-1.Download this project's release build.If you would like to experience new features,you can download latest beta build or prerelease build.
-
-2.Make sure that you have installed UnityModManager to ADOFAI.
-
-3.Unzip file you downloaded to the game folder(which has a children folder named `A Dance of Fire And Ice_Data`)/Mods/Iridium (mkdir if it does not exist)
-
-4.Launch the game.Restart if it has started.
-
-### Build Deployment
-
-1.Make sure that you have installed .NET SDK.
-
-2.Clone this project:
-```bash
-git clone https://github.com/Xbodwf/Iridium.git Iridium
-cd Iridium
-```
-
-3.Set the game folder in [Iridium.csproj](Iridium.csproj)
-
-4.Build Iridium with dotnet and deploy it to the game:
-```bash
-dotnet build
-```
-
-
-## Project Structure
-- `Main.cs`: Entry point
-- `Settings.cs`: Root configuration & UI rendering
-- `Settings/`: Modular sub-settings classes
-- `UI/`: Material 3 UI utilities and styles
-- `Patches/`: Feature-specific Harmony patches
-- `Resources/`: Assets & Localization
-
-## Developing Environment
-- IDE: Visual Studio 2022 / Rider 2025.3
-- ADOFAI 2.9.7~2.9.8
 
 ## Special Thanks
-感谢他们的贡献:
+Thanks to their contributions:
 
 <a href="https://github.com/Xbodwf/Iridium/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Xbodwf/Iridium&max=200&columns=14" />
 </a>
 
-一些其他贡献者:（排名不分先后）
-[
-101%밀카사는](https://github.com/yubanyuyi)
-[-2](https://space.bilibili.com/1243523532)
+For other contributors, see [Contributors.md](Contributors.md)
