@@ -53,4 +53,4 @@ Thanks to their contributions:
   <img src="https://contrib.rocks/image?repo=Xbodwf/Iridium&max=200&columns=14" />
 </a>
 
-For other contributors, see [Contributors.md](Contributors.md)
+> For other contributors, see [contributors](contributors.md) here.

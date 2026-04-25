@@ -53,4 +53,4 @@ dotnet build
   <img src="https://contrib.rocks/image?repo=Xbodwf/Iridium&max=200&columns=14" />
 </a>
 
-其余的贡献者见[Contributors.md](Contributors.md)
+> 若要查看其他贡献者，详见 [贡献者名单](contributors.md).
