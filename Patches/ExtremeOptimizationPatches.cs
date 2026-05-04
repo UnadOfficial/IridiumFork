@@ -331,15 +331,15 @@ namespace Iridium.Patches
 						float duration = instance.duration;
 						Ease ease = instance.ease;
 			
-						// 收集所有受影响的装饰物
-						List<scrDecoration> allDecors = new List<scrDecoration>();
+						var allDecors = new List<scrDecoration>();
+						var seenDecors = new HashSet<scrDecoration>();
 						foreach (string tag in instance.targetTags)
 						{
 							if (decorManager.taggedDecorations.TryGetValue(tag, out var taggedList))
 							{
 								foreach (var decor in taggedList)
 								{
-									if (!allDecors.Contains(decor))
+									if (seenDecors.Add(decor))
 									{
 										allDecors.Add(decor);
 									}

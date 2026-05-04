@@ -16,16 +16,12 @@ namespace Iridium.Core
         /// </summary>
         public static T GetOrAdd<T>(string key, Func<T> factory) where T : class
         {
-            if (_cache.TryGetValue(key, out var value))
+            return (T)_cache.GetOrAdd(key, _ => 
             {
-                return (T)value;
-            }
-            
-            T newValue = factory();
-            _cache[key] = newValue;
-            
-            Main.Logger?.Log($"[ReflectionCache] Cached: {key}");
-            return newValue;
+                T newValue = factory();
+                Main.Logger?.Log($"[ReflectionCache] Cached: {key}");
+                return newValue;
+            });
         }
 
         /// <summary>

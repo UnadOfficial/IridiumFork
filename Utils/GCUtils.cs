@@ -18,6 +18,8 @@ namespace Iridium.Core
         private static int _totalGCCount = 0;
         private static float _totalGCTime = 0f;
         private static int _gcCountThisSession = 0;
+        
+        private static readonly string[] SizeSuffixes = { "B", "KB", "MB", "GB" };
 
         /// <summary>
         /// 初始化 GC 工具
@@ -185,17 +187,16 @@ namespace Iridium.Core
         /// </summary>
         private static string FormatSize(long bytes)
         {
-            string[] sizes = { "B", "KB", "MB", "GB" };
             int order = 0;
             double size = bytes;
             
-            while (size >= 1024 && order < sizes.Length - 1)
+            while (size >= 1024 && order < SizeSuffixes.Length - 1)
             {
                 order++;
                 size /= 1024;
             }
 
-            return $"{size:0.##} {sizes[order]}";
+            return $"{size:0.##} {SizeSuffixes[order]}";
         }
 
         /// <summary>

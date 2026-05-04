@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityModManagerNet;
 
@@ -28,7 +29,10 @@ namespace Iridium
         private const string MODNAME_WARN = "[Iridium/WARN] "; // Prefix Name
         private const string MODNAME_ERROR = "[Iridium/ERROR] "; // Prefix Name
         private static readonly ConcurrentQueue<LogData> _writeQueue = new();
-        private static Task? _task;
+        private static Thread? _logThread;
+        private static readonly AutoResetEvent _logSignal = new(false);
+        private static volatile bool _logRunning;
+        private static readonly ConcurrentDictionary<Type, (PropertyInfo[] Properties, FieldInfo[] Fields)> _typeMembersCache = new();
         private static readonly List<string> _history = (List<string>)
                 typeof(UnityModManager.Logger).GetField("history", HarmonyLib.AccessTools.all).GetValue(null);
         private static readonly int _historyCapacity = (int)
@@ -39,15 +43,28 @@ namespace Iridium
 #if UNSAFE_MODE
         public static void TaskRun()
         {
-            if (_task != null && !_task.Wait(1000))
-                throw new Exception("thread can't stop");
-            _task = Task.Run(ThreadTask);
-        }
-        private static void ThreadTask()
-        {
-            int count = _writeQueue.Count;
-            for (int i = 0; i < count; i++)
+            int wcount = _writeBack.Count;
+            if (wcount + _history.Count >= _historyCapacity * 2)
             {
+                int hcount = _history.Count;
+                _history.Clear();
+                int count = (wcount + hcount) / _historyCapacity * _historyCapacity - hcount - _historyCapacity;
+                for (int i = 0; i < count; i++)
+                {
+                    while (!_writeBack.TryDequeue(out _)) ;
+                }
+            }
+            while (_writeBack.TryDequeue(out string res))
+            {
+                _history.Add(res);
+            }
+        }
+        private static void LogThreadLoop()
+        {
+            while (_logRunning)
+            {
+                _logSignal.WaitOne();
+                if (!_logRunning) break;
                 while (_writeQueue.TryDequeue(out var data))
                 {
                     switch (data.type)
@@ -82,10 +99,6 @@ namespace Iridium
         private static readonly ConcurrentQueue<string> _writeBack = new();
         public static void TaskRun()
         {
-            if (_task != null && !_task.Wait(1000))
-                throw new Exception("thread can't stop");
-            _task = Task.Run(ThreadTask);
-            // 不每次都释放_history 减少占用
             int wcount = _writeBack.Count;
             if (wcount + _history.Count >= _historyCapacity * 2)
             {
@@ -102,11 +115,12 @@ namespace Iridium
                 _history.Add(res);
             }
         }
-        private static void ThreadTask()
+        private static void LogThreadLoop()
         {
-            int count = _writeQueue.Count;
-            for (int i = 0; i < count; i++)
+            while (_logRunning)
             {
+                _logSignal.WaitOne();
+                if (!_logRunning) break;
                 while (_writeQueue.TryDequeue(out var data))
                 {
                     switch (data.type)
@@ -164,24 +178,28 @@ namespace Iridium
         public void Log(params object[] args)
         {
             _writeQueue.Enqueue(new() { contents = args, type = 0 });
+            _logSignal.Set();
         }
 
         // Warning 映射到Warning
         public void Warning(params object[] args)
         {
             _writeQueue.Enqueue(new() { contents = args, type = 1 });
+            _logSignal.Set();
         }
 
         // Error 映射到LogException
         public void Error(params object[] args)
         {
             _writeQueue.Enqueue(new() { contents = args, type = 2 });
+            _logSignal.Set();
         }
 
         // Dir 用于显示对象的属性列表
         public void Dir(object obj)
         {
             _writeQueue.Enqueue(new() { contents = new object[1] { obj }, type = 3 });
+            _logSignal.Set();
         }
 
         // Debug 等同于Log
@@ -264,16 +282,20 @@ namespace Iridium
 
             var propStrings = new List<string>();
 
-            var properties = obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                            .Where(p => p.CanRead)
-                            .OrderBy(p => p.Name)
-                            .ToList();
+            var typeKey = obj.GetType();
+            var cached = _typeMembersCache.GetOrAdd(typeKey, t => (
+                t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.CanRead)
+                    .OrderBy(p => p.Name)
+                    .ToArray(),
+                t.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                    .OrderBy(f => f.Name)
+                    .ToArray()
+            ));
+            var properties = cached.Properties;
+            var fields = cached.Fields;
 
-            var fields = obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance)
-                            .OrderBy(f => f.Name)
-                            .ToList();
-
-            for (int i = 0; i < properties.Count; i++)
+            for (int i = 0; i < properties.Length; i++)
             {
                 if (propStrings.Count >= MAX_OBJECT_PROPERTIES) break;
 
@@ -289,7 +311,7 @@ namespace Iridium
                 }
             }
 
-            for (int i = 0; i < fields.Count; i++)
+            for (int i = 0; i < fields.Length; i++)
             {
                 if (propStrings.Count >= MAX_OBJECT_PROPERTIES) break;
 
@@ -305,7 +327,7 @@ namespace Iridium
                 }
             }
 
-            if (properties.Count + fields.Count > MAX_OBJECT_PROPERTIES)
+            if (properties.Length + fields.Length > MAX_OBJECT_PROPERTIES)
             {
                 propStrings.Add($"... more properties/fields ...");
             }
@@ -390,16 +412,20 @@ namespace Iridium
 
             var propStrings = new List<string>();
 
-            var properties = obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                            .Where(p => p.CanRead)
-                            .OrderBy(p => p.Name)
-                            .ToList();
+            var typeKey = obj.GetType();
+            var cached = _typeMembersCache.GetOrAdd(typeKey, t => (
+                t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.CanRead)
+                    .OrderBy(p => p.Name)
+                    .ToArray(),
+                t.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                    .OrderBy(f => f.Name)
+                    .ToArray()
+            ));
+            var properties = cached.Properties;
+            var fields = cached.Fields;
 
-            var fields = obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance)
-                            .OrderBy(f => f.Name)
-                            .ToList();
-
-            for (int i = 0; i < properties.Count; i++)
+            for (int i = 0; i < properties.Length; i++)
             {
                 if (propStrings.Count >= MAX_OBJECT_PROPERTIES) break;
 
@@ -415,7 +441,7 @@ namespace Iridium
                 }
             }
 
-            for (int i = 0; i < fields.Count; i++)
+            for (int i = 0; i < fields.Length; i++)
             {
                 if (propStrings.Count >= MAX_OBJECT_PROPERTIES) break;
 
@@ -431,7 +457,7 @@ namespace Iridium
                 }
             }
 
-            if (properties.Count + fields.Count > MAX_OBJECT_PROPERTIES)
+            if (properties.Length + fields.Length > MAX_OBJECT_PROPERTIES)
             {
                 propStrings.Add($"{COLOR_COMMENT}... more properties/fields ...{COLOR_RESET}");
             }
@@ -442,10 +468,29 @@ namespace Iridium
             return $"{COLOR_TYPE_NAME}{typeName}{COLOR_RESET} {COLOR_BRACKET}{{{COLOR_RESET}\n{nextIndent}{string.Join($",\n{nextIndent}", propStrings)}\n{indent}{COLOR_BRACKET}}}{COLOR_RESET}";
         }
 
+        private static readonly string[] IndentCache = new string[MAX_DEPTH + 2];
+
+        static Logger()
+        {
+            _logRunning = true;
+            _logThread = new Thread(LogThreadLoop)
+            {
+                Name = "IridiumLogger",
+                IsBackground = true,
+                Priority = ThreadPriority.Lowest
+            };
+            _logThread.Start();
+
+            for (int i = 0; i < IndentCache.Length; i++)
+            {
+                IndentCache[i] = new string(' ', i * 4);
+            }
+        }
+
         private static string GetIndent(int depth)
         {
-            // GC: 我草你妈
-            // Array Temp: 孩子们我失业了
+            if (depth < IndentCache.Length)
+                return IndentCache[depth];
             return new string(' ', depth * 4);
         }
 

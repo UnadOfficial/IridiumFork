@@ -38,16 +38,15 @@ namespace Iridium.UI
         #endregion
 
         // 样式缓存
-        private static GUIStyle? _sidebarActiveStyle;
-        private static GUIStyle? _sidebarInactiveStyle;
+        private static GUIStyle? _sidebarItemStyle;
 
-        private static GUIStyle SidebarActiveStyle
+        private static GUIStyle SidebarItemStyle
         {
             get
             {
-                if (_sidebarActiveStyle == null)
+                if (_sidebarItemStyle == null)
                 {
-                    _sidebarActiveStyle = new(GUI.skin.button)
+                    _sidebarItemStyle = new(GUI.skin.button)
                     {
                         fixedHeight = SIDEBAR_ITEM_HEIGHT,
                         margin = new RectOffset(SIDEBAR_PADDING, SIDEBAR_PADDING, 4, 4),
@@ -59,35 +58,10 @@ namespace Iridium.UI
                         active = { background = UIUtils.GetCachedRoundedTex(32, 32, 14, Color.white), textColor = Color.white }
                     };
                 }
-                return _sidebarActiveStyle;
+                return _sidebarItemStyle;
             }
         }
 
-        private static GUIStyle SidebarInactiveStyle
-        {
-            get
-            {
-                if (_sidebarInactiveStyle == null)
-                {
-                    _sidebarInactiveStyle = new(GUI.skin.button)
-                    {
-                        fixedHeight = SIDEBAR_ITEM_HEIGHT,
-                        margin = new RectOffset(SIDEBAR_PADDING, SIDEBAR_PADDING, 4, 4),
-                        padding = new RectOffset(12, 12, 0, 0),
-                        alignment = TextAnchor.MiddleLeft,
-                        fontSize = 13,
-                        normal = { background = UIUtils.GetCachedRoundedTex(32, 32, 14, Color.white), textColor = UIUtils.OnSurface },
-                        hover = { background = UIUtils.GetCachedRoundedTex(32, 32, 14, Color.white), textColor = Color.white },
-                        active = { background = UIUtils.GetCachedRoundedTex(32, 32, 14, Color.white), textColor = Color.white }
-                    };
-                }
-                return _sidebarInactiveStyle;
-            }
-        }
-
-        /// <summary>
-        /// 绘制侧边栏项目 - 使用缓存样式和 GUI.backgroundColor
-        /// </summary>
         public static bool DrawSidebarItem(string label, bool isActive, Texture2D? icon = null)
         {
             Color bgColor = isActive ? SidebarActiveColor : SidebarInactiveColor;
@@ -95,8 +69,7 @@ namespace Iridium.UI
             Color originalBgColor = GUI.backgroundColor;
             GUI.backgroundColor = bgColor;
 
-            GUIStyle style = isActive ? SidebarActiveStyle : SidebarInactiveStyle;
-            bool clicked = GUILayout.Button(label, style, GUILayout.ExpandWidth(true));
+            bool clicked = GUILayout.Button(label, SidebarItemStyle, GUILayout.ExpandWidth(true));
 
             GUI.backgroundColor = originalBgColor;
             return clicked;

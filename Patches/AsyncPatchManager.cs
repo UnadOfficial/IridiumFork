@@ -17,7 +17,7 @@ namespace Iridium.Patches
         private static readonly AutoResetEvent _taskEvent = new(false);
         private static volatile bool _isRunning = false;
         private static volatile bool _isProcessing = false;
-        private static DateTime _lastUpdateTime = DateTime.MinValue;
+        private static int _lastUpdateTick = Environment.TickCount;
         private const int DEBOUNCE_MS = 100; // 防抖延迟100毫秒
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Iridium.Patches
             lock (_queueLock)
             {
                 _pendingPatchTypes.Add(patchType);
-                _lastUpdateTime = DateTime.Now;
+                _lastUpdateTick = Environment.TickCount;
             }
             _taskEvent.Set();
         }
@@ -84,7 +84,7 @@ namespace Iridium.Patches
             lock (_queueLock)
             {
                 _pendingOptimizerUpdate = true;
-                _lastUpdateTime = DateTime.Now;
+                _lastUpdateTick = Environment.TickCount;
             }
             _taskEvent.Set();
         }
@@ -97,7 +97,7 @@ namespace Iridium.Patches
             lock (_queueLock)
             {
                 _pendingAllUpdate = true;
-                _lastUpdateTime = DateTime.Now;
+                _lastUpdateTick = Environment.TickCount;
             }
             _taskEvent.Set();
         }
@@ -109,44 +109,42 @@ namespace Iridium.Patches
         {
             while (_isRunning)
             {
-                _taskEvent.WaitOne(200); // 最多等待200ms
+                int elapsed;
+                lock (_queueLock)
+                {
+                    elapsed = unchecked(Environment.TickCount - _lastUpdateTick);
+                }
+                int remainingDebounce = DEBOUNCE_MS - elapsed;
+                int timeout = Math.Max(1, Math.Min(remainingDebounce, 200));
+
+                _taskEvent.WaitOne(timeout);
 
                 if (!_isRunning) break;
 
-                // 检查是否需要执行（防抖）
-                bool shouldExecute = false;
-                lock (_queueLock)
-                {
-                    var elapsed = (DateTime.Now - _lastUpdateTime).TotalMilliseconds;
-                    if (elapsed >= DEBOUNCE_MS &&
-                        (_pendingAllUpdate || _pendingOptimizerUpdate || _pendingPatchTypes.Count > 0))
-                    {
-                        shouldExecute = true;
-                    }
-                }
-
-                if (!shouldExecute) continue;
-
-                // 获取待处理的任务
                 bool doAllUpdate = false;
                 bool doOptimizerUpdate = false;
                 List<Type> patchTypes = new();
 
                 lock (_queueLock)
                 {
-                    doAllUpdate = _pendingAllUpdate;
-                    doOptimizerUpdate = _pendingOptimizerUpdate;
-                    patchTypes.AddRange(_pendingPatchTypes);
+                    var elapsed2 = unchecked(Environment.TickCount - _lastUpdateTick);
+                    if (elapsed2 >= DEBOUNCE_MS &&
+                        (_pendingAllUpdate || _pendingOptimizerUpdate || _pendingPatchTypes.Count > 0))
+                    {
+                        doAllUpdate = _pendingAllUpdate;
+                        doOptimizerUpdate = _pendingOptimizerUpdate;
+                        patchTypes.AddRange(_pendingPatchTypes);
 
-                    _pendingAllUpdate = false;
-                    _pendingOptimizerUpdate = false;
-                    _pendingPatchTypes.Clear();
+                        _pendingAllUpdate = false;
+                        _pendingOptimizerUpdate = false;
+                        _pendingPatchTypes.Clear();
+                    }
                 }
 
-                // 标记为正在处理
+                if (!doAllUpdate && !doOptimizerUpdate && patchTypes.Count == 0) continue;
+
                 _isProcessing = true;
 
-                // 执行 Patch 操作
                 try
                 {
                     if (doAllUpdate)
@@ -168,12 +166,7 @@ namespace Iridium.Patches
                         }
                     }
 
-                    // 完成后通知主线程刷新 UI
-                    // Main.RunOnMainThread(() =>
-                    // {
-                        // 这里可以触发 UI 刷新，但由于 OnGUI 会自动刷新，所以不需要额外操作
-                        Main.Logger?.Log(Localization.Get("AsyncPatchCompleted"));
-                    // });
+                    Main.Logger?.Log(Localization.Get("AsyncPatchCompleted"));
                 }
                 catch (Exception ex)
                 {

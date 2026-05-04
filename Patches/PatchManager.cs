@@ -34,6 +34,7 @@ namespace Iridium.Patches
         }
 
         private static readonly List<PatchDef> _definitions = new();
+        private static readonly Dictionary<Type, PatchDef> _definitionDict = new();
 
         static PatchManager()
         {
@@ -52,17 +53,25 @@ namespace Iridium.Patches
                 // Only register types that have HarmonyPatch attribute
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    _definitions.Add(new PatchDef(type, optCond));
+                    var def = new PatchDef(type, optCond);
+                    _definitions.Add(def);
+                    _definitionDict[def.Type] = def;
                 }
             }
-            _definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
+            {
+                var def = new PatchDef(typeof(TrackOptimizationPatches), optCond);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
 
             // --- Ffx Optimization Patches ---
             foreach (var type in typeof(FfxOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    _definitions.Add(new PatchDef(type, optCond));
+                    var def = new PatchDef(type, optCond);
+                    _definitions.Add(def);
+                    _definitionDict[def.Type] = def;
                 }
             }
 
@@ -71,7 +80,9 @@ namespace Iridium.Patches
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    _definitions.Add(new PatchDef(type, optCond));
+                    var def = new PatchDef(type, optCond);
+                    _definitions.Add(def);
+                    _definitionDict[def.Type] = def;
                 }
             }
 
@@ -80,7 +91,9 @@ namespace Iridium.Patches
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    _definitions.Add(new PatchDef(type, optCond));
+                    var def = new PatchDef(type, optCond);
+                    _definitions.Add(def);
+                    _definitionDict[def.Type] = def;
                 }
             }
 
@@ -93,7 +106,9 @@ namespace Iridium.Patches
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    _definitions.Add(new PatchDef(type, () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization));
+                    var def = new PatchDef(type, () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization);
+                    _definitions.Add(def);
+                    _definitionDict[def.Type] = def;
                 }
             }
 
@@ -104,45 +119,115 @@ namespace Iridium.Patches
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    _definitions.Add(new PatchDef(type, tweenSafetyCond));
+                    var def = new PatchDef(type, tweenSafetyCond);
+                    _definitions.Add(def);
+                    _definitionDict[def.Type] = def;
                 }
             }
 
             // --- UI / Misc ---
-            _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.ForceDifficultyUIPatch), () => Main.Settings.ui.forceDifficultyUI));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.AutoplayTextPositionPatch), () => Main.Settings.ui.moveAutoplayText));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.AlwaysCountdownPatch), () => Main.Settings.ui.alwaysCountdown));
+            {
+                var def = new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
+            {
+                var def = new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
+            {
+                var def = new PatchDef(typeof(MiscPatches.ForceDifficultyUIPatch), () => Main.Settings.ui.forceDifficultyUI);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
+            {
+                var def = new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
+            {
+                var def = new PatchDef(typeof(MiscPatches.AutoplayTextPositionPatch), () => Main.Settings.ui.moveAutoplayText);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
+            {
+                var def = new PatchDef(typeof(MiscPatches.AlwaysCountdownPatch), () => Main.Settings.ui.alwaysCountdown);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
 
             // Lobby music
-            _definitions.Add(new PatchDef(typeof(MiscPatches.LobbyMusicPatch), () => Main.Settings.lobbyMusic.enableLobbyMusicPatch));
+            {
+                var def = new PatchDef(typeof(MiscPatches.LobbyMusicPatch), () => Main.Settings.lobbyMusic.enableLobbyMusicPatch);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
 
             // Memory
             var memCond = () => Main.Settings.memory.enableMemoryOptimization;
-            _definitions.Add(new PatchDef(typeof(MiscPatches.SmartGCPatch), () => memCond() && Main.Settings.memory.enableSmartGC));
+            {
+                var def = new PatchDef(typeof(MiscPatches.SmartGCPatch), () => memCond() && Main.Settings.memory.enableSmartGC);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
 
             // Compatibility
             var pauseFixCond = () => Main.Settings.compatibility.enableLegacyPauseFix;
-            _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play), pauseFixCond));
-            _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Apply), pauseFixCond));
-            _definitions.Add(new PatchDef(typeof(CompatibilityPatches.NoFailTooEarlyPatch), () => Main.Settings.compatibility.enableNoFailTooEarly));
-            _definitions.Add(new PatchDef(typeof(JsonPatches.ForceAngleDataPatch), () => Main.Settings.compatibility.forceAngleData));
-            _definitions.Add(new PatchDef(typeof(JsonPatches.LegacyBehaviorPatch), () =>
-                Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||
-                Main.Settings.compatibility.legacyCamRelativeToMode != LegacyBehaviorMode.Default));
+            {
+                var def = new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play), pauseFixCond);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
+            {
+                var def = new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Apply), pauseFixCond);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
+            {
+                var def = new PatchDef(typeof(CompatibilityPatches.NoFailTooEarlyPatch), () => Main.Settings.compatibility.enableNoFailTooEarly);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
+            {
+                var def = new PatchDef(typeof(JsonPatches.ForceAngleDataPatch), () => Main.Settings.compatibility.forceAngleData);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
+            {
+                var def = new PatchDef(typeof(JsonPatches.LegacyBehaviorPatch), () =>
+                    Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||
+                    Main.Settings.compatibility.legacyCamRelativeToMode != LegacyBehaviorMode.Default);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
 
             // Hit Sound
-            _definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
+            {
+                var def = new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
 
             // Judge Text
             // InitPatch: Handles custom text mode
-            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
+            {
+                var def = new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
             // ShowPatch: Handles offset mode
-            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
+            {
+                var def = new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
             // Rewind: Reset
-            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
+            {
+                var def = new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization);
+                _definitions.Add(def);
+                _definitionDict[def.Type] = def;
+            }
         }
 
         /// <summary>
@@ -165,7 +250,7 @@ namespace Iridium.Patches
         {
             if (_harmony == null) return;
 
-            var def = _definitions.Find(d => d.Type == patchType);
+            _definitionDict.TryGetValue(patchType, out var def);
             if (def != null)
             {
                 UpdateSinglePatch(def);

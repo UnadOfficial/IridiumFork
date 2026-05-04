@@ -107,12 +107,31 @@ namespace Iridium
             }
         }
 
+        // 缓存标签页名称，只在语言变化时重建
+        private string[]? _cachedTabNames;
+        private string? _cachedTabNamesLang;
+
+        private string[] GetTabNames()
+        {
+            if (_cachedTabNames == null || _cachedTabNamesLang != language)
+            {
+                _cachedTabNamesLang = language;
+                _cachedTabNames = new[]
+                {
+                    "🚀 " + Localization.Get("EnableOptimizer"),
+                    "🎨 " + Localization.Get("UISettings"),
+                    "🎵 " + Localization.Get("LevelSelectSettings"),
+                    "🔧 " + Localization.Get("CompatibilitySettings"),
+                    "⚙️ " + Localization.Get("HitSoundSettings")
+                };
+            }
+            return _cachedTabNames;
+        }
+
         public void OnGUI(UnityModManager.ModEntry modEntry)
         {
-            // 性能优化：只在必要时初始化样式
             UIUtils.InitializeStyles();
 
-            // 性能优化：只在第一帧或需要时执行某些检查
             if (Time.frameCount != _lastFrameCount)
             {
                 _lastFrameCount = Time.frameCount;
@@ -135,13 +154,7 @@ namespace Iridium
             GUILayout.Space(8);
 
             // Navigation Items
-            string[] tabNames = [
-                "🚀 " + Localization.Get("EnableOptimizer"),
-                "🎨 " + Localization.Get("UISettings"),
-                "🎵 " + Localization.Get("LevelSelectSettings"),
-                "🔧 " + Localization.Get("CompatibilitySettings"),
-                "⚙️ " + Localization.Get("HitSoundSettings")
-            ];
+            string[] tabNames = GetTabNames();
 
             for (int i = 0; i < tabNames.Length; i++)
             {
@@ -260,8 +273,17 @@ namespace Iridium
 
         private void DrawOptimizerTab()
         {
+            var enableOptimizerLabel = Localization.Get("EnableOptimizer");
+            var imageOptimizationsLabel = Localization.Get("ImageOptimizations");
+            var renderingOptimizationsLabel = Localization.Get("RenderingOptimizations");
+            var sceneOptimizationsLabel = Localization.Get("SceneOptimizations");
+            var loadingOptimizationsLabel = Localization.Get("LoadingOptimizations");
+            var dotweenOptimizationsLabel = Localization.Get("DOTweenOptimizations");
+            var extremeOptimizationsLabel = Localization.Get("ExtremeOptimizations");
+            var memorySettingsLabel = Localization.Get("MemorySettings");
+
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("EnableOptimizer"), UIUtils.LabelStyle);
+            GUILayout.Label(enableOptimizerLabel, UIUtils.LabelStyle);
             GUILayout.FlexibleSpace();
             bool newEnableOptimizer = UIUtils.M3Switch(optimizer.enableOptimizer, "");
             if (newEnableOptimizer != optimizer.enableOptimizer)
@@ -283,7 +305,7 @@ namespace Iridium
                     GUILayout.Space(8);
                 }
 
-                UILayout.DrawSettingGroupTitle(Localization.Get("ImageOptimizations"));
+                UILayout.DrawSettingGroupTitle(imageOptimizationsLabel);
 
                 bool showSavedMemory = UIUtils.M3Switch(!optimizer.dontShowSavedMemory, Localization.Get("ShowSavedMemory"));
                 if (showSavedMemory == optimizer.dontShowSavedMemory)
@@ -316,7 +338,7 @@ namespace Iridium
                 GUILayout.Space(4);
                 optimizer.dontResizeCollider = UIUtils.M3Switch(optimizer.dontResizeCollider, Localization.Get("DontResizeCollider"));
 
-                UILayout.DrawSettingGroupTitle(Localization.Get("RenderingOptimizations"));
+                UILayout.DrawSettingGroupTitle(renderingOptimizationsLabel);
 
                 bool newDisableShadows = UIUtils.M3Switch(optimizer.disableShadows, Localization.Get("DisableShadows"));
                 if (newDisableShadows != optimizer.disableShadows)
@@ -339,20 +361,20 @@ namespace Iridium
                 optimizer.optimizeFilters = UIUtils.M3Switch(optimizer.optimizeFilters, Localization.Get("OptimizeFilters"));
                 optimizer.fastLoading = UIUtils.M3Switch(optimizer.fastLoading, Localization.Get("FastLoading"));
 
-                UILayout.DrawSettingGroupTitle(Localization.Get("SceneOptimizations"));
+                UILayout.DrawSettingGroupTitle(sceneOptimizationsLabel);
 
                 optimizer.cacheGameObjectReferences = UIUtils.M3Switch(optimizer.cacheGameObjectReferences, Localization.Get("CacheGameObjectReferences"));
                 optimizer.optimizeEventProcessing = UIUtils.M3Switch(optimizer.optimizeEventProcessing, Localization.Get("OptimizeEventProcessing"));
                 optimizer.optimizeEditorMouseDetection = UIUtils.M3Switch(optimizer.optimizeEditorMouseDetection, Localization.Get("OptimizeEditorMouseDetection"));
                 optimizer.optimizeEditorEventIndicators = UIUtils.M3Switch(optimizer.optimizeEditorEventIndicators, Localization.Get("OptimizeEditorEventIndicators"));
 
-                UILayout.DrawSettingGroupTitle(Localization.Get("LoadingOptimizations"));
+                UILayout.DrawSettingGroupTitle(loadingOptimizationsLabel);
 
                 optimizer.cacheFloorEvents = UIUtils.M3Switch(optimizer.cacheFloorEvents, Localization.Get("CacheFloorEvents"));
                 optimizer.optimizeMoveTrackTweens = UIUtils.M3Switch(optimizer.optimizeMoveTrackTweens, Localization.Get("OptimizeMoveTrackTweens"));
                 optimizer.batchMoveDecorations = UIUtils.M3Switch(optimizer.batchMoveDecorations, Localization.Get("BatchMoveDecorations"));
 
-                UILayout.DrawSettingGroupTitle(Localization.Get("DOTweenOptimizations"));
+                UILayout.DrawSettingGroupTitle(dotweenOptimizationsLabel);
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(Localization.Get("EnableDOTweenOptimization"), UIUtils.LabelStyle);
@@ -424,7 +446,7 @@ namespace Iridium
                 GUILayout.Label(Localization.Get("DOTweenOptimizationRestartRequired"), UIUtils.LabelStyle);
                 GUI.contentColor = Color.white;
 
-                UILayout.DrawSettingGroupTitle(Localization.Get("ExtremeOptimizations"));
+                UILayout.DrawSettingGroupTitle(extremeOptimizationsLabel);
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(Localization.Get("EnableExtremeOptimization"), UIUtils.LabelStyle);
@@ -474,10 +496,10 @@ namespace Iridium
                 }
             }
 
-            UILayout.DrawSettingGroupTitle(Localization.Get("MemorySettings"));
+            UILayout.DrawSettingGroupTitle(memorySettingsLabel);
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("MemorySettings"), UIUtils.LabelStyle);
+            GUILayout.Label(memorySettingsLabel, UIUtils.LabelStyle);
             GUILayout.FlexibleSpace();
             bool newEnableMemory = UIUtils.M3Switch(memory.enableMemoryOptimization, "");
             if (newEnableMemory != memory.enableMemoryOptimization)
@@ -517,29 +539,37 @@ namespace Iridium
 
         private void DrawUISettingsTab()
         {
-            bool newRemoveNews = UIUtils.M3Switch(ui.removeNews, Localization.Get("RemoveNews"));
+            var removeNewsLabel = Localization.Get("RemoveNews");
+            var hideBetaWatermarkLabel = Localization.Get("HideBetaWatermark");
+            var forceDifficultyUILabel = Localization.Get("ForceDifficultyUI");
+            var alwaysCountdownLabel = Localization.Get("AlwaysCountdown");
+            var moveAutoplayTextLabel = Localization.Get("MoveAutoplayText");
+            var enableCircleArcLabel = Localization.Get("EnableCircleArc");
+            var restartRequiredLabel = Localization.Get("RestartRequired");
+
+            bool newRemoveNews = UIUtils.M3Switch(ui.removeNews, removeNewsLabel);
             if (newRemoveNews != ui.removeNews)
             {
                 ui.removeNews = newRemoveNews;
                 Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.MiscPatches.RemoveNewsPatch));
                 Iridium.Patches.MiscPatches.RemoveNewsPatch.UpdateNews();
             }
-            bool newHideBeta = UIUtils.M3Switch(ui.hideBetaWatermark, Localization.Get("HideBetaWatermark"));
+            bool newHideBeta = UIUtils.M3Switch(ui.hideBetaWatermark, hideBetaWatermarkLabel);
             if (newHideBeta != ui.hideBetaWatermark)
             {
                 ui.hideBetaWatermark = newHideBeta;
                 Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.MiscPatches.HideBetaWatermarkPatch));
                 Iridium.Patches.MiscPatches.RefreshBetaWatermark();
             }
-            bool newForceDifficulty = UIUtils.M3Switch(ui.forceDifficultyUI, Localization.Get("ForceDifficultyUI"));
+            bool newForceDifficulty = UIUtils.M3Switch(ui.forceDifficultyUI, forceDifficultyUILabel);
             if (newForceDifficulty != ui.forceDifficultyUI)
             {
                 ui.forceDifficultyUI = newForceDifficulty;
                 Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.MiscPatches.ForceDifficultyUIPatch));
             }
-            ui.alwaysCountdown = UIUtils.M3Switch(ui.alwaysCountdown, Localization.Get("AlwaysCountdown"));
+            ui.alwaysCountdown = UIUtils.M3Switch(ui.alwaysCountdown, alwaysCountdownLabel);
 
-            bool newMoveAutoplay = UIUtils.M3Switch(ui.moveAutoplayText, Localization.Get("MoveAutoplayText"));
+            bool newMoveAutoplay = UIUtils.M3Switch(ui.moveAutoplayText, moveAutoplayTextLabel);
             if (newMoveAutoplay != ui.moveAutoplayText)
             {
                 ui.moveAutoplayText = newMoveAutoplay;
@@ -568,19 +598,30 @@ namespace Iridium
             }
 
             GUILayout.Space(8);
-            bool newEnableCircleArc = UIUtils.M3Switch(ui.enableCircleArc, Localization.Get("EnableCircleArc"));
+            bool newEnableCircleArc = UIUtils.M3Switch(ui.enableCircleArc, enableCircleArcLabel);
             if (newEnableCircleArc != ui.enableCircleArc)
             {
                 ui.enableCircleArc = newEnableCircleArc;
                 Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.MiscPatches.CircleArcPatch));
             }
-            if (ui.enableCircleArc) UIUtils.DrawInfoBox("⚠ " + Localization.Get("RestartRequired"), true);
+            if (ui.enableCircleArc) UIUtils.DrawInfoBox("⚠ " + restartRequiredLabel, true);
         }
 
         private void DrawLevelSelectTab()
         {
+            var levelSelectSettingsLabel = Localization.Get("LevelSelectSettings");
+            var enableCustomBpmLabel = Localization.Get("EnableCustomBpm");
+            var customBpmLabel = Localization.Get("CustomBpm");
+            var lobbyFastMusicLabel = Localization.Get("LobbyFastMusic");
+            var lobbyCustomMusicLabel = Localization.Get("LobbyCustomMusic");
+            var lobbyDefaultMusicPathLabel = Localization.Get("LobbyDefaultMusicPath");
+            var applyLabel = Localization.Get("Apply");
+            var lobbyFastMusicPathLabel = Localization.Get("LobbyFastMusicPath");
+            var lobbyReloadMusicLabel = Localization.Get("LobbyReloadMusic");
+            var lobbyMusicHintLabel = Localization.Get("LobbyMusicHint");
+
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("LevelSelectSettings"), UIUtils.LabelStyle);
+            GUILayout.Label(levelSelectSettingsLabel, UIUtils.LabelStyle);
             GUILayout.FlexibleSpace();
             bool newEnableLobbyMusic = UIUtils.M3Switch(lobbyMusic.enableLobbyMusicPatch, "");
             if (newEnableLobbyMusic != lobbyMusic.enableLobbyMusicPatch)
@@ -597,11 +638,11 @@ namespace Iridium
             if (lobbyMusic.enableLobbyMusicPatch)
             {
                 GUILayout.Space(8);
-                lobbyMusic.enableCustomBpm = UIUtils.M3Switch(lobbyMusic.enableCustomBpm, Localization.Get("EnableCustomBpm"));
+                lobbyMusic.enableCustomBpm = UIUtils.M3Switch(lobbyMusic.enableCustomBpm, enableCustomBpmLabel);
                 if (lobbyMusic.enableCustomBpm)
                 {
                     GUILayout.BeginHorizontal(GUILayout.Height(28));
-                    GUILayout.Label(Localization.Get("CustomBpm"), UIUtils.LabelStyle);
+                    GUILayout.Label(customBpmLabel, UIUtils.LabelStyle);
                     GUILayout.FlexibleSpace();
                     string bpmStr = GUILayout.TextField(lobbyMusic.customBpm.ToString("F1"), 6, UIUtils.TextFieldStyle, GUILayout.Width(60));
                     if (float.TryParse(bpmStr, out float newBpm)) lobbyMusic.customBpm = Mathf.Max(1f, newBpm);
@@ -609,9 +650,9 @@ namespace Iridium
                 }
 
                 GUILayout.Space(4);
-                lobbyMusic.fastMusic = UIUtils.M3Switch(lobbyMusic.fastMusic, Localization.Get("LobbyFastMusic"));
+                lobbyMusic.fastMusic = UIUtils.M3Switch(lobbyMusic.fastMusic, lobbyFastMusicLabel);
 
-                bool newCustomMusic = UIUtils.M3Switch(lobbyMusic.customMusic, Localization.Get("LobbyCustomMusic"));
+                bool newCustomMusic = UIUtils.M3Switch(lobbyMusic.customMusic, lobbyCustomMusicLabel);
                 if (newCustomMusic != lobbyMusic.customMusic)
                 {
                     lobbyMusic.customMusic = newCustomMusic;
@@ -621,13 +662,13 @@ namespace Iridium
                 if (lobbyMusic.customMusic)
                 {
                     GUILayout.BeginHorizontal(GUILayout.Height(28));
-                    GUILayout.Label(Localization.Get("LobbyDefaultMusicPath"), UIUtils.LabelStyle);
+                    GUILayout.Label(lobbyDefaultMusicPathLabel, UIUtils.LabelStyle);
                     GUILayout.FlexibleSpace();
                     _defaultLobbyMusicPathCache = GUILayout.TextField(_defaultLobbyMusicPathCache ?? string.Empty, UIUtils.TextFieldStyle, GUILayout.Width(260));
                     GUILayout.Space(6);
                     bool canApplyDefaultPath = (_defaultLobbyMusicPathCache ?? string.Empty) != lobbyMusic.defaultMusicPath;
                     GUI.enabled = canApplyDefaultPath;
-                    if (GUILayout.Button(Localization.Get("Apply"), UIUtils.ButtonStyle, GUILayout.Width(70)))
+                    if (GUILayout.Button(applyLabel, UIUtils.ButtonStyle, GUILayout.Width(70)))
                     {
                         lobbyMusic.defaultMusicPath = (_defaultLobbyMusicPathCache ?? string.Empty).Trim();
                         Iridium.Patches.MiscPatches.LobbyMusicPatch.StartLoad(true, lobbyMusic.defaultMusicPath);
@@ -636,13 +677,13 @@ namespace Iridium
                     GUILayout.EndHorizontal();
 
                     GUILayout.BeginHorizontal(GUILayout.Height(28));
-                    GUILayout.Label(Localization.Get("LobbyFastMusicPath"), UIUtils.LabelStyle);
+                    GUILayout.Label(lobbyFastMusicPathLabel, UIUtils.LabelStyle);
                     GUILayout.FlexibleSpace();
                     _fastLobbyMusicPathCache = GUILayout.TextField(_fastLobbyMusicPathCache ?? string.Empty, UIUtils.TextFieldStyle, GUILayout.Width(260));
                     GUILayout.Space(6);
                     bool canApplyFastPath = (_fastLobbyMusicPathCache ?? string.Empty) != lobbyMusic.fastMusicPath;
                     GUI.enabled = canApplyFastPath;
-                    if (GUILayout.Button(Localization.Get("Apply"), UIUtils.ButtonStyle, GUILayout.Width(70)))
+                    if (GUILayout.Button(applyLabel, UIUtils.ButtonStyle, GUILayout.Width(70)))
                     {
                         lobbyMusic.fastMusicPath = (_fastLobbyMusicPathCache ?? string.Empty).Trim();
                         Iridium.Patches.MiscPatches.LobbyMusicPatch.StartLoad(false, lobbyMusic.fastMusicPath);
@@ -651,34 +692,44 @@ namespace Iridium
                     GUILayout.EndHorizontal();
 
                     GUILayout.Space(6);
-                    if (GUILayout.Button(Localization.Get("LobbyReloadMusic"), UIUtils.ButtonStyle, GUILayout.Width(140)))
+                    if (GUILayout.Button(lobbyReloadMusicLabel, UIUtils.ButtonStyle, GUILayout.Width(140)))
                     {
                         Iridium.Patches.MiscPatches.LobbyMusicPatch.ReloadFromSettings();
                     }
-                    UIUtils.DrawInfoBox(Localization.Get("LobbyMusicHint"));
+                    UIUtils.DrawInfoBox(lobbyMusicHintLabel);
                 }
             }
         }
 
         private void DrawCompatibilityTab()
         {
-            bool newLegacyPauseFix = UIUtils.M3Switch(compatibility.enableLegacyPauseFix, Localization.Get("EnableLegacyPauseFix"));
+            var enableLegacyPauseFixLabel = Localization.Get("EnableLegacyPauseFix");
+            var enableNoFailTooEarlyLabel = Localization.Get("EnableNoFailTooEarly");
+            var legacyLevelBehaviorLabel = Localization.Get("LegacyLevelBehavior");
+            var forceAngleDataLabel = Localization.Get("ForceAngleData");
+            var legacyFlashModeLabel = Localization.Get("LegacyFlashMode");
+            var legacyCamRelativeToModeLabel = Localization.Get("LegacyCamRelativeToMode");
+            var modeDefaultLabel = Localization.Get("ModeDefault");
+            var modeAlwaysOffLabel = Localization.Get("ModeAlwaysOff");
+            var modeAlwaysOnLabel = Localization.Get("ModeAlwaysOn");
+
+            bool newLegacyPauseFix = UIUtils.M3Switch(compatibility.enableLegacyPauseFix, enableLegacyPauseFixLabel);
             if (newLegacyPauseFix != compatibility.enableLegacyPauseFix)
             {
                 compatibility.enableLegacyPauseFix = newLegacyPauseFix;
                 Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.CompatibilityPatches.LegacyPauseFixPatch_Play));
                 Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.CompatibilityPatches.LegacyPauseFixPatch_Apply));
             }
-            bool newNoFailTooEarly = UIUtils.M3Switch(compatibility.enableNoFailTooEarly, Localization.Get("EnableNoFailTooEarly"));
+            bool newNoFailTooEarly = UIUtils.M3Switch(compatibility.enableNoFailTooEarly, enableNoFailTooEarlyLabel);
             if (newNoFailTooEarly != compatibility.enableNoFailTooEarly)
             {
                 compatibility.enableNoFailTooEarly = newNoFailTooEarly;
                 Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.CompatibilityPatches.NoFailTooEarlyPatch));
             }
 
-            UILayout.DrawSettingGroupTitle(Localization.Get("LegacyLevelBehavior"));
+            UILayout.DrawSettingGroupTitle(legacyLevelBehaviorLabel);
 
-            bool newForceAngleData = UIUtils.M3Switch(compatibility.forceAngleData, Localization.Get("ForceAngleData"));
+            bool newForceAngleData = UIUtils.M3Switch(compatibility.forceAngleData, forceAngleDataLabel);
             if (newForceAngleData != compatibility.forceAngleData)
             {
                 compatibility.forceAngleData = newForceAngleData;
@@ -687,16 +738,16 @@ namespace Iridium
 
             GUILayout.Space(8);
 
-            GUILayout.Label(Localization.Get("LegacyFlashMode"), UIUtils.SubHeaderStyle);
+            GUILayout.Label(legacyFlashModeLabel, UIUtils.SubHeaderStyle);
             GUILayout.Space(2);
             var newFlashMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyFlashMode,
-                [Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn")]);
+                [modeDefaultLabel, modeAlwaysOffLabel, modeAlwaysOnLabel]);
 
             GUILayout.Space(10);
-            GUILayout.Label(Localization.Get("LegacyCamRelativeToMode"), UIUtils.SubHeaderStyle);
+            GUILayout.Label(legacyCamRelativeToModeLabel, UIUtils.SubHeaderStyle);
             GUILayout.Space(2);
             var newCamRelMode = (LegacyBehaviorMode)UIUtils.M3SegmentedButton((int)compatibility.legacyCamRelativeToMode,
-                [Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn")]);
+                [modeDefaultLabel, modeAlwaysOffLabel, modeAlwaysOnLabel]);
 
             if (newFlashMode != compatibility.legacyFlashMode || newCamRelMode != compatibility.legacyCamRelativeToMode)
             {
@@ -708,8 +759,14 @@ namespace Iridium
 
         private void DrawHitSoundAndJudgeTextTab()
         {
+            var enableHitSoundPitchLabel = Localization.Get("EnableHitSoundPitch");
+            var judgeTextSettingsLabel = Localization.Get("JudgeTextSettings");
+            var showAsOffsetLabel = Localization.Get("ShowAsOffset");
+            var customJudgeTextLabel = Localization.Get("CustomJudgeText");
+            var resetJudgeTextLabel = Localization.Get("ResetJudgeText");
+
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("EnableHitSoundPitch"), UIUtils.LabelStyle);
+            GUILayout.Label(enableHitSoundPitchLabel, UIUtils.LabelStyle);
             GUILayout.FlexibleSpace();
             bool newEnableHitSound = UIUtils.M3Switch(hitSound.enableHitSoundPitch, "");
             if (newEnableHitSound != hitSound.enableHitSoundPitch)
@@ -719,10 +776,10 @@ namespace Iridium
             }
             GUILayout.EndHorizontal();
 
-            UILayout.DrawSettingGroupTitle(Localization.Get("JudgeTextSettings"));
+            UILayout.DrawSettingGroupTitle(judgeTextSettingsLabel);
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Localization.Get("JudgeTextSettings"), UIUtils.LabelStyle);
+            GUILayout.Label(judgeTextSettingsLabel, UIUtils.LabelStyle);
             GUILayout.FlexibleSpace();
             bool newEnableJudgeText = UIUtils.M3Switch(judgeText.enableJudgeTextCustomization, "");
             if (newEnableJudgeText != judgeText.enableJudgeTextCustomization)
@@ -738,7 +795,7 @@ namespace Iridium
             {
                 GUILayout.Space(8);
 
-                bool newShowAsOffset = UIUtils.M3Switch(judgeText.showAsOffset, Localization.Get("ShowAsOffset"));
+                bool newShowAsOffset = UIUtils.M3Switch(judgeText.showAsOffset, showAsOffsetLabel);
                 if (newShowAsOffset != judgeText.showAsOffset)
                 {
                     judgeText.showAsOffset = newShowAsOffset;
@@ -749,7 +806,7 @@ namespace Iridium
 
                 GUI.enabled = !judgeText.showAsOffset;
 
-                GUILayout.Label(Localization.Get("CustomJudgeText"), UIUtils.LabelStyle);
+                GUILayout.Label(customJudgeTextLabel, UIUtils.LabelStyle);
                 GUILayout.Space(4);
 
                 DrawJudgeTextInput("TooEarly", ref judgeText.tooEarly);
@@ -766,7 +823,7 @@ namespace Iridium
                 GUI.enabled = true;
 
                 GUILayout.Space(8);
-                if (GUILayout.Button(Localization.Get("ResetJudgeText"), UIUtils.ButtonStyle, GUILayout.Width(120)))
+                if (GUILayout.Button(resetJudgeTextLabel, UIUtils.ButtonStyle, GUILayout.Width(120)))
                 {
                     judgeText.ResetToDefault();
                 }
@@ -775,7 +832,8 @@ namespace Iridium
 
         public override void Save(UnityModManager.ModEntry modEntry)
         {
-            // Clear cached styles when language changes to force regeneration with new localized text
+            var previousLang = _cachedTabNamesLang;
+
             _sidebarStyle = null;
             _sidebarHeaderStyle = null;
             _sidebarLanguageStyle = null;
@@ -783,8 +841,10 @@ namespace Iridium
             
             Save(this, modEntry);
             
-            // Reload localization to ensure all UI text is updated immediately after language change
-            Localization.Reload();
+            if (previousLang != language)
+            {
+                Localization.Reload();
+            }
         }
 
         private void DrawJudgeTextInput(string key, ref string value)

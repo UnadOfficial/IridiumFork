@@ -13,6 +13,8 @@ namespace Iridium
         private static readonly Dictionary<string, string> languageDisplayNames = [];
         private static bool loaded = false;
         private static readonly List<string> _availableLanguages = [];
+        private static string? _cachedLang;
+        private static Dictionary<string, string>? _cachedDict;
         public static List<string> AvailableLanguages
         {
             get
@@ -101,7 +103,14 @@ namespace Iridium
             if (!loaded) Load();
             
             string currentLang = Main.Settings?.language ?? "en";
-            if (languages.TryGetValue(currentLang, out var dict) && dict.TryGetValue(key, out string value))
+            
+            if (_cachedLang != currentLang || _cachedDict == null)
+            {
+                _cachedLang = currentLang;
+                languages.TryGetValue(currentLang, out _cachedDict);
+            }
+            
+            if (_cachedDict != null && _cachedDict.TryGetValue(key, out string value))
             {
                 return value;
             }
@@ -120,6 +129,8 @@ namespace Iridium
         /// </summary>
         public static void Reload()
         {
+            _cachedLang = null;
+            _cachedDict = null;
             loaded = false;
             Load();
         }
