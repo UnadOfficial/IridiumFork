@@ -105,6 +105,11 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModEnabled"));
 
+
+                // 初始化内存管理组件
+                Iridium.Core.PoolManager.Initialize();
+                Iridium.Core.StringBuilderPool.Initialize();
+                Iridium.Core.GCUtils.Initialize();
                 // 启动异步 Patch 管理器
                 Iridium.Patches.AsyncPatchManager.Start();
 
@@ -141,6 +146,10 @@ namespace Iridium
 
                 Iridium.Patches.PatchManager.UnpatchAll();
 
+
+                // 清理内存管理组件
+                Iridium.Core.PoolManager.ClearAll();
+                Iridium.Core.ReflectionCache.Clear();
                 if (_uiObject != null)
                 {
                     Object.Destroy(_uiObject);
