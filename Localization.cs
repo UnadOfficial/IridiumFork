@@ -32,6 +32,12 @@ namespace Iridium
         {
             try
             {
+                // Don't clear if already loaded to prevent redundant file I/O
+                if (loaded && languages.Count > 0)
+                {
+                    return;
+                }
+                
                 languages.Clear();
                 languageDisplayNames.Clear();
                 _availableLanguages.Clear();
@@ -107,6 +113,15 @@ namespace Iridium
             }
 
             return key;
+        }
+
+        /// <summary>
+        /// Force reload all language files. Call this when language setting changes.
+        /// </summary>
+        public static void Reload()
+        {
+            loaded = false;
+            Load();
         }
 
         public static string Get(string key, params object[] args)
