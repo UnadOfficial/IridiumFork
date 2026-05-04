@@ -175,7 +175,16 @@ namespace Iridium
                 string displayName = Localization.GetDisplayName(lang);
                 if (GUILayout.Button(displayName.ToUpper(), UIUtils.LanguageButtonStyle, GUILayout.Height(32), GUILayout.ExpandWidth(true)))
                 {
-                    language = lang;
+                    if (language != lang)
+                    {
+                        language = lang;
+                        // Force UI refresh by resetting scroll position and triggering a full repaint
+                        _contentScrollPosition = Vector2.zero;
+                        // Reset tab index to ensure consistent UI state after language change
+                        _currentTabIndex = 0;
+                        // Mark GUI as changed to trigger save
+                        GUI.changed = true;
+                    }
                 }
                 GUI.color = Color.white;
                 GUILayout.Space(2);
@@ -766,7 +775,16 @@ namespace Iridium
 
         public override void Save(UnityModManager.ModEntry modEntry)
         {
+            // Clear cached styles when language changes to force regeneration with new localized text
+            _sidebarStyle = null;
+            _sidebarHeaderStyle = null;
+            _sidebarLanguageStyle = null;
+            _versionStyle = null;
+            
             Save(this, modEntry);
+            
+            // Reload localization to ensure all UI text is updated immediately after language change
+            Localization.Reload();
         }
 
         private void DrawJudgeTextInput(string key, ref string value)
