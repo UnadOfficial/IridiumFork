@@ -1,8 +1,8 @@
 {
-  "Id": "Iridium",
-  "DisplayName": "Iridium",
-  "Author": "Xbodwf",
-  "Version": "1.2.0",
+  "Id": "IridiumFork",
+  "DisplayName": "IridiumFork",
+  "Author": "Xbodwf ForkByUnad",
+  "Version": "1.2.1",
   "Requirements": [],
   "AssemblyName": "Iridium.dll",
   "EntryMethod": "Iridium.Main.Load",
