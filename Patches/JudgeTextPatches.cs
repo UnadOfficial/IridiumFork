@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using HarmonyLib;
 using Iridium.Config;
+using Iridium.Core;
 using TMPro;
 using UnityEngine;
 
@@ -46,17 +47,15 @@ namespace Iridium.Patches
         }
 
         /// <summary>
-        /// Get display text for offset mode
+        /// Get display text for offset mode - 使用 StringBuilder 池优化
         /// </summary>
         private static string GetOffsetText(double timing)
         {
             if (double.IsNaN(timing) || double.IsInfinity(timing))
                 return "0ms";
             
-            // Display as integer (F0) as per user example "5ms"
-            // Use Math.Round to ensure 0.5ms becomes 1ms
-            long ms = (long)Math.Round(timing);
-            return $"{(ms >= 0 ? "+" : "-")}{Math.Abs(ms)}ms";
+            // 使用 StringBuilder 池减少 GC 分配
+            return StringBuilderPool.GetOffsetText(timing);
         }
 
         /// <summary>
