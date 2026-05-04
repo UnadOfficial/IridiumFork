@@ -20,7 +20,9 @@ namespace Iridium
             public object[] contents;
             // public long timespan;
             public int type;
+#pragma warning disable CS0649
             public int flag;
+#pragma warning restore CS0649
         }
 
         // 多线程队列

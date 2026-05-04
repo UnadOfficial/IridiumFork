@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -65,7 +65,7 @@ namespace Iridium.Core
         /// <summary>
         /// 补丁后返回的<see cref="MethodInfo"/>
         /// </summary>
-        internal MethodInfo? patchedaResult;
+        internal MethodInfo? patchedaResult = null;
         public abstract void StartPatch();
         public abstract void StopPatch();
     }

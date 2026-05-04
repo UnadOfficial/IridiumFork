@@ -139,7 +139,7 @@ namespace Iridium.Patches
  /// <summary>
  /// 安全地设置Tween的属性
  /// </summary>
- public static Tween SetTweenProperties(Tween tween)
+ public static Tween? SetTweenProperties(Tween tween)
  {
  if (tween == null) return null;
 
