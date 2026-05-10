@@ -26,13 +26,13 @@ namespace Iridium.Patches
 		/// <summary>
 		/// Tween批处理队列 - 用于延迟创建Tween
 		/// </summary>
-		private static class TweenBatchQueue
+		internal static class TweenBatchQueue
 		{
 			private static readonly Queue<TweenRequest> _pendingTweens = new Queue<TweenRequest>();
 			private static int _tweensCreatedThisFrame = 0;
 			private static bool _isProcessing = false;
 
-			public static void Enqueue(TweenRequest request)
+			internal static void Enqueue(TweenRequest request)
 			{
 				_pendingTweens.Enqueue(request);
 				if (!_isProcessing)
@@ -41,7 +41,7 @@ namespace Iridium.Patches
 				}
 			}
 
-			public static void StartProcessing()
+			internal static void StartProcessing()
 			{
 				if (_isProcessing) return;
 				_isProcessing = true;
@@ -77,13 +77,13 @@ namespace Iridium.Patches
 				_tweensCreatedThisFrame = 0;
 			}
 
-			public static int PendingCount => _pendingTweens.Count;
+			internal static int PendingCount => _pendingTweens.Count;
 		}
 
 		/// <summary>
 		/// Tween请求 - 封装Tween创建逻辑
 		/// </summary>
-		private abstract class TweenRequest
+		internal abstract class TweenRequest
 		{
 			public abstract void Execute();
 		}

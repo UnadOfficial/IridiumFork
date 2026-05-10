@@ -149,4 +149,9 @@ namespace Iridium.Config
             failOverload = "FailOverload";
         }
     }
+
+    public class PatchModeSettings
+    {
+        public bool useILPatch = false;
+    }
 }

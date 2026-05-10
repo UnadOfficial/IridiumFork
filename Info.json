@@ -2,7 +2,7 @@
   "Id": "IridiumFork",
   "DisplayName": "IridiumFork",
   "Author": "Xbodwf ForkByUnad",
-  "Version": "1.2.1",
+  "Version": "1.2.17",
   "Requirements": [],
   "AssemblyName": "Iridium.dll",
   "EntryMethod": "Iridium.Main.Load",

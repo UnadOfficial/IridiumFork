@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using Iridium.Config;
+using Iridium.Core;
 
 namespace Iridium.Patches
 {
@@ -11,18 +12,16 @@ namespace Iridium.Patches
     {
         private static Harmony _harmony => Main.Harmony!;
 
-        // Status
         private static readonly Dictionary<Type, bool> _activePatches = new();
-        // Optimization: Cache exact patch bindings for each patch class to speed up and isolate unpatching
         private static readonly Dictionary<Type, List<(MethodBase Original, MethodInfo PatchMethod)>> _patchedBindings = new();
 
-        // Patch Declaration
         private class PatchDef
         {
             public Type Type;
             public Func<bool> Condition;
             public Type? Parent;
             public string Name;
+            public BasePatchMethod? MethodInstance;
 
             public PatchDef(Type type, Func<bool> condition, Type? parent = null)
             {
@@ -31,10 +30,18 @@ namespace Iridium.Patches
                 Parent = parent;
                 Name = type.Name;
             }
+
+            public PatchDef(BasePatchMethod method, Func<bool> condition, Type? parent = null)
+            {
+                MethodInstance = method;
+                Condition = condition;
+                Parent = parent;
+                Name = method.GetType().Name;
+                Type = method.GetType();
+            }
         }
 
         private static readonly List<PatchDef> _definitions = new();
-        private static readonly Dictionary<Type, PatchDef> _definitionDict = new();
 
         static PatchManager()
         {
@@ -47,42 +54,41 @@ namespace Iridium.Patches
 
             // --- Optimizer ---
             var optCond = () => Main.Settings.optimizer.enableOptimizer;
-            // Register all nested patch classes in OptimizerPatches
             foreach (var type in typeof(OptimizerPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             {
-                // Only register types that have HarmonyPatch attribute
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    var def = new PatchDef(type, optCond);
-                    _definitions.Add(def);
-                    _definitionDict[def.Type] = def;
+                    _definitions.Add(new PatchDef(type, optCond));
                 }
             }
-            {
-                var def = new PatchDef(typeof(TrackOptimizationPatches), optCond);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
+            _definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
+
+            // --- Track optimization StdPatchMethods (replacing attribute-based) ---
+            var trackOptCond = () => Main.Settings.optimizer.optimizeMoveTrack;
+            _definitions.Add(new PatchDef(new StdMoveFloorPatch(), trackOptCond));
+            _definitions.Add(new PatchDef(new StdRecolorFloorPatch(), () => Main.Settings.optimizer.optimizeRecolorTrack));
+
+            // --- Filter optimization StdPatchMethods ---
+            var filterOptCond = () => Main.Settings.optimizer.optimizeFilters;
+            _definitions.Add(new PatchDef(new StdFilterPlusPatch(), filterOptCond));
+            _definitions.Add(new PatchDef(new StdFilterAdvancedPlusPatch(), filterOptCond));
 
             // --- Ffx Optimization Patches ---
             foreach (var type in typeof(FfxOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    var def = new PatchDef(type, optCond);
-                    _definitions.Add(def);
-                    _definitionDict[def.Type] = def;
+                    _definitions.Add(new PatchDef(type, optCond));
                 }
             }
+            _definitions.Add(new PatchDef(new StdDecorationManagerLateUpdatePatch(), optCond));
 
             // --- Scene Optimization Patches ---
             foreach (var type in typeof(SceneOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    var def = new PatchDef(type, optCond);
-                    _definitions.Add(def);
-                    _definitionDict[def.Type] = def;
+                    _definitions.Add(new PatchDef(type, optCond));
                 }
             }
 
@@ -91,148 +97,68 @@ namespace Iridium.Patches
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    var def = new PatchDef(type, optCond);
-                    _definitions.Add(def);
-                    _definitionDict[def.Type] = def;
+                    _definitions.Add(new PatchDef(type, optCond));
                 }
             }
 
             // --- DOTween Optimization Patches ---
             // 注意：DOTween优化现在不使用任何HarmonyPatch，只使用运行时配置
-            // 所以不需要注册任何补丁
 
             // --- Extreme Optimization Patches ---
             foreach (var type in typeof(ExtremeOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    var def = new PatchDef(type, () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization);
-                    _definitions.Add(def);
-                    _definitionDict[def.Type] = def;
+                    _definitions.Add(new PatchDef(type, () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization));
                 }
             }
+            _definitions.Add(new PatchDef(new StdProcessPendingTweensPatch(), () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization));
 
             // --- Tween Safety Patches ---
-            // 解决 DOTween.defaultRecyclable=true 时，ADOFAI 中 Tween 引用过期导致的动画异常
             var tweenSafetyCond = () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.dotweenDefaultRecyclable;
             foreach (var type in typeof(TweenSafetyPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                 {
-                    var def = new PatchDef(type, tweenSafetyCond);
-                    _definitions.Add(def);
-                    _definitionDict[def.Type] = def;
+                    _definitions.Add(new PatchDef(type, tweenSafetyCond));
                 }
             }
 
             // --- UI / Misc ---
-            {
-                var def = new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            {
-                var def = new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            {
-                var def = new PatchDef(typeof(MiscPatches.ForceDifficultyUIPatch), () => Main.Settings.ui.forceDifficultyUI);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            {
-                var def = new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            {
-                var def = new PatchDef(typeof(MiscPatches.AutoplayTextPositionPatch), () => Main.Settings.ui.moveAutoplayText);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            {
-                var def = new PatchDef(typeof(MiscPatches.AlwaysCountdownPatch), () => Main.Settings.ui.alwaysCountdown);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
+            _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
+            _definitions.Add(new PatchDef(new StdHideBetaWatermarkPatch(), () => Main.Settings.ui.hideBetaWatermark));
+            _definitions.Add(new PatchDef(new StdForceDifficultyUIPatch(), () => Main.Settings.ui.forceDifficultyUI));
+            _definitions.Add(new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc));
+            _definitions.Add(new PatchDef(new StdAutoplayTextPositionPatch(), () => Main.Settings.ui.moveAutoplayText));
+            _definitions.Add(new PatchDef(typeof(MiscPatches.AlwaysCountdownPatch), () => Main.Settings.ui.alwaysCountdown));
 
             // Lobby music
-            {
-                var def = new PatchDef(typeof(MiscPatches.LobbyMusicPatch), () => Main.Settings.lobbyMusic.enableLobbyMusicPatch);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
+            _definitions.Add(new PatchDef(typeof(MiscPatches.LobbyMusicPatch), () => Main.Settings.lobbyMusic.enableLobbyMusicPatch));
+            _definitions.Add(new PatchDef(new StdCustomBpmPatch(), () => Main.Settings.lobbyMusic.enableCustomBpm));
 
             // Memory
             var memCond = () => Main.Settings.memory.enableMemoryOptimization;
-            {
-                var def = new PatchDef(typeof(MiscPatches.SmartGCPatch), () => memCond() && Main.Settings.memory.enableSmartGC);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
+            _definitions.Add(new PatchDef(typeof(MiscPatches.SmartGCPatch), () => memCond() && Main.Settings.memory.enableSmartGC));
 
             // Compatibility
             var pauseFixCond = () => Main.Settings.compatibility.enableLegacyPauseFix;
-            {
-                var def = new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play), pauseFixCond);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            {
-                var def = new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Apply), pauseFixCond);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            {
-                var def = new PatchDef(typeof(CompatibilityPatches.NoFailTooEarlyPatch), () => Main.Settings.compatibility.enableNoFailTooEarly);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            {
-                var def = new PatchDef(typeof(JsonPatches.ForceAngleDataPatch), () => Main.Settings.compatibility.forceAngleData);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            {
-                var def = new PatchDef(typeof(JsonPatches.LegacyBehaviorPatch), () =>
-                    Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||
-                    Main.Settings.compatibility.legacyCamRelativeToMode != LegacyBehaviorMode.Default);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
+            _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play), pauseFixCond));
+            _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Apply), pauseFixCond));
+            _definitions.Add(new PatchDef(typeof(CompatibilityPatches.NoFailTooEarlyPatch), () => Main.Settings.compatibility.enableNoFailTooEarly));
+            _definitions.Add(new PatchDef(typeof(JsonPatches.ForceAngleDataPatch), () => Main.Settings.compatibility.forceAngleData));
+            _definitions.Add(new PatchDef(typeof(JsonPatches.LegacyBehaviorPatch), () =>
+                Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||
+                Main.Settings.compatibility.legacyCamRelativeToMode != LegacyBehaviorMode.Default));
 
-            // Hit Sound
-            {
-                var def = new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
+            // Hit Sound (converted to StdPatchMethod)
+            _definitions.Add(new PatchDef(new StdHitSoundPatch(), () => Main.Settings.hitSound.enableHitSoundPitch));
 
             // Judge Text
-            // InitPatch: Handles custom text mode
-            {
-                var def = new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            // ShowPatch: Handles offset mode
-            {
-                var def = new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
-            // Rewind: Reset
-            {
-                var def = new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization);
-                _definitions.Add(def);
-                _definitionDict[def.Type] = def;
-            }
+            _definitions.Add(new PatchDef(new StdHitTextMeshInitPatch(), () => Main.Settings.judgeText.enableJudgeTextCustomization));
+            _definitions.Add(new PatchDef(new StdHitTextMeshShowPatch(), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
+            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
         }
 
-        /// <summary>
-        /// 更新所有patch（仅用于初始化或全量更新）
-        /// </summary>
         public static void UpdateAllPatches()
         {
             if (_harmony == null) return;
@@ -243,28 +169,21 @@ namespace Iridium.Patches
             }
         }
 
-        /// <summary>
-        /// 按类型更新单个patch - 用于增量更新
-        /// </summary>
         public static void UpdatePatchByType(Type patchType)
         {
             if (_harmony == null) return;
 
-            _definitionDict.TryGetValue(patchType, out var def);
+            var def = _definitions.Find(d => d.Type == patchType);
             if (def != null)
             {
                 UpdateSinglePatch(def);
             }
         }
 
-        /// <summary>
-        /// 更新所有优化器相关的patch（当 enableOptimizer 改变时调用）
-        /// </summary>
         public static void UpdateOptimizerPatches()
         {
             if (_harmony == null) return;
 
-            // 优化器相关的 patch 类型
             var optimizerParentTypes = new HashSet<Type>
             {
                 typeof(OptimizerPatches),
@@ -276,7 +195,6 @@ namespace Iridium.Patches
 
             foreach (var def in _definitions)
             {
-                // 检查是否是优化器相关的 patch
                 bool isOptimizerPatch = optimizerParentTypes.Contains(def.Type) ||
                     (def.Type.DeclaringType != null && optimizerParentTypes.Contains(def.Type.DeclaringType));
 
@@ -287,9 +205,6 @@ namespace Iridium.Patches
             }
         }
 
-        /// <summary>
-        /// 更新满足条件的patch - 用于批量增量更新
-        /// </summary>
         public static void UpdatePatchesByCondition(Func<Type, bool> predicate)
         {
             if (_harmony == null) return;
@@ -303,11 +218,14 @@ namespace Iridium.Patches
             }
         }
 
-        /// <summary>
-        /// 更新单个patch定义
-        /// </summary>
         private static void UpdateSinglePatch(PatchDef def)
         {
+            if (def.MethodInstance != null)
+            {
+                UpdateSingleMethodPatch(def);
+                return;
+            }
+
             bool shouldBeActive = CalculateEffectiveStatus(def);
             bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
 
@@ -321,12 +239,25 @@ namespace Iridium.Patches
             }
         }
 
+        private static void UpdateSingleMethodPatch(PatchDef def)
+        {
+            bool shouldBeActive = CalculateEffectiveStatus(def);
+            bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
+
+            if (trackedActive != shouldBeActive)
+            {
+                Main.Logger?.Log(Localization.Get("PatchManagerStatusChanged", def.Name, trackedActive.ToString(), shouldBeActive.ToString()));
+                if (shouldBeActive) def.MethodInstance!.StartPatch();
+                else def.MethodInstance!.StopPatch();
+
+                _activePatches[def.Type] = shouldBeActive;
+            }
+        }
+
         private static bool CalculateEffectiveStatus(PatchDef def)
         {
-            // Condition
             if (!def.Condition()) return false;
 
-            // Check Parent
             if (def.Parent != null)
             {
                 _activePatches.TryGetValue(def.Parent, out bool parentActive);
@@ -335,8 +266,6 @@ namespace Iridium.Patches
 
             return true;
         }
-
-        // 移除不再使用的 IsActuallyPatched 辅助方法
 
         private static void ApplyPatch(Type type)
         {
@@ -407,7 +336,6 @@ namespace Iridium.Patches
                 }
                 else
                 {
-                    // Fallback to slow method if cache is missing or empty
                     Main.Logger?.Log(Localization.Get("PatchManagerUsingFallback", type.Name));
                     UnpatchMethod(type);
                     _patchedBindings.Remove(type);
@@ -424,7 +352,6 @@ namespace Iridium.Patches
 
         private static void UnpatchMethod(Type patchClass)
         {
-            // Slow fallback: search all patched methods in the game
             var allPatchedMethods = _harmony.GetPatchedMethods();
             foreach (var original in allPatchedMethods)
             {
@@ -459,6 +386,13 @@ namespace Iridium.Patches
             _harmony?.UnpatchAll(_harmony.Id);
             _activePatches.Clear();
             _patchedBindings.Clear();
+            lock (BasePatchMethod._methods)
+            {
+                foreach (var m in BasePatchMethod._methods)
+                {
+                    m.ForceReset();
+                }
+            }
             Main.Logger?.Log(Localization.Get("PatchManagerUnpatchedAll"));
         }
     }
