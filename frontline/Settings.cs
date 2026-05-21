@@ -644,23 +644,13 @@ namespace Iridium
                 Separator();
 
                 GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.syncSpeedTrialOnLoad, "SyncSpeedTrialOnLoad");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.SyncSpeedTrialPatch));
-                Separator();
-
-                GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.fixMarginTrackerReset, "FixMarginTrackerReset");
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.MarginTrackerResetFix));
                 Separator();
 
                 GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.fixTwirlErrorMeter, "FixTwirlErrorMeter");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.TwirlErrorMeterSignFix));
-                Separator();
-
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.fixAddHitBpmTimesSpeed, "FixAddHitBpmTimesSpeed");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.AddHitSpeedFix));
+                IridiumPreset.SwitchOption(sizes, ref compatibility.fixEditorPlayResetMistakes, "FixEditorPlayResetMistakes");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.EditorPlayResetMistakesPatch));
                 Separator();
 
                 GUI.changed = false;

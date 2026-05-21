@@ -130,20 +130,12 @@ namespace Iridium.Patches
             // --- Bugfix Patches (2.10.0 only) ---
             _definitions.Add(new PatchDef(typeof(BugfixPatches.PortalTravelFixPatch),
                 () => Main.Settings.compatibility.portalTravelFix));
-            _definitions.Add(new PatchDef(typeof(BugfixPatches.SyncSpeedTrialPatch),
-                () => Main.Settings.compatibility.syncSpeedTrialOnLoad));
             // Always-on: fixes SetPlayerCount creating orphaned marginTrackers
             _definitions.Add(new PatchDef(typeof(BugfixPatches.MarginTrackerResetFix),
                 () => Main.Settings.compatibility.fixMarginTrackerReset));
-            // Always-on: ensures hardestDifficulty is reset when playing from editor
+            // Fix: ensures hardestDifficulty is reset when playing from editor
             _definitions.Add(new PatchDef(typeof(BugfixPatches.EditorPlayResetMistakesPatch),
-                () => Main.Settings.compatibility.fixMarginTrackerReset));
-            // Always-on: fixes error meter sign flip on Twirl tiles
-            _definitions.Add(new PatchDef(typeof(BugfixPatches.TwirlErrorMeterSignFix),
-                () => Main.Settings.compatibility.fixTwirlErrorMeter));
-            // Always-on: fixes AddHit hardcoding playerOne for bpmTimesSpeed
-            _definitions.Add(new PatchDef(typeof(BugfixPatches.AddHitSpeedFix),
-                () => Main.Settings.compatibility.fixAddHitBpmTimesSpeed));
+                () => Main.Settings.compatibility.fixEditorPlayResetMistakes));
             // Always-on: fixes turnaround detection matching v2.9.8 behavior
             _definitions.Add(new PatchDef(typeof(BugfixPatches.TurnaroundConditionFix),
                 () => Main.Settings.compatibility.fixTurnaroundCondition));

@@ -97,10 +97,8 @@ namespace Iridium.Config
         public bool forceAngleData = false;
         public bool scaleFilterSpeedWithPitch = false;
         public bool portalTravelFix = false;
-        public bool syncSpeedTrialOnLoad = false;
         public bool fixMarginTrackerReset = true;
-        public bool fixTwirlErrorMeter = true;
-        public bool fixAddHitBpmTimesSpeed = true;
+        public bool fixEditorPlayResetMistakes = true;
         public bool fixTurnaroundCondition = true;
         public bool editorPauseEnabled = true;
         public int editorPauseKey = 32; // KeyCode.Space
