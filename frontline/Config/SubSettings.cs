@@ -87,9 +87,7 @@ namespace Iridium.Config
     public class MemorySettings
     {
         public bool enableMemoryOptimization = false;
-        public bool enableSmartGC = false;
-        public float gcInterval = 60f;
-        public bool gcInGame = false;
+        public bool cleanOnSceneSwitch = true;
     }
 
     public class CompatibilitySettings

@@ -163,7 +163,7 @@ namespace Iridium.Patches
 
             // Memory
             var memCond = () => Main.Settings.memory.enableMemoryOptimization;
-            _definitions.Add(new PatchDef(typeof(MiscPatches.SmartGCPatch), () => memCond() && Main.Settings.memory.enableSmartGC));
+            _definitions.Add(new PatchDef(typeof(MiscPatches.CleanOnSceneSwitchPatch), () => memCond() && Main.Settings.memory.cleanOnSceneSwitch));
 
             // Compatibility
             var pauseFixCond = () => Main.Settings.compatibility.enableLegacyPauseFix;

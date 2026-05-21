@@ -409,24 +409,14 @@ namespace Iridium
             {
                 GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref memory.enableMemoryOptimization, "MemorySettings");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.SmartGCPatch));
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.CleanOnSceneSwitchPatch));
 
                 if (memory.enableMemoryOptimization)
                 {
                     Separator();
                     GUI.changed = false;
-                    IridiumPreset.SwitchOption(sizes, ref memory.enableSmartGC, "EnableSmartGC");
-                    if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.SmartGCPatch));
-
-                    if (memory.enableSmartGC)
-                    {
-                        Separator();
-                        var gcIntervalVal = (double)memory.gcInterval;
-                        IridiumPreset.DoubleOption(sizes, ref gcIntervalVal, "GCInterval", DoubleFormat(precision: 0));
-                        memory.gcInterval = (float)gcIntervalVal;
-                        Separator();
-                        IridiumPreset.SwitchOption(sizes, ref memory.gcInGame, "GCInGame");
-                    }
+                    IridiumPreset.SwitchOption(sizes, ref memory.cleanOnSceneSwitch, "CleanOnSceneSwitch");
+                    if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.CleanOnSceneSwitchPatch));
                 }
             }
             End();

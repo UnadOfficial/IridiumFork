@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using static Iridium.UI.IridiumLayout;
 
@@ -84,6 +85,12 @@ namespace Iridium.UI
             GUILayout.EndArea();
 
             GUI.color = Color.white;
+        }
+
+        public static void RunCoroutine(IEnumerator routine)
+        {
+            EnsureInstance();
+            _instance.StartCoroutine(routine);
         }
 
         private void Update()

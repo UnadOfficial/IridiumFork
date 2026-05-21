@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using ADOFAI;
 using HarmonyLib;
+using Iridium.UI;
 using UnityEngine;
 
 namespace Iridium.Patches
@@ -260,60 +261,36 @@ namespace Iridium.Patches
             }
         }
 
-        [HarmonyPatch(typeof(scrController), "Awake")]
-        public static class SmartGCPatch
+        [HarmonyPatch(typeof(scnGame), "OnDestroy")]
+        public static class CleanOnSceneSwitchPatch
         {
-            private static float _lastCleanTime = 0f;
             private static bool _isCleaning = false;
 
-            public static void Postfix(scrController __instance)
+            [HarmonyPostfix]
+            public static void Postfix()
             {
-                __instance.StartCoroutine(GCLoop());
-            }
+                if (_isCleaning) return;
+                if (!Main.Settings.memory.enableMemoryOptimization || !Main.Settings.memory.cleanOnSceneSwitch) return;
 
-            private static IEnumerator GCLoop()
-            {
-                while (true)
-                {
-                    yield return new WaitForSeconds(5f);
-
-                    // 检查是否达到间隔
-                    if (Time.realtimeSinceStartup - _lastCleanTime < Main.Settings.memory.gcInterval) continue;
-
-                    // 安全性检查：如果在关卡内且未开启 gcInGame，则跳过
-                    bool isInLevel = scrController.instance != null && !scrController.instance.paused && scrController.instance.gameworld;
-                    if (isInLevel && !Main.Settings.memory.gcInGame) continue;
-
-                    // 避免重叠清理
-                    if (_isCleaning) continue;
-
-                    yield return CleanMemoryRoutine();
-                }
+                _isCleaning = true;
+                VRAMNotificationUI.RunCoroutine(CleanMemoryRoutine());
             }
 
             private static IEnumerator CleanMemoryRoutine()
             {
-                _isCleaning = true;
-                _lastCleanTime = Time.realtimeSinceStartup;
-
                 Main.Logger?.Log(Localization.Get("CleaningMemory"));
 
-                // 1. 异步卸载未使用的资源 (Unity 推荐方式)
+                // 1. 异步卸载未使用的资源
                 AsyncOperation asyncUnload = Resources.UnloadUnusedAssets();
                 while (!asyncUnload.isDone)
                 {
                     yield return null;
                 }
 
-                // 2. 只有在不在关卡内时，才尝试卸载 AssetBundles (防止画面内容缺失)
-                bool isInLevel = scrController.instance is not null && scrController.instance.gameworld;
-                if (!isInLevel)
-                {
-                    // 使用 false 表示只卸载 bundle 容器，不销毁已加载的对象
-                    AssetBundle.UnloadAllAssetBundles(false);
-                }
+                // 2. 卸载 AssetBundle 容器（不销毁已加载的对象）
+                AssetBundle.UnloadAllAssetBundles(false);
 
-                // 3. 强制 GC (分步进行以减缓卡顿)
+                // 3. 分步 GC 以减少单帧卡顿
                 GC.Collect(0, GCCollectionMode.Optimized, false);
                 yield return null;
 

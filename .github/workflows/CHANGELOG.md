@@ -1,7 +1,13 @@
 > [!IMPORTANT]
 > 若您在使用Iridium Beta版时出现问题，请及时向维护者报告。
 
-## r22 beta3
+## r22 beta4
+
+### 变更
+
+1. 重构内存清理机制: 移除基于定时器的 `SmartGCPatch`，改为**切换场景时自动清理** (`scnGame.OnDestroy`)
+2. 设置项简化: 移除 `GC Interval` / `GC during gameplay`，替换为 `Clean on Scene Change` 单一开关
+3. 协程宿主迁移至 `DontDestroyOnLoad` 的 `VRAMNotificationUI`，避免场景销毁时无法执行异步清理
 
 ### 修复
 
