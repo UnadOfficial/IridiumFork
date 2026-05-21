@@ -186,6 +186,7 @@
   "FixMarginTrackerReset": "修复进入编辑器时结算异常累积",
   "FixTwirlErrorMeter": "修复旋转事件导致误差表符号反转",
   "FixAddHitBpmTimesSpeed": "修复误差表速度计算硬编码错误",
+  "FixTurnaroundCondition": "修复发卡弯地板暂停节拍时间",
   "EditorPauseEnabled": "编辑器暂停快捷键",
   "EditorPauseKey": "暂停快捷键",
   "EditorPauseKeyPress": "按下按键...",

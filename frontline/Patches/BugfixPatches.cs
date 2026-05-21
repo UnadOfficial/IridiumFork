@@ -241,5 +241,27 @@ namespace Iridium.Patches
                 return codes;
             }
         }
+        /// <summary>
+        /// v2.10.0: CalculateSingleFloorAngleLength sets turnaround=true when
+        /// |GetAngleMoved| <= 1e-6 OR >= 2π-ε. v2.9.8 only detected this when
+        /// |GetAngleMoved - 2π| < 0.0001. The broader condition (1e-6 branch)
+        /// catches wrap-around entry==exit floors that v2.9.8 did not, causing
+        /// Pause events on those floors to incorrectly add an extra beat.
+        /// This postfix re-checks turnaround using v2.9.8's exact condition.
+        /// </summary>
+        [HarmonyPatch(typeof(scrLevelMaker), "CalculateSingleFloorAngleLength")]
+        public static class TurnaroundConditionFix
+        {
+            [HarmonyPostfix]
+            public static void Postfix(scrFloor cf)
+            {
+                if (cf.turnaround)
+                {
+                    double angleMoved = scrMisc.GetAngleMoved(cf.entryangle, cf.exitangle, !cf.isCCW);
+                    if (Math.Abs(angleMoved - 6.2831854820251465) >= 0.0001)
+                        cf.turnaround = false;
+                }
+            }
+        }
     }
 }

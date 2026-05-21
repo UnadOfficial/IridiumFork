@@ -144,6 +144,9 @@ namespace Iridium.Patches
             // Always-on: fixes AddHit hardcoding playerOne for bpmTimesSpeed
             _definitions.Add(new PatchDef(typeof(BugfixPatches.AddHitSpeedFix),
                 () => Main.Settings.compatibility.fixAddHitBpmTimesSpeed));
+            // Always-on: fixes turnaround detection matching v2.9.8 behavior
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.TurnaroundConditionFix),
+                () => Main.Settings.compatibility.fixTurnaroundCondition));
             _definitions.Add(new PatchDef(typeof(EditorPausePatches),
                 () => Main.Settings.compatibility.editorPauseEnabled));
 
