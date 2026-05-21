@@ -24,7 +24,6 @@ namespace Iridium.Config
         public bool optimizeMoveDecorations = false;
         public bool optimizeFloorMesh = false;
         public bool optimizeFfxDecorations = false; // 新增：优化 ffx 装饰物更新
-        public bool optimizeDecorationAnimation = false; // 新增：装饰物逐帧动画优化 (RTMaxSize)
 
         // Particle Optimization Patches (粒子优化)
         public bool optimizeParticle = false;             // 主开关
@@ -102,6 +101,9 @@ namespace Iridium.Config
         public bool portalTravelFix = false;
         public bool syncSpeedTrialOnLoad = false;
         public bool fixMarginTrackerReset = true;
+        public bool fixTwirlErrorMeter = true;
+        public bool fixAddHitBpmTimesSpeed = true;
+        public bool fixTurnaroundCondition = true;
         public bool editorPauseEnabled = true;
         public int editorPauseKey = 32; // KeyCode.Space
         public int editorPauseModifiers = 0; // bit: 1=Ctrl 2=Alt 4=Shift 8=Win
