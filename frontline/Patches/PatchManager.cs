@@ -97,7 +97,6 @@ namespace Iridium.Patches
             // --- Scene Optimization Patches ---
             RegisterNestedPatches(typeof(SceneOptimizationPatches), optCond);
 
-            // --- Event Tween Optimization Patches ---
             var eventTweenCond = () => Main.Settings.optimizer.optimizeEventProcessing;
             _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxMoveFloorPlusEventTweensPatch), eventTweenCond));
             _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxMoveDecorationsPlusEventTweensPatch), eventTweenCond));
@@ -136,6 +135,15 @@ namespace Iridium.Patches
             // Always-on: fixes SetPlayerCount creating orphaned marginTrackers
             _definitions.Add(new PatchDef(typeof(BugfixPatches.MarginTrackerResetFix),
                 () => Main.Settings.compatibility.fixMarginTrackerReset));
+            // Always-on: ensures hardestDifficulty is reset when playing from editor
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.EditorPlayResetMistakesPatch),
+                () => Main.Settings.compatibility.fixMarginTrackerReset));
+            // Always-on: fixes error meter sign flip on Twirl tiles
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.TwirlErrorMeterSignFix),
+                () => Main.Settings.compatibility.fixTwirlErrorMeter));
+            // Always-on: fixes AddHit hardcoding playerOne for bpmTimesSpeed
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.AddHitSpeedFix),
+                () => Main.Settings.compatibility.fixAddHitBpmTimesSpeed));
             _definitions.Add(new PatchDef(typeof(EditorPausePatches),
                 () => Main.Settings.compatibility.editorPauseEnabled));
 

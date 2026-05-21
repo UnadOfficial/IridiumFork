@@ -664,6 +664,16 @@ namespace Iridium
                 Separator();
 
                 GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.fixTwirlErrorMeter, "FixTwirlErrorMeter");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.TwirlErrorMeterSignFix));
+                Separator();
+
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.fixAddHitBpmTimesSpeed, "FixAddHitBpmTimesSpeed");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.AddHitSpeedFix));
+                Separator();
+
+                GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.editorPauseEnabled, "EditorPauseEnabled");
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(EditorPausePatches));
                 if (compatibility.editorPauseEnabled)

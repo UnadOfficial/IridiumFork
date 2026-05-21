@@ -184,6 +184,8 @@
   "PortalTravelFix": "Portal Travel Fix",
   "SyncSpeedTrialOnLoad": "Fix Speed Trial Background Sync",
   "FixMarginTrackerReset": "Fix Results Accumulation When Entering Editor",
+  "FixTwirlErrorMeter": "Fix Error Meter Sign Inversion on Twirl Tiles",
+  "FixAddHitBpmTimesSpeed": "Fix Error Meter Speed Calculation Hardcoding",
   "EditorPauseEnabled": "Editor Pause Shortcut",
   "EditorPauseKey": "Pause Key",
   "EditorPauseKeyPress": "Press a key...",
