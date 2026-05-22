@@ -357,6 +357,9 @@ namespace Iridium.Patches
                     }
                 }
 
+                // MoveDecoration image preloading — collect paths first, then load with yields
+                // to avoid piling all synchronous disk IO into a single frame
+                var moveDecImages = new List<(string name, string path)>();
                 foreach (var evt in instance.events)
                 {
                     if (evt.eventType != LevelEventType.MoveDecorations) continue;
@@ -366,15 +369,32 @@ namespace Iridium.Patches
                         if (evt.TryGetAndSet("decorationImage", ref output2, onlyIfEnabled: true) && !output2.IsNullOrEmpty())
                         {
                             string filePath2 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(instance.levelPath), output2!);
-                            LoadResult status2;
-                            instance.imgHolder.AddSprite(output2!, filePath2, out status2);
-                            if (ADOBase.editor != null)
-                                ADOBase.editor.UpdateImageLoadResult(output2!, status2);
+                            moveDecImages.Add((output2!, filePath2));
                         }
                     }
-                    catch (System.Exception ex)
+                    catch { }
+                }
+
+                if (moveDecImages.Count > 0)
+                {
+                    total += moveDecImages.Count;
+                    for (int i = 0; i < moveDecImages.Count; i++)
                     {
-                        Main.Logger?.Error($"[LoadingOptimization] Failed to load MoveDecoration image: {ex}");
+                        var (name, path) = moveDecImages[i];
+                        UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                        try
+                        {
+                            LoadResult status;
+                            instance.imgHolder.AddSprite(name, path, out status);
+                            if (ADOBase.editor != null)
+                                ADOBase.editor.UpdateImageLoadResult(name, status);
+                        }
+                        catch (System.Exception ex)
+                        {
+                            Main.Logger?.Error($"[LoadingOptimization] Failed to load MoveDecoration image: {ex}");
+                        }
+                        processed++;
+                        yield return null;
                     }
                 }
 
