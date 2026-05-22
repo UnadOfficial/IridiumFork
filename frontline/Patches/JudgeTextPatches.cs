@@ -1,5 +1,5 @@
 using System;
-using System.Reflection;
+using DG.Tweening;
 using HarmonyLib;
 using Iridium.Config;
 using TMPro;
@@ -107,6 +107,26 @@ namespace Iridium.Patches
                     double timing = CalculateTimingFromAngle(_pendingMissAngle);
                     ___text.text = GetOffsetText(timing);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Fixes vanilla v2.10.0 bug: non-coop ShowHitText doesn't forward missAngle to Show,
+        /// so non-Perfect judgments don't get the rotation animation.
+        /// </summary>
+        [HarmonyPatch(typeof(scrHitTextMesh), "Show")]
+        public static class HitTextMeshShowRotationFixPatch
+        {
+            public static void Postfix(scrHitTextMesh __instance)
+            {
+                if (scrController.coopMode) return;
+                if (__instance.hitMargin == HitMargin.Perfect) return;
+
+                __instance.transform.DOLocalRotate(
+                    new Vector3(0f, 0f, _pendingMissAngle * 20f),
+                    2f,
+                    RotateMode.LocalAxisAdd
+                );
             }
         }
 

@@ -173,10 +173,12 @@ namespace Iridium.Patches
             // Judge Text
             // InitPatch: Handles custom text mode
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
-            // ShowPatch: Captures missAngle from ShowHitText
-            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextManagerShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
-            // ShowPatch: Modifies text before display
+            // HitTextManagerShowPatch: Always captures missAngle (needed by rotation fix)
+            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextManagerShowPatch), () => true));
+            // ShowPatch: Handles offset mode text replacement
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
+            // ShowRotationFixPatch: Always fixes vanilla v2.10.0 bug (non-coop missAngle not forwarded)
+            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowRotationFixPatch), () => true));
             // Rewind: Reset
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
         }

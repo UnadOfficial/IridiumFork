@@ -751,7 +751,6 @@ namespace Iridium
                 if (GUI.changed)
                 {
                     AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshInitPatch));
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextManagerShowPatch));
                     AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
                     AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.ResetTimingOnRewindPatch));
                 }
@@ -764,7 +763,6 @@ namespace Iridium
                 IridiumPreset.SwitchOption(sizes, ref judgeText.showAsOffset, "ShowAsOffset");
                 if (GUI.changed)
                 {
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextManagerShowPatch));
                     AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
                 }
 
