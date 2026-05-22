@@ -141,6 +141,8 @@ namespace Iridium.Patches
                 () => Main.Settings.compatibility.fixTurnaroundCondition));
             // Always-on: fixes AsyncInputManager dspTime drift (per-frame calibration removed in v2.10.0)
             _definitions.Add(new PatchDef(typeof(BugfixPatches.AsyncInputDspTimeCalibrationFix), () => true));
+            // Always-on: fixes non-coop missAngle not forwarded to Show (non-Perfect rotation missing)
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.HitTextMeshShowRotationFixPatch), () => true));
             _definitions.Add(new PatchDef(typeof(EditorPausePatches),
                 () => Main.Settings.compatibility.editorPauseEnabled));
 
@@ -179,8 +181,6 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextManagerShowPatch), () => true));
             // ShowPatch: Handles offset mode text replacement
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
-            // ShowRotationFixPatch: Always fixes vanilla v2.10.0 bug (non-coop missAngle not forwarded)
-            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowRotationFixPatch), () => true));
             // Rewind: Reset
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
         }
