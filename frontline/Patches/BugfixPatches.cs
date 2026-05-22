@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using ADOFAI;
+using UnityEngine;
 
 namespace Iridium.Patches
 {
@@ -94,6 +95,41 @@ namespace Iridium.Patches
                     double angleMoved = scrMisc.GetAngleMoved(cf.entryangle, cf.exitangle, !cf.isCCW);
                     if (Math.Abs(angleMoved - 6.2831854820251465) >= 0.0001)
                         cf.turnaround = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fixes vanilla v2.10.0 regression: the per-frame AudioSettings.dspTime
+        /// calibration for AsyncInputManager was removed, causing offsetTick to
+        /// drift over time. A coroutine is started from Awake to perform the
+        /// calibration independently of Harmony's per-frame patching overhead.
+        /// </summary>
+        [HarmonyPatch(typeof(scrConductor), "Awake")]
+        public static class AsyncInputDspTimeCalibrationFix
+        {
+            [HarmonyPostfix]
+            public static void Postfix(scrConductor __instance)
+            {
+                __instance.StartCoroutine(CalibrationLoop());
+            }
+
+            private static System.Collections.IEnumerator CalibrationLoop()
+            {
+                while (true)
+                {
+                    if (AsyncInputManager.isActive)
+                    {
+                        double current = AudioSettings.dspTime;
+                        if (current != AsyncInputManager.dspTime)
+                        {
+                            AsyncInputManager.dspTime = current;
+                            AsyncInputManager.offsetTick = AsyncInputManager.currFrameTick
+                                - (ulong)(current * 10000000.0);
+                            AsyncInputManager.offsetTickUpdated = true;
+                        }
+                    }
+                    yield return null;
                 }
             }
         }
