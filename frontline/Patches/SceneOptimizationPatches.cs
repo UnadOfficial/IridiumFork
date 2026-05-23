@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using ADOFAI.Editor.Actions;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
@@ -373,6 +374,35 @@ namespace Iridium.Patches
                 }
 
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// ToggleFloorNumsEditorAction 不再调用 RemakePath()（重建整个路径很慢），
+        /// 改为只调 DrawFloorNums() 刷新编号标签的可见性。
+        /// </summary>
+        [HarmonyPatch(typeof(ToggleFloorNumsEditorAction), "Execute")]
+        public static class ToggleFloorNumsActionPatch
+        {
+            private static Action<scnEditor>? _drawFloorNums;
+
+            [HarmonyPrefix]
+            public static bool Prefix(ToggleFloorNumsEditorAction __instance, scnEditor editor)
+            {
+                if (!Main.Settings.optimizer.enableOptimizer) return true;
+
+                int num = editor.SelectionIsSingle() ? editor.selectedFloors[0].seqID : -1;
+                editor.showFloorNums = !editor.showFloorNums;
+
+                // Skip RemakePath() — just refresh floor number labels
+                _drawFloorNums ??= AccessTools.MethodDelegate<Action<scnEditor>>(
+                    AccessTools.Method(typeof(scnEditor), "DrawFloorNums"), null);
+                _drawFloorNums?.Invoke(editor);
+
+                if (num != -1)
+                    editor.SelectFloor(editor.floors[num], false);
+
+                return false;
             }
         }
 

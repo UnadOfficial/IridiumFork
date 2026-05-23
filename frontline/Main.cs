@@ -95,16 +95,15 @@ namespace Iridium
             Logger.TaskRun();
 
             // AsyncInputManager dspTime calibration (v2.10.0 removed per-frame calibration)
+            // Uses slewing to avoid 28ms jitter on high audio buffer sizes (2048 samples).
+            // error / 100 converges in ~1.6s, ~0.9µs per-frame correction at 20ppm skew.
             if (Settings.compatibility.fixDspTimeCalibration && AsyncInputManager.isActive)
             {
-                double current = AudioSettings.dspTime;
-                if (System.Math.Abs(current - AsyncInputManager.dspTime) > 0.0001)
-                {
-                    AsyncInputManager.dspTime = current;
-                    AsyncInputManager.offsetTick = AsyncInputManager.currFrameTick
-                        - (ulong)(current * 10000000.0);
-                    AsyncInputManager.offsetTickUpdated = true;
-                }
+                long idealOffset = (long)AsyncInputManager.currFrameTick
+                    - (long)(AudioSettings.dspTime * 10000000.0);
+                long error = idealOffset - (long)AsyncInputManager.offsetTick;
+                AsyncInputManager.offsetTick = (ulong)((long)AsyncInputManager.offsetTick + error / 100);
+                AsyncInputManager.offsetTickUpdated = true;
             }
         }
 

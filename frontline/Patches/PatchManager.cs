@@ -131,6 +131,8 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(BugfixPatches.PortalTravelFixPatch),
                 () => Main.Settings.compatibility.portalTravelFix));
             // Always-on: fixes SetPlayerCount creating orphaned marginTrackers
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.MarginTrackerSetPlayerCountFix),
+                () => Main.Settings.compatibility.fixMarginTrackerReset));
             _definitions.Add(new PatchDef(typeof(BugfixPatches.MarginTrackerResetFix),
                 () => Main.Settings.compatibility.fixMarginTrackerReset));
             // Fix: ensures hardestDifficulty is reset when playing from editor

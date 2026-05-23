@@ -41,12 +41,30 @@ namespace Iridium.Patches
         }
 
         /// <summary>
-        /// scnEditor.Awake() in v2.10.0 calls scrPlayerManager.SetPlayerCount(1)
-        /// which creates a new marginTrackers array. The active scrPlayer instances
-        /// still reference the old marginTracker objects, so mistaksManager.Reset()
-        /// (called later in SwitchToEditMode) only clears the new unused trackers,
-        /// leaving stale checkpoint/death margins on the players' real trackers.
-        /// This postfix ensures every player's marginTracker is cleared too.
+        /// Source-level fix: after SetPlayerCount allocates new marginTrackers,
+        /// update existing scrPlayer instances to reference the new trackers.
+        /// This prevents the orphaned tracker problem at the root.
+        /// </summary>
+        [HarmonyPatch(typeof(scrMistakesManager), "SetPlayerCount")]
+        public static class MarginTrackerSetPlayerCountFix
+        {
+            [HarmonyPostfix]
+            public static void Postfix(int playerCount)
+            {
+                var players = scrPlayerManager.instance?.players;
+                if (players != null)
+                {
+                    int count = Math.Min(players.Length, playerCount);
+                    for (int i = 0; i < count; i++)
+                        players[i].marginTracker = scrMistakesManager.marginTrackers[i];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Defensive safety net: even with MarginTrackerSetPlayerCountFix active,
+        /// ensure Reset() always clears the actual trackers on players.
+        /// Catches any future code path that could desync player references.
         /// </summary>
         [HarmonyPatch(typeof(scrMistakesManager), "Reset")]
         public static class MarginTrackerResetFix
@@ -63,8 +81,8 @@ namespace Iridium.Patches
         /// v2.10.0: When scnGame.Play() runs in editor mode, it skips WaitForStartCo()
         /// and calls Awake_Rewind() + Start_Rewind() directly. Neither resets the
         /// mistakes manager, so hardestDifficulty retains a stale value (defaults to
-        /// Lenient). SwitchToEditMode() calls mistakesManager.Reset() (fixed by
-        /// MarginTrackerResetFix) which is why ESC+replay shows the strict clear text.
+        /// Lenient). SwitchToEditMode() calls mistakesManager.Reset() (which now uses
+        /// the current marginTrackers thanks to MarginTrackerSetPlayerCountFix).
         /// This ensures Reset() is also called on the first Play from the editor.
         /// </summary>
         [HarmonyPatch(typeof(scnGame), "Play")]
