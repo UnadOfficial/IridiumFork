@@ -1,16 +1,20 @@
 > [!IMPORTANT]
 > 若您在使用Iridium Beta版时出现问题，请及时向维护者报告。
 
-## r22 beta4
+## r22 beta5
 
 ### 变更
 
-1. 重构内存清理机制: 移除基于定时器的 `SmartGCPatch`，改为**切换场景时自动清理** (`scnGame.OnDestroy`)
-2. 设置项简化: 移除 `GC Interval` / `GC during gameplay`，替换为 `Clean on Scene Change` 单一开关
-3. 协程宿主迁移至 `DontDestroyOnLoad` 的 `VRAMNotificationUI`，避免场景销毁时无法执行异步清理
+1. **新增 `fixDspTimeCalibration` 设置项** (Compatibility 选项卡): v2.10.0 去掉了每帧的 `AsyncInputManager.offsetTick` 重算，异步输入的时间基准不再与音频时钟对齐。新增的修复每帧检测偏移并重新校准，消除长期游玩的判定偏移累积
+2. **JPEG 压缩保留透明度**: 装饰物大图（>5MB）压缩时新增 `HasAlphaPixels` 检测，有透明像素的图片强制存为 PNG 而非 JPEG，修复透明度丢失
+3. **VRAM 通知界面新增停止按钮**: 支持在分帧装饰物加载过程中手动取消
+4. **Bugfix 补丁整理**:
+   - `HitTextMeshShowRotationFixPatch` 移入 `BugfixPatches` 统一管理
+   - `EditorPlayResetMistakesPatch` 拥有独立开关，不再绑定到位移显示
+5. **装饰物日志增强**: 分帧加载时记录关卡路径和前 10 个装饰物信息，便于调试
 
 ### 修复
 
-1. 修复: 进入编辑器时结算异常累积 (`scrMistakesManager.Reset` 无法清除旧 `marginTracker` 数据) (frontline v2.10.0)
-2. 修复: Beta 水印开关设置不生效，现在开关可正确显示/隐藏水印 (main + frontline)
+1. 修复: vanilla v2.10.0 `non-coop` 模式下 `missAngle` 未正确传递到 `Show` 方法 (BugfixPatches)
+2. 修复: `MoveDecoration` 图片预加载阻塞主线程，改为逐帧 yield 而非整批处理
 3. 更新: v2.10.0 的 `Assembly-CSharp.dll`
