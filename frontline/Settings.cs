@@ -684,12 +684,6 @@ namespace Iridium
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.TurnaroundConditionFix));
                 Separator();
 
-                IridiumPreset.SwitchOption(sizes, ref compatibility.fixDspTimeCalibration, "FixDspTimeCalibration");
-                if (compatibility.fixDspTimeCalibration)
-                {
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Information, "FixDspTimeCalibrationHint");
-                }
             }
             End();
             Separator();

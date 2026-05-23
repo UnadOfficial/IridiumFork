@@ -189,8 +189,6 @@
   "EditorPauseKey": "暂停快捷键",
   "EditorPauseKeyPress": "按下按键...",
   "EditorPauseKeyHint": "在自动播放模式下按此键暂停/恢复。点击按钮后按下键盘按键绑定",
-  "FixDspTimeCalibration": "修复长时间游玩的判定偏移",
-  "FixDspTimeCalibrationHint": "长时间游玩时判定可能会逐渐偏移，开启此功能可校准计时。v3.1.0 默认关闭此功能。",
   "CompatibleBehavior": "兼容行为",
   "BugFixes": "Bug 修复"
 }

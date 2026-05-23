@@ -106,7 +106,6 @@ namespace Iridium.Config
         public int editorPauseModifiers = 0; // bit: 1=Ctrl 2=Alt 4=Shift 8=Win
         public LegacyBehaviorMode legacyFlashMode = LegacyBehaviorMode.Default;
         public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
-        public bool fixDspTimeCalibration = false; // Per-frame dspTime calibration for AsyncInputManager
     }
 
     public enum LegacyBehaviorMode

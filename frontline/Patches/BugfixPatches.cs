@@ -129,7 +129,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrHitTextMesh __instance)
             {
-                if (scrController.coopMode) return;
+                if (scrPlayerManager.playerCount > 1) return;
                 if (__instance.hitMargin == HitMargin.Perfect) return;
 
                 __instance.transform.DOLocalRotate(
