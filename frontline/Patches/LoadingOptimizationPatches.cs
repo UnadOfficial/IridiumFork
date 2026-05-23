@@ -199,6 +199,7 @@ namespace Iridium.Patches
             private static readonly Queue<LevelEvent> _pendingDecorations = new();
             private static bool _isLoading = false;
             private static readonly List<GraphicRaycaster> _disabledRaycasters = new();
+            private static bool _cancelled = false;
 
             public static bool IsLoading => _isLoading;
 
@@ -297,6 +298,11 @@ namespace Iridium.Patches
                 }
             }
 
+            public static void Cancel()
+            {
+                _cancelled = true;
+            }
+
             private static System.Collections.IEnumerator FrameSpreadLoadCoroutine(scnGame instance)
             {
                 int maxPerFrame = Main.Settings.optimizer.decorationsPerFrame;
@@ -318,7 +324,7 @@ namespace Iridium.Patches
                 UI.VRAMNotificationUI.ShowPersistent(Localization.Get("LoadingDecorationsProgress", 0, total));
                 Main.Logger?.Log($"[LoadingOptimization] Starting frame-spread loading: {total} decorations");
 
-                while (_pendingDecorations.Count > 0)
+                while (_pendingDecorations.Count > 0 && !_cancelled)
                 {
                     if (instance == null || instance.decManager == null)
                     {
@@ -350,11 +356,23 @@ namespace Iridium.Patches
                             break;
                     }
 
-                    if (_pendingDecorations.Count > 0)
+                    if (_pendingDecorations.Count > 0 && !_cancelled)
                     {
                         UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
                         yield return null;
                     }
+                }
+
+                if (_cancelled)
+                {
+                    Main.Logger?.Log($"[LoadingOptimization] Loading cancelled by user");
+                    _isLoading = false;
+                    _cancelled = false;
+                    _pendingDecorations.Clear();
+                    RestoreUIInput();
+                    UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                    UI.VRAMNotificationUI.Complete();
+                    yield break;
                 }
 
                 // MoveDecoration image preloading — collect paths first, then load with yields
@@ -375,11 +393,34 @@ namespace Iridium.Patches
                     catch { }
                 }
 
+                if (_cancelled)
+                {
+                    Main.Logger?.Log($"[LoadingOptimization] Loading cancelled by user");
+                    _isLoading = false;
+                    _cancelled = false;
+                    _pendingDecorations.Clear();
+                    RestoreUIInput();
+                    UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                    UI.VRAMNotificationUI.Complete();
+                    yield break;
+                }
+
                 if (moveDecImages.Count > 0)
                 {
                     total += moveDecImages.Count;
                     for (int i = 0; i < moveDecImages.Count; i++)
                     {
+                        if (_cancelled)
+                        {
+                            Main.Logger?.Log($"[LoadingOptimization] Loading cancelled by user");
+                            _isLoading = false;
+                            _cancelled = false;
+                            _pendingDecorations.Clear();
+                            RestoreUIInput();
+                            UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                            UI.VRAMNotificationUI.Complete();
+                            yield break;
+                        }
                         var (name, path) = moveDecImages[i];
                         UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
                         try
@@ -399,6 +440,7 @@ namespace Iridium.Patches
                 }
 
                 _isLoading = false;
+                _cancelled = false;
                 RestoreUIInput();
                 Main.Logger?.Log($"[LoadingOptimization] Finished loading {processed} decorations across multiple frames");
 

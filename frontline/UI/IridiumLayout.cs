@@ -49,7 +49,8 @@ public static class IridiumLayout
         Information,
         Success,
         Warning,
-        Error
+        Error,
+        Stop
     }
 
     public enum TextStyle
@@ -631,6 +632,7 @@ public static class IridiumLayout
                 IconStyle.Success => Resolution.IconSuccess,
                 IconStyle.Warning => Resolution.IconWarning,
                 IconStyle.Error => Resolution.IconError,
+                IconStyle.Stop => Resolution.IconStop,
                 _ => Resolution.IconInformation
             }),
             Options(options)
@@ -937,6 +939,10 @@ public static class IridiumLayout
 
         private static readonly ColorGroup IconErrorBorderColors = new(RGB(0xB41818));
 
+        private static readonly ColorGroup IconStopColors = new(RGB(0xD92020));
+
+        private static readonly ColorGroup IconStopBorderColors = new(RGB(0xB41818));
+
         private static readonly ColorGroup IconStrokeColors = TitleTextColors;
 
         public ResolutionResources(int scaleTimes1M)
@@ -1190,6 +1196,15 @@ public static class IridiumLayout
             };
 
             SetupIcon(IconError, IconErrorColors, IconErrorBorderColors, IconStrokeColors, DrawError);
+
+            IconStop = new GUIStyle(Base)
+            {
+                name = "Iridium Icon Stop",
+                fixedWidth = iconSize,
+                fixedHeight = iconSize
+            };
+
+            SetupIcon(IconStop, IconStopColors, IconStopBorderColors, IconStrokeColors, DrawStop);
         }
 
         private double Scale { get; }
@@ -1245,6 +1260,8 @@ public static class IridiumLayout
         public GUIStyle IconWarning { get; }
 
         public GUIStyle IconError { get; }
+
+        public GUIStyle IconStop { get; }
 
         public double Margin { get; }
 
@@ -1834,6 +1851,16 @@ public static class IridiumLayout
                 using var pen = new SolidBrush(DrawingColor(strokeColor));
                 graphics.FillPath(pen, path);
             }
+        }
+
+        private static void DrawStop(Graphics graphics, int size, Color strokeColor)
+        {
+            using var path = new GraphicsPath();
+            var margin = size * 4.5F / 20F;
+            var stopSize = size * 11F / 20F;
+            path.AddRectangle(new RectangleF(margin, margin, stopSize, stopSize));
+            using var brush = new SolidBrush(DrawingColor(strokeColor));
+            graphics.FillPath(brush, path);
         }
 
         private static void SetupTextSize(

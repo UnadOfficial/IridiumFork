@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using static Iridium.UI.IridiumLayout;
+using Iridium.Patches;
 
 namespace Iridium.UI
 {
@@ -73,12 +74,19 @@ namespace Iridium.UI
             GUI.color = new Color(1f, 1f, 1f, alpha);
 
             var sizes = _sizesHolder.Begin();
-            GUILayout.BeginArea(new Rect(20, 20, 360, 50));
+            GUILayout.BeginArea(new Rect(20, 20, 420, 50));
             {
                 Begin(ContainerDirection.Horizontal, ContainerStyle.Background, sizes: sizes, options: WidthMax);
                 {
                     Icon(_isPersistent ? IconStyle.Information : IconStyle.Success);
                     Text(_message, TextStyle.Normal, WidthMax);
+                    if (_isPersistent && LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.IsLoading)
+                    {
+                        if (Icon(IconStyle.Stop, MinWidth(24)))
+                        {
+                            LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.Cancel();
+                        }
+                    }
                 }
                 End();
             }
