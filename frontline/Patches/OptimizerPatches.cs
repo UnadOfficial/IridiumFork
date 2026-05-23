@@ -252,19 +252,44 @@ namespace Iridium.Patches
 
                         using (var outMs = new MemoryStream())
                         {
-                            if (imageData.Length > 5 * 1024 * 1024)
+                            bool hasAlpha = HasAlphaPixels(resized);
+                            if (hasAlpha || imageData.Length <= 5 * 1024 * 1024)
+                            {
+                                resized.Save(outMs, System.Drawing.Imaging.ImageFormat.Png);
+                            }
+                            else
                             {
                                 var jpegParams = new System.Drawing.Imaging.EncoderParameters(1);
                                 jpegParams.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 92L);
                                 resized.Save(outMs, GetJpegCodecInfo(), jpegParams);
                             }
-                            else
-                            {
-                                resized.Save(outMs, System.Drawing.Imaging.ImageFormat.Png);
-                            }
                             return outMs.ToArray();
                         }
                     }
+                }
+            }
+
+            private static bool HasAlphaPixels(System.Drawing.Bitmap bitmap)
+            {
+                var rect = new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height);
+                var data = bitmap.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                try
+                {
+                    int stride = data.Stride;
+                    byte[] rowData = new byte[stride];
+                    for (int y = 0; y < bitmap.Height; y++)
+                    {
+                        System.Runtime.InteropServices.Marshal.Copy(data.Scan0 + y * stride, rowData, 0, stride);
+                        for (int x = 0; x < bitmap.Width; x++)
+                        {
+                            if (rowData[x * 4 + 3] < 255) return true;
+                        }
+                    }
+                    return false;
+                }
+                finally
+                {
+                    bitmap.UnlockBits(data);
                 }
             }
 
