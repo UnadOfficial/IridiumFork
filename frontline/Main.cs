@@ -93,6 +93,19 @@ namespace Iridium
                 }
             }
             Logger.TaskRun();
+
+            // AsyncInputManager dspTime calibration (v2.10.0 removed per-frame calibration)
+            if (Settings.compatibility.fixDspTimeCalibration && AsyncInputManager.isActive)
+            {
+                double current = AudioSettings.dspTime;
+                if (System.Math.Abs(current - AsyncInputManager.dspTime) > 0.0001)
+                {
+                    AsyncInputManager.dspTime = current;
+                    AsyncInputManager.offsetTick = AsyncInputManager.currFrameTick
+                        - (ulong)(current * 10000000.0);
+                    AsyncInputManager.offsetTickUpdated = true;
+                }
+            }
         }
 
         private static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)

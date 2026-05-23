@@ -184,8 +184,13 @@
   "FixMarginTrackerReset": "Fix Results Accumulation When Entering Editor",
   "FixEditorPlayResetMistakes": "Reset Mistakes on Editor Play",
   "FixTurnaroundCondition": "Fix Pause Beat Timing on Hairpin Turn Floors",
-  "EditorPauseEnabled": "Editor Pause Shortcut",
+  "EditorPauseAllowed": "Enable Pause in Editor Auto-play",
+  "EditorPauseEnabled": "Use Custom Pause Key",
   "EditorPauseKey": "Pause Key",
   "EditorPauseKeyPress": "Press a key...",
-  "EditorPauseKeyHint": "Press this key during auto-play to pause/resume. Click the button then press a keyboard key to bind"
+  "EditorPauseKeyHint": "Press this key during auto-play to pause/resume. Click the button then press a keyboard key to bind",
+  "FixDspTimeCalibration": "Fix judgment timing drift over long sessions",
+  "FixDspTimeCalibrationHint": "Judgment timing may drift during extended play. Enables dspTime calibration. v3.1.0 defaults to OFF.",
+  "CompatibleBehavior": "Compatible Behavior",
+  "BugFixes": "Bug Fixes"
 }

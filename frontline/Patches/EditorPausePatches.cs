@@ -12,8 +12,13 @@ namespace Iridium.Patches
     {
         public static bool CheckPauseKey()
         {
-            if (!Main.Settings.compatibility.editorPauseEnabled)
+            // Master switch: completely disable pause in editor auto-play
+            if (!Main.Settings.compatibility.editorPauseAllowed)
                 return false;
+
+            // Custom key disabled: fall back to default Space behavior
+            if (!Main.Settings.compatibility.editorPauseEnabled)
+                return Input.GetKeyDown(KeyCode.Space);
 
             int mods = Main.Settings.compatibility.editorPauseModifiers;
             int key = Main.Settings.compatibility.editorPauseKey;

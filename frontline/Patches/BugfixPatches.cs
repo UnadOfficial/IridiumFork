@@ -100,40 +100,6 @@ namespace Iridium.Patches
             }
         }
 
-        /// <summary>
-        /// Fixes vanilla v2.10.0 regression: the per-frame AudioSettings.dspTime
-        /// calibration for AsyncInputManager was removed, causing offsetTick to
-        /// drift over time. A coroutine is started from Awake to perform the
-        /// calibration independently of Harmony's per-frame patching overhead.
-        /// </summary>
-        [HarmonyPatch(typeof(scrConductor), "Awake")]
-        public static class AsyncInputDspTimeCalibrationFix
-        {
-            [HarmonyPostfix]
-            public static void Postfix(scrConductor __instance)
-            {
-                __instance.StartCoroutine(CalibrationLoop());
-            }
-
-            private static System.Collections.IEnumerator CalibrationLoop()
-            {
-                while (true)
-                {
-                    if (AsyncInputManager.isActive)
-                    {
-                        double current = AudioSettings.dspTime;
-                        if (current != AsyncInputManager.dspTime)
-                        {
-                            AsyncInputManager.dspTime = current;
-                            AsyncInputManager.offsetTick = AsyncInputManager.currFrameTick
-                                - (ulong)(current * 10000000.0);
-                            AsyncInputManager.offsetTickUpdated = true;
-                        }
-                    }
-                    yield return null;
-                }
-            }
-        }
 
         /// <summary>
         /// Fixes vanilla v2.10.0 bug: non-coop ShowHitText doesn't forward missAngle

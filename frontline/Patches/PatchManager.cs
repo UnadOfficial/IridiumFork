@@ -139,12 +139,10 @@ namespace Iridium.Patches
             // Always-on: fixes turnaround detection matching v2.9.8 behavior
             _definitions.Add(new PatchDef(typeof(BugfixPatches.TurnaroundConditionFix),
                 () => Main.Settings.compatibility.fixTurnaroundCondition));
-            // Always-on: fixes AsyncInputManager dspTime drift (per-frame calibration removed in v2.10.0)
-            _definitions.Add(new PatchDef(typeof(BugfixPatches.AsyncInputDspTimeCalibrationFix), () => true));
             // Always-on: fixes non-coop missAngle not forwarded to Show (non-Perfect rotation missing)
             _definitions.Add(new PatchDef(typeof(BugfixPatches.HitTextMeshShowRotationFixPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(EditorPausePatches),
-                () => Main.Settings.compatibility.editorPauseEnabled));
+            // Pause hotkey in editor auto-play (always applied; CheckPauseKey reads the setting at runtime)
+            _definitions.Add(new PatchDef(typeof(EditorPausePatches), () => true));
 
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));

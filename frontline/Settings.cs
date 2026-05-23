@@ -618,6 +618,8 @@ namespace Iridium
             Text(Localization.Get("CompatibilitySettings"), TextStyle.Title);
             Separator();
 
+            Text(Localization.Get("CompatibleBehavior"), TextStyle.Subtitle);
+            Separator();
             Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
             {
                 GUI.changed = false;
@@ -636,8 +638,28 @@ namespace Iridium
                 GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.scaleFilterSpeedWithPitch, "ScaleFilterSpeedWithPitch");
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.ScaleFilterSpeedWithPitchPatch));
-                Separator();
 
+                IridiumPreset.SwitchOption(sizes, ref compatibility.editorPauseAllowed, "EditorPauseAllowed");
+                if (compatibility.editorPauseAllowed)
+                {
+                    Separator();
+                    IridiumPreset.SwitchOption(sizes, ref compatibility.editorPauseEnabled, "EditorPauseEnabled");
+                    if (compatibility.editorPauseEnabled)
+                    {
+                        Separator();
+                        DrawPauseKeyBinding(sizes);
+                        Separator();
+                        IridiumPreset.IconText(sizes, IconStyle.Information, "EditorPauseKeyHint");
+                    }
+                }
+            }
+            End();
+            Separator();
+
+            Text(Localization.Get("BugFixes"), TextStyle.Subtitle);
+            Separator();
+            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            {
                 GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.portalTravelFix, "PortalTravelFix");
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.PortalTravelFixPatch));
@@ -658,15 +680,11 @@ namespace Iridium
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.TurnaroundConditionFix));
                 Separator();
 
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.editorPauseEnabled, "EditorPauseEnabled");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(EditorPausePatches));
-                if (compatibility.editorPauseEnabled)
+                IridiumPreset.SwitchOption(sizes, ref compatibility.fixDspTimeCalibration, "FixDspTimeCalibration");
+                if (compatibility.fixDspTimeCalibration)
                 {
                     Separator();
-                    DrawPauseKeyBinding(sizes);
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Information, "EditorPauseKeyHint");
+                    IridiumPreset.IconText(sizes, IconStyle.Information, "FixDspTimeCalibrationHint");
                 }
             }
             End();

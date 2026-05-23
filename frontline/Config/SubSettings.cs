@@ -101,10 +101,12 @@ namespace Iridium.Config
         public bool fixEditorPlayResetMistakes = true;
         public bool fixTurnaroundCondition = true;
         public bool editorPauseEnabled = true;
+        public bool editorPauseAllowed = true; // Master switch: allow pause in editor auto-play
         public int editorPauseKey = 32; // KeyCode.Space
         public int editorPauseModifiers = 0; // bit: 1=Ctrl 2=Alt 4=Shift 8=Win
         public LegacyBehaviorMode legacyFlashMode = LegacyBehaviorMode.Default;
         public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
+        public bool fixDspTimeCalibration = false; // Per-frame dspTime calibration for AsyncInputManager
     }
 
     public enum LegacyBehaviorMode

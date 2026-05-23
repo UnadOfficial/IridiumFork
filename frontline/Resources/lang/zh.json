@@ -184,8 +184,13 @@
   "FixMarginTrackerReset": "修复进入编辑器时结算异常累积",
   "FixEditorPlayResetMistakes": "编辑器播放时重置失误记录",
   "FixTurnaroundCondition": "修复发卡弯地板暂停节拍时间",
-  "EditorPauseEnabled": "编辑器暂停快捷键",
+  "EditorPauseAllowed": "启用在编辑器自动播放中暂停",
+  "EditorPauseEnabled": "使用自定义暂停快捷键",
   "EditorPauseKey": "暂停快捷键",
   "EditorPauseKeyPress": "按下按键...",
-  "EditorPauseKeyHint": "在自动播放模式下按此键暂停/恢复。点击按钮后按下键盘按键绑定"
+  "EditorPauseKeyHint": "在自动播放模式下按此键暂停/恢复。点击按钮后按下键盘按键绑定",
+  "FixDspTimeCalibration": "修复长时间游玩的判定偏移",
+  "FixDspTimeCalibrationHint": "长时间游玩时判定可能会逐渐偏移，开启此功能可校准计时。v3.1.0 默认关闭此功能。",
+  "CompatibleBehavior": "兼容行为",
+  "BugFixes": "Bug 修复"
 }
