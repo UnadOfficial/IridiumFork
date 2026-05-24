@@ -493,6 +493,11 @@ namespace Iridium
                 Separator();
 
                 GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref ui.enablePausePlanetTrail, "EnablePausePlanetTrail");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(PausePlanetTrailPatch));
+                Separator();
+
+                GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref ui.moveAutoplayText, "MoveAutoplayText");
                 if (GUI.changed)
                 {

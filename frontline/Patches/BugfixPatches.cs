@@ -90,6 +90,11 @@ namespace Iridium.Patches
         {
             public static void Prefix()
             {
+                // Force snap calibration at start of play — without this, offsetTick
+                // starts at 0 and the per-frame slew (error/100) takes ~1.6s to converge.
+                if (AsyncInputManager.isActive)
+                    AsyncInputUtils.UpdateOffsetTime(1L);
+
                 if (!ADOBase.isLevelEditor) return;
                 scrController.instance?.mistakesManager.Reset();
             }

@@ -27,6 +27,8 @@
   "MoveAutoplayText": "自定义“自动播放”字样位置",
   "ForceDifficultyUI": "强制启用判定选择 (CLS)",
   "AlwaysCountdown": "在编辑器内总是显示倒计时",
+	"EnablePausePlanetTrail": "暂停菜单星球拖尾效果",
+	"EnablePausePlanetTrail": "暂停菜单星球拖尾效果",
   "EnableCircleArc": "启用圆弧转角",
   "RestartRequired": "重进游戏后生效",
   "EnableCustomBpm": "启用自定义 BPM",

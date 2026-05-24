@@ -78,6 +78,7 @@ namespace Iridium.Config
         public bool forceDifficultyUI = false;
         public bool enableCircleArc = false;
         public bool alwaysCountdown = false;
+        public bool enablePausePlanetTrail = false;
     }
 
     public class LobbyMusicSettings

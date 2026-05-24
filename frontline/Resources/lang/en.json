@@ -27,6 +27,7 @@
   "MoveAutoplayText": "Custom Autoplay Text Position",
   "ForceDifficultyUI": "Force Difficulty UI (CLS)",
   "AlwaysCountdown": "Always Show Countdown in Level Editor",
+  "EnablePausePlanetTrail": "Pause Planet Motion Trail",
   "EnableCircleArc": "Enable Circle Arc",
   "RestartRequired": "Takes effect after restarting the game",
   "EnableCustomBpm": "Enable Custom BPM",
