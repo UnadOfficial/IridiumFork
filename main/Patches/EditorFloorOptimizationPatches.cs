@@ -21,18 +21,19 @@ namespace Iridium.Patches
 
         #region Reflection Targets
 
-        private static readonly MethodInfo _updateSelectedFloorMethod =
-            AccessTools.Method(typeof(scnEditor), "UpdateSelectedFloor");
-        private static readonly FieldInfo _refreshDecSpritesField =
-            AccessTools.Field(typeof(scnEditor), "refreshDecSprites");
-        private static readonly MethodInfo _drawFloorNumsMethod =
-            AccessTools.Method(typeof(scnEditor), "DrawFloorNums");
-        private static readonly MethodInfo _drawFloorOffsetLinesMethod =
-            AccessTools.Method(typeof(scnEditor), "DrawFloorOffsetLines");
-        private static readonly FieldInfo _meshFloorField =
-            AccessTools.Field(typeof(scrLevelMaker), "meshFloor");
-        private static readonly FieldInfo _spriteFloorField =
-            AccessTools.Field(typeof(scrLevelMaker), "spriteFloor");
+        // FieldRefAccess delegates — direct memory access, zero allocation per call
+        private static AccessTools.FieldRef<scnEditor, bool>? _refreshDecSpritesRef;
+        private static AccessTools.FieldRef<scrLevelMaker, GameObject>? _meshFloorRef;
+        private static AccessTools.FieldRef<scrLevelMaker, GameObject>? _spriteFloorRef;
+
+        // Cached open delegate — created once, reused every call
+        private static Action<scnEditor>? _drawFloorNumsAction;
+
+        private static void DrawFloorNums(scnEditor editor)
+        {
+            (_drawFloorNumsAction ??= AccessTools.MethodDelegate<Action<scnEditor>>(
+                AccessTools.Method(typeof(scnEditor), "DrawFloorNums"), null))?.Invoke(editor);
+        }
 
         #endregion
 
@@ -71,44 +72,24 @@ namespace Iridium.Patches
 
                 try
                 {
-                    // 1. Insert path data
-                    __instance.levelData.pathData = __instance.levelData.pathData.Insert(sequenceID, floorType.ToString());
-
-                    // 2. Convert char to float angle (use scrLevelMaker's conversion)
+                    // Convert char to angle — midspin fallback to original
                     float floorAngle = scrLevelMaker.GetAngleFromFloorCharDirection(floorType);
-                    if (floorAngle == 999f) return true; // midspin, fallback
+                    if (floorAngle == 999f) return true;
 
-                    // 3. Insert into angleData too (for consistency)
+                    // Inject data before RemakePath runs
+                    __instance.levelData.pathData = __instance.levelData.pathData.Insert(sequenceID, floorType.ToString());
                     __instance.levelData.angleData.Insert(sequenceID, floorAngle);
 
-                    // 4. Sync floorAngles on levelMaker
-                    lm.floorAngles = __instance.levelData.angleData.ToArray();
-
-                    // 5. Set incremental mode and re-run InstantiateFloatFloors with reuse
+                    // Let RemakePath() run the full chain (MakeLevel → InstantiateFloatFloors → post-process → draws).
+                    // Our InstantiateFloatFloors patch intercepts to reuse existing floors.
                     _incrementalMode = true;
                     _incrementalIsInsert = true;
                     _incrementalSeqID = sequenceID;
 
-                    // Run InstantiateFloatFloors - it will reuse existing floors
-                    // and only create one new one at the right position
-                    lm.InstantiateFloatFloors();
+                    __instance.RemakePath();
 
                     _incrementalMode = false;
-
-                    // 6. Apply events to update event icon positions
-                    __instance.ApplyEventsToFloors();
-
-                    // 7. Redraw visuals
-                    lm.DrawHolds(unfillHolds: false);
-                    lm.DrawMultiPlanet(forcePlaying: false);
-
-                    var drawNums = (Action)_drawFloorNumsMethod.CreateDelegate(typeof(Action), __instance);
-                    drawNums?.Invoke();
-
-                    var drawOffsetLines = (Action)_drawFloorOffsetLinesMethod.CreateDelegate(typeof(Action), __instance);
-                    drawOffsetLines?.Invoke();
-
-                    return false; // skip original
+                    return false; // data already inserted, skip original
                 }
                 catch (Exception e)
                 {
@@ -138,34 +119,15 @@ namespace Iridium.Patches
 
                 try
                 {
-                    // 1. Insert angle data
                     __instance.levelData.angleData.Insert(sequenceID, floorAngle);
 
-                    // 2. Sync floorAngles on levelMaker
-                    lm.floorAngles = __instance.levelData.angleData.ToArray();
-
-                    // 3. Set incremental mode
                     _incrementalMode = true;
                     _incrementalIsInsert = true;
                     _incrementalSeqID = sequenceID;
 
-                    lm.InstantiateFloatFloors();
+                    __instance.RemakePath();
 
                     _incrementalMode = false;
-
-                    // 4. Apply events to update event icon positions
-                    __instance.ApplyEventsToFloors();
-
-                    // 5. Redraw visuals
-                    lm.DrawHolds(unfillHolds: false);
-                    lm.DrawMultiPlanet(forcePlaying: false);
-
-                    var drawNums = (Action)_drawFloorNumsMethod.CreateDelegate(typeof(Action), __instance);
-                    drawNums?.Invoke();
-
-                    var drawOffsetLines = (Action)_drawFloorOffsetLinesMethod.CreateDelegate(typeof(Action), __instance);
-                    drawOffsetLines?.Invoke();
-
                     return false;
                 }
                 catch (Exception e)
@@ -199,8 +161,10 @@ namespace Iridium.Patches
                         int seqID = _incrementalSeqID;
 
                         // Create ONE new floor
-                        GameObject prefab = (GameObject)_meshFloorField.GetValue(__instance);
-                        if (prefab == null) prefab = (GameObject)_spriteFloorField.GetValue(__instance);
+                        _meshFloorRef ??= AccessTools.FieldRefAccess<scrLevelMaker, GameObject>("meshFloor");
+                        _spriteFloorRef ??= AccessTools.FieldRefAccess<scrLevelMaker, GameObject>("spriteFloor");
+                        GameObject prefab = _meshFloorRef(__instance);
+                        if (prefab == null) prefab = _spriteFloorRef(__instance);
                         if (prefab == null) return true; // fallback
 
                         GameObject container = GameObject.Find("Floors");
@@ -214,17 +178,7 @@ namespace Iridium.Patches
                             ? prevFloor.entryangle
                             : (-ang + 90f) * (Math.PI / 180.0);
                         Vector3 offset = scrMisc.getVectorFromAngle(exitAngle, radius);
-                        Vector3 insertPos = prevFloor.transform.position + offset;
-
-                        // If we're inserting at position 0, use floor 0's position + offset
-                        if (seqID == 0)
-                        {
-                            insertPos = floors[0].transform.position + offset;
-                        }
-                        else
-                        {
-                            insertPos = floors[seqID].transform.position + offset;
-                        }
+                        Vector3 insertPos = floors[seqID].transform.position + offset;
 
                         GameObject newObj = UnityEngine.Object.Instantiate(prefab, insertPos, Quaternion.identity);
                         newObj.transform.parent = container.transform;
@@ -242,11 +196,12 @@ namespace Iridium.Patches
                         }
 
                         // Now rebuild geometry for all floors from insertion point
+                        // Reuse existing floor 0 setup
                         RebuildPositionsAndAngles(__instance, seqID);
                     }
                     else
                     {
-                        // Delete mode - floor was already removed from list by original DeleteFloor
+                        // Delete mode - floor was already removed from list by our prefix
                         // Remove excess floors
                         while (floors.Count > targetCount)
                         {
@@ -258,8 +213,10 @@ namespace Iridium.Patches
                         // Add missing floors if needed
                         while (floors.Count < targetCount)
                         {
-                            GameObject prefab = (GameObject)_meshFloorField.GetValue(__instance);
-                            if (prefab == null) prefab = (GameObject)_spriteFloorField.GetValue(__instance);
+                            _meshFloorRef ??= AccessTools.FieldRefAccess<scrLevelMaker, GameObject>("meshFloor");
+                            _spriteFloorRef ??= AccessTools.FieldRefAccess<scrLevelMaker, GameObject>("spriteFloor");
+                            GameObject prefab = _meshFloorRef(__instance);
+                            if (prefab == null) prefab = _spriteFloorRef(__instance);
                             if (prefab == null) break;
 
                             GameObject container = GameObject.Find("Floors");
@@ -294,26 +251,58 @@ namespace Iridium.Patches
             var angles = lm.floorAngles;
             if (floors == null || floors.Count == 0 || angles == null) return;
 
-            // Reset floor 0
-            var floor0 = floors[0];
-            floor0.entryangle = 4.71238899230957; // MathF.PI * 1.5
-            floor0.seqID = 0;
-            floor0.transform.position = Vector3.zero;
-            floor0.hasLit = true;
+            // Destroy all ffxPlusBase on floors before the rebuild range.
+            // These floors are not touched by ResetFloorState, so their event
+            // components (holds, twirls, etc.) would persist and accumulate.
+            int start = Math.Max(0, fromSeqID);
+            for (int i = 0; i < start && i < floors.Count; i++)
+            {
+                var ffx = floors[i].GetComponents<ffxPlusBase>();
+                for (int j = 0; j < ffx.Length; j++)
+                    UnityEngine.Object.DestroyImmediate(ffx[j]);
+            }
 
+            // Full rebuild from floor 0
+            if (start == 0)
+            {
+                var floor0 = floors[0];
+                ResetFloorState(floor0, Vector3.zero);
+                floor0.entryangle = 4.71238899230957; // MathF.PI * 1.5
+                floor0.seqID = 0;
+                floor0.hasLit = true;
+                floor0.prevfloor = null;
+            }
+
+            // Recompute cumulative position from floor 0 to the anchor.
+            // Using floors[start].transform.position directly would compound
+            // floating-point error across multiple incremental edits.
             Vector3 cumulativePos = Vector3.zero;
-            double prevEntryAngle = floor0.entryangle;
+            double entryAngle = 4.71238899230957; // MathF.PI * 1.5
+            double tileRadius = scrController.instance.tileSize;
+            for (int i = 0; i < start && i < angles.Length; i++)
+            {
+                float ang = angles[i];
+                double exitAngle = ang == 999f ? entryAngle : (-ang + 90f) * (Math.PI / 180.0);
+                cumulativePos += scrMisc.getVectorFromAngle(exitAngle, tileRadius);
+                entryAngle = (exitAngle + Math.PI) % (2.0 * Math.PI);
+            }
+            double prevEntryAngle = entryAngle;
 
-            for (int i = 0; i < floors.Count - 1 && i < angles.Length; i++)
+            // Reset the anchor floor if we're not doing a full rebuild (floor 0 was
+            // already reset above). All other floors are reset once as nextFloor below.
+            if (start > 0)
+                ResetFloorState(floors[start], cumulativePos);
+
+            for (int i = start; i < floors.Count - 1 && i < angles.Length; i++)
             {
                 var floor = floors[i];
                 var nextFloor = floors[i + 1];
 
-                bool isCCW = true;
                 double radius = scrController.instance.tileSize;
                 float ang = angles[i];
 
-                // Calculate exit angle
+                floor.entryangle = prevEntryAngle;
+
                 double exitAngle;
                 if (ang == 999f)
                 {
@@ -331,35 +320,51 @@ namespace Iridium.Patches
                 floor.prevfloor = i > 0 ? floors[i - 1] : null;
                 floor.nextfloor = nextFloor;
                 floor.speed = 1f;
-                floor.isCCW = !isCCW;
+                floor.isCCW = false;
 
-                // Calculate position offset
                 Vector3 offset = scrMisc.getVectorFromAngle(exitAngle, radius);
                 cumulativePos += offset;
 
-                // Set next floor properties
-                if (nextFloor != null)
-                {
-                    nextFloor.entryangle = (exitAngle + Math.PI) % (2.0 * Math.PI);
-                    nextFloor.seqID = i + 1;
-                    nextFloor.transform.position = cumulativePos;
-                    nextFloor.floatDirection = ang;
-                    nextFloor.prevfloor = floor;
-                }
+                ResetFloorState(nextFloor, cumulativePos);
+                nextFloor.entryangle = (exitAngle + Math.PI) % (2.0 * Math.PI);
+                nextFloor.seqID = i + 1;
+                nextFloor.transform.position = cumulativePos;
+                nextFloor.floatDirection = ang;
+                nextFloor.prevfloor = floor;
 
-                prevEntryAngle = nextFloor != null ? nextFloor.entryangle : exitAngle;
-
-                // Update floor angle/rotation
-                floor.UpdateAngle();
+                prevEntryAngle = nextFloor.entryangle;
             }
 
-            // Fix last floor's exit angle
             if (floors.Count > 1)
             {
                 var lastFloor = floors[floors.Count - 1];
                 lastFloor.exitangle = lastFloor.entryangle + Math.PI;
                 lastFloor.nextfloor = null;
+
+                if (scrController.instance?.gameworld == true)
+                {
+                    lastFloor.isportal = true;
+                    lastFloor.levelnumber = Portal.EndOfLevel;
+                }
             }
+        }
+
+        /// <summary>
+        /// Replicate scrLevelMaker.ResetFloor logic for incremental reuse:
+        /// destroy stray ffxPlusBase components, reset transform, call floor.Reset().
+        /// </summary>
+        private static void ResetFloorState(scrFloor floor, Vector3 position)
+        {
+            if (floor == null) return;
+
+            var ffxComponents = floor.GetComponents<ffxPlusBase>();
+            for (int i = 0; i < ffxComponents.Length; i++)
+                UnityEngine.Object.DestroyImmediate(ffxComponents[i]);
+
+            floor.transform.position = position;
+            floor.transform.rotation = Quaternion.identity;
+            floor.transform.localScale = Vector3.one;
+            floor.Reset();
         }
 
         #endregion
@@ -416,23 +421,16 @@ namespace Iridium.Patches
                         return;
                     }
 
-                    // Data was already removed by DeleteFloor.
-                    // We need to: sync floorAngles, let InstantiateFloatFloors handle the rest.
-                    lm.floorAngles = editor.levelData.angleData.ToArray();
-
+                    // Data already removed by DeleteFloor. Let RemakePath run the full
+                    // chain (scnGame.RemakePath → MakeLevel → post-process → draws).
+                    // InstantiateFloatFloors is intercepted to reuse existing floors.
                     _incrementalMode = true;
                     _incrementalIsInsert = false;
                     _incrementalSeqID = 0;
 
-                    lm.InstantiateFloatFloors();
+                    editor.RemakePath(applyEventsToFloors, remakeLevel);
+
                     _incrementalMode = false;
-
-                    // Redraw visuals
-                    lm.DrawHolds(unfillHolds: false);
-                    lm.DrawMultiPlanet(forcePlaying: false);
-
-                    var drawNums = (Action)_drawFloorNumsMethod.CreateDelegate(typeof(Action), editor);
-                    drawNums?.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -463,8 +461,7 @@ namespace Iridium.Patches
                 // We skip the scnGame call and do only the minimum editor-level draws.
                 if (!applyEventsToFloors && !remakeLevel)
                 {
-                    var drawNums = (Action)_drawFloorNumsMethod.CreateDelegate(typeof(Action), __instance);
-                    drawNums?.Invoke();
+                    DrawFloorNums(__instance);
                     return false;
                 }
 
@@ -568,8 +565,8 @@ namespace Iridium.Patches
                     if (decorations[i].floor > startFloorID)
                         decorations[i].floor += offset;
 
-                if (_refreshDecSpritesField != null)
-                    _refreshDecSpritesField.SetValue(__instance, true);
+                _refreshDecSpritesRef ??= AccessTools.FieldRefAccess<scnEditor, bool>("refreshDecSprites");
+                _refreshDecSpritesRef(__instance) = true;
                 return false;
             }
         }
