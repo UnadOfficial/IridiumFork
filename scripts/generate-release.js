@@ -57,15 +57,17 @@ function getVersionInfo(projectDir) {
 }
 
 /**
- * 获取上一个 release 的 tag
+ * 获取上一个 release 的 tag（倒数第二个 tag，排除当前发布的 tag）
  */
 function getLastReleaseTag() {
     try {
         const tags = execSync('git tag --sort=-version:refname', { encoding: 'utf8' }).trim();
         if (!tags) return null;
         
-        const tagList = tags.split('\n').filter(t => t.startsWith('v'));
-        return tagList.length > 0 ? tagList[0] : null;
+        const tagList = tags.split('\n').filter(t => t.trim() !== '');
+        // index 0 = current (newest) tag being released
+        // index 1 = previous release tag
+        return tagList.length > 1 ? tagList[1] : null;
     } catch (error) {
         return null;
     }
