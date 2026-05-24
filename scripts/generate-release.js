@@ -61,13 +61,9 @@ function getVersionInfo(projectDir) {
  */
 function getLastReleaseTag() {
     try {
-        const tags = execSync('git tag --sort=-version:refname', { encoding: 'utf8' }).trim();
-        if (!tags) return null;
-        
-        const tagList = tags.split('\n').filter(t => t.trim() !== '');
-        // index 0 = current (newest) tag being released
-        // index 1 = previous release tag
-        return tagList.length > 1 ? tagList[1] : null;
+        // 找到当前提交的父节点能到达的最近 tag，即上一次 release 的 tag
+        const tag = execSync('git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo ""', { encoding: 'utf8' }).trim();
+        return tag || null;
     } catch (error) {
         return null;
     }
