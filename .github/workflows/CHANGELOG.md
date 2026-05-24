@@ -1,6 +1,20 @@
 > [!IMPORTANT]
 > 若您在使用Iridium Beta版时出现问题，请及时向维护者报告。
 
+## r22 beta7
+
+### 变更
+
+1. **判定文本字数上限提升至 128**: 支持富文本标签（如 `<color=red>`），来自 #11
+2. **Release 工作流修复**:
+   - Release 预览不再显示全部历史 commit，改为只展示两次 release 之间的提交
+   - Release tag 名称统一格式
+
+### 修复
+
+1. 修复: `getLastReleaseTag` 使用版本排序导致跨 release 系列的 tag 干扰，改为 `git describe` 回溯
+2. 修复: Release 工作流浅克隆导致只拉取 1 个 commit，提交记录只显示一条
+
 ## r22 beta6
 
 ### 变更
