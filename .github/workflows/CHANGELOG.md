@@ -1,20 +1,22 @@
 > [!IMPORTANT]
 > 若您在使用Iridium Beta版时出现问题，请及时向维护者报告。
 
-## r22 beta5
+## r22 beta6
 
 ### 变更
 
-1. **新增 `fixDspTimeCalibration` 设置项** (Compatibility 选项卡): v2.10.0 去掉了每帧的 `AsyncInputManager.offsetTick` 重算，异步输入的时间基准不再与音频时钟对齐。新增的修复每帧检测偏移并重新校准，消除长期游玩的判定偏移累积
-2. **JPEG 压缩保留透明度**: 装饰物大图（>5MB）压缩时新增 `HasAlphaPixels` 检测，有透明像素的图片强制存为 PNG 而非 JPEG，修复透明度丢失
-3. **VRAM 通知界面新增停止按钮**: 支持在分帧装饰物加载过程中手动取消
-4. **Bugfix 补丁整理**:
-   - `HitTextMeshShowRotationFixPatch` 移入 `BugfixPatches` 统一管理
-   - `EditorPlayResetMistakesPatch` 拥有独立开关，不再绑定到位移显示
-5. **装饰物日志增强**: 分帧加载时记录关卡路径和前 10 个装饰物信息，便于调试
+1. **新增编辑器砖块性能优化 (EditorFloorOptimization)**: 重写编辑器砖块插入/删除逻辑，跳过完整的 `RemakePath` 重建，采用增量式砖块操作。包含 9 个子补丁:
+   - `incrementalFloorInsert` — 增量式砖块插入/删除（跳过完整路径重建）
+   - `rangeBasedRedraw` — 范围式重绘（仅重绘受影响的砖块）
+   - `skipRedundantRemakePath` — 跳过冗余的 RemakePath 调用
+   - `optimizeOffsetFloorEvents` — 优化事件中的砖块 ID 偏移
+2. **移除 `fixDspTimeCalibration` 设置项**: v2.10.0 原生已正确校准，不再需要该修复
+3. **端口双分支支持**: EditorFloorOptimization 同时在 `main` (v2.9.8) 和 `frontline` (v2.10.0) 两个分支可用
 
 ### 修复
 
-1. 修复: vanilla v2.10.0 `non-coop` 模式下 `missAngle` 未正确传递到 `Show` 方法 (BugfixPatches)
-2. 修复: `MoveDecoration` 图片预加载阻塞主线程，改为逐帧 yield 而非整批处理
-3. 更新: v2.10.0 的 `Assembly-CSharp.dll`
+1. 修复: `JsonPatches.GetCustomLevelName` 反序列化失败（JSON 键顺序导致 `DeserializePartially` 找不到 `settings` 键），添加完整 `Deserialize` 回退
+2. 修复: `MarginTracker` 来源字段引用错误
+3. 修复: Ctrl+F 搜索功能优化，减少不必要的重新计算
+4. 修复: `_coopMode` 字段引用错误
+5. 修复: 增量插入后事件图标位置未更新（添加 `ApplyEventsToFloors` 调用）

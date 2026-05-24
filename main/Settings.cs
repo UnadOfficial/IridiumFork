@@ -428,6 +428,36 @@ namespace Iridium
                 }
             }
             End();
+            Separator();
+
+            // --- Editor Floor Optimizations ---
+            Text(Localization.Get("EditorFloorOptimizations"), TextStyle.Subtitle);
+            Separator();
+            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            {
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref optimizer.enableEditorFloorOptimization, "EnableEditorFloorOptimization");
+                if (GUI.changed) AsyncPatchManager.UpdateOptimizerPatchesAsync();
+
+                if (optimizer.enableEditorFloorOptimization)
+                {
+                    Separator();
+                    IridiumPreset.SwitchOption(sizes, ref optimizer.incrementalFloorInsert, "IncrementalFloorInsert");
+                    if (optimizer.incrementalFloorInsert)
+                    {
+                        Separator();
+                        IridiumPreset.SwitchOption(sizes, ref optimizer.rangeBasedRedraw, "RangeBasedRedraw");
+                        Separator();
+                        IridiumPreset.SwitchOption(sizes, ref optimizer.skipRedundantRemakePath, "SkipRedundantRemakePath");
+                        Separator();
+                        IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeOffsetFloorEvents, "OptimizeOffsetFloorEvents");
+                    }
+                    Separator();
+                    IridiumPreset.IconText(sizes, IconStyle.Warning, "EditorFloorOptimizationWarning");
+                }
+            }
+            End();
+
             GUI.enabled = true;
         }
         #endregion

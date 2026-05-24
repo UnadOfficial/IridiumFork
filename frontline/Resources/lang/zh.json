@@ -190,5 +190,12 @@
   "EditorPauseKeyPress": "按下按键...",
   "EditorPauseKeyHint": "在自动播放模式下按此键暂停/恢复。点击按钮后按下键盘按键绑定",
   "CompatibleBehavior": "兼容行为",
-  "BugFixes": "Bug 修复"
+  "BugFixes": "Bug 修复",
+  "EditorFloorOptimizations": "编辑器砖块优化",
+  "EnableEditorFloorOptimization": "启用编辑器砖块性能优化 (提升1万+砖块时的插入/删除性能)",
+  "IncrementalFloorInsert": "增量式砖块插入/删除 (跳过完整路径重建)",
+  "RangeBasedRedraw": "范围式重绘 (仅重绘受影响的砖块)",
+  "SkipRedundantRemakePath": "跳过冗余的 RemakePath 调用",
+  "OptimizeOffsetFloorEvents": "优化事件中的砖块 ID 偏移",
+  "EditorFloorOptimizationWarning": "这些优化会改变编辑器的砖块重建逻辑。如果遇到显示异常，请尝试关闭它们。"
 }

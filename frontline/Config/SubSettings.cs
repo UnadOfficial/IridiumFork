@@ -59,6 +59,13 @@ namespace Iridium.Config
 
         // JSON Deserialize Optimization
         public bool customLevelReadOptimization = true; // 自定义关卡谱面读取优化
+
+        // --- Editor Floor Performance Optimizations ---
+        public bool enableEditorFloorOptimization = false; // 主开关
+        public bool incrementalFloorInsert = false;        // 增量式砖块插入/删除
+        public bool rangeBasedRedraw = false;              // 范围式重绘(Holds/Planets/Nums)
+        public bool skipRedundantRemakePath = false;       // 跳过重复的RemakePath调用
+        public bool optimizeOffsetFloorEvents = false;     // 优化 OffsetFloorIDsInEvents
     }
 
     public class UISettings

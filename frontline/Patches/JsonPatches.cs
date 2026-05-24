@@ -11,31 +11,110 @@ namespace Iridium.Patches
 {
     public static class JsonPatches
     {
-        private static readonly MethodInfo _deserialize = typeof(Json).GetMethod(nameof(Json.Deserialize), new[] { typeof(string) });
         private static readonly MethodInfo _deserializePartially = typeof(Json).GetMethod(nameof(Json.DeserializePartially), new[] { typeof(string), typeof(string) });
 
         /// <summary>
+        /// 安全替换：将 Json.Deserialize(str) 替换为 Json.DeserializePartially(str, "actions")。
+        /// 如果 _deserializePartially 为 null（方法未找到），则跳过替换，使用原始 Deserialize。
+        /// </summary>
+        private static IEnumerable<CodeInstruction> ReplaceDeserializeWithPartially(IEnumerable<CodeInstruction> instructions)
+        {
+            if (_deserializePartially == null)
+            {
+                Main.Logger?.Warning("[JsonPatches] DeserializePartially method not found, skipping optimization");
+                return instructions;
+            }
+
+            var list = new List<CodeInstruction>();
+            foreach (var inst in instructions)
+            {
+                if (inst.opcode == OpCodes.Call && inst.operand is MethodInfo method &&
+                    method.Name == nameof(Json.Deserialize) && method.DeclaringType == typeof(Json))
+                {
+                    list.Add(new CodeInstruction(OpCodes.Ldstr, "actions"));
+                    list.Add(new CodeInstruction(OpCodes.Call, _deserializePartially));
+                }
+                else
+                {
+                    list.Add(inst);
+                }
+            }
+            return list;
+        }
+
+        /// <summary>
         /// LevelData.GetCustomLevelName 只取 settings，无需解析 actions 数组。
-        /// 用 DeserializePartially(str, "actions") 在遇到 "actions" key 时提前停止解析。
+        /// 用 DeserializePartially(str, "actions") 遇到 "actions" 时提前停止。
+        /// 安全性修正：如果 settings 未找到（JSON 中 actions 在 settings 之前），则返回 "" 避免崩溃。
         /// </summary>
         [HarmonyPatch(typeof(LevelData), nameof(LevelData.GetCustomLevelName))]
         public static class PatchGetCustomLevelName
         {
-            [HarmonyTranspiler]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            [HarmonyPrefix]
+            public static bool Prefix(string path, ref string __result)
             {
-                foreach (var inst in instructions)
+                if (!Main.Settings.optimizer.customLevelReadOptimization)
+                    return true; // use original
+
+                try
                 {
-                    if (inst.opcode == OpCodes.Call && inst.operand is MethodInfo method &&
-                        method.Name == nameof(Json.Deserialize) && method.DeclaringType == typeof(Json))
+                    string json = RDFile.ReadAllText(path);
+                    if (json == null)
                     {
-                        yield return new CodeInstruction(OpCodes.Ldstr, "actions");
-                        yield return new CodeInstruction(OpCodes.Call, _deserializePartially);
+                        __result = "";
+                        return false;
+                    }
+
+                    var root = Json.DeserializePartially(json, "actions") as Dictionary<string, object>;
+                    if (root == null || !root.TryGetValue("settings", out var settingsObj))
+                    {
+                        // "actions" came before "settings" - fallback to full parse
+                        root = Json.Deserialize(json) as Dictionary<string, object>;
+                        if (root == null || !root.TryGetValue("settings", out settingsObj))
+                        {
+                            __result = "";
+                            return false;
+                        }
+                    }
+
+                    var settings = settingsObj as Dictionary<string, object>;
+                    if (settings == null)
+                    {
+                        __result = "";
+                        return false;
+                    }
+
+                    string song = settings.TryGetValue("song", out var s) ? s as string : null;
+                    string artist = settings.TryGetValue("artist", out var a) ? a as string : null;
+                    string result;
+
+                    if (string.IsNullOrEmpty(song))
+                    {
+                        result = "";
+                    }
+                    else if (string.IsNullOrEmpty(artist))
+                    {
+                        result = song;
                     }
                     else
                     {
-                        yield return inst;
+                        string artistTrimmed = artist.Trim();
+                        if (artistTrimmed.EndsWith(")"))
+                        {
+                            int idx = artistTrimmed.IndexOf("(");
+                            if (idx > 0)
+                                artistTrimmed = artistTrimmed.Substring(0, idx).Trim();
+                        }
+                        result = artistTrimmed + " - " + song;
                     }
+
+                    __result = RDUtils.RemoveRichTags(result);
+                    return false;
+                }
+                catch (System.Exception e)
+                {
+                    Main.Logger?.Error($"[JsonPatches] GetCustomLevelName failed: {e.Message}");
+                    return true; // fallback to original
                 }
             }
         }
@@ -49,19 +128,7 @@ namespace Iridium.Patches
             [HarmonyTranspiler]
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                foreach (var inst in instructions)
-                {
-                    if (inst.opcode == OpCodes.Call && inst.operand is MethodInfo method &&
-                        method.Name == nameof(Json.Deserialize) && method.DeclaringType == typeof(Json))
-                    {
-                        yield return new CodeInstruction(OpCodes.Ldstr, "actions");
-                        yield return new CodeInstruction(OpCodes.Call, _deserializePartially);
-                    }
-                    else
-                    {
-                        yield return inst;
-                    }
-                }
+                return ReplaceDeserializeWithPartially(instructions);
             }
         }
 

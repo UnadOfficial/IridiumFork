@@ -86,6 +86,29 @@ namespace Iridium.Patches
         {
             _definitions.Clear();
 
+            // --- Editor Floor Optimization Patches (each with its own sub-condition) ---
+            var editorMaster = () => Main.Settings.optimizer.enableEditorFloorOptimization;
+            _definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.InsertCharFloorOptimizationPatch),
+                () => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert));
+            _definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.InsertFloatFloorOptimizationPatch),
+                () => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert));
+            _definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.InstantiateFloatFloorsOptimizationPatch),
+                () => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert));
+            _definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.DeleteFloorOptimizationPatch),
+                () => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert));
+            _definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.RemakePathRedundancyPatch),
+                () => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.skipRedundantRemakePath));
+            _definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.GameRemakePathOptimizationPatch),
+                () => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.skipRedundantRemakePath));
+            _definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.DrawFloorNumsOptimizationPatch),
+                () => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.rangeBasedRedraw));
+            _definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.DrawFloorOffsetLinesOptimizationPatch),
+                () => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.skipRedundantRemakePath));
+            _definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.OffsetFloorIDsOptimizationPatch),
+                () => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.optimizeOffsetFloorEvents));
+
+
+
             // --- Optimizer ---
             var optCond = () => Main.Settings.optimizer.enableOptimizer;
             RegisterNestedPatches(typeof(OptimizerPatches), optCond);
@@ -229,7 +252,8 @@ namespace Iridium.Patches
                 typeof(TrackOptimizationPatches),
                 typeof(SceneOptimizationPatches),
                 typeof(LoadingOptimizationPatches),
-                typeof(ExtremeOptimizationPatches)
+                typeof(ExtremeOptimizationPatches),
+                typeof(EditorFloorOptimizationPatches)
             };
 
             foreach (var def in _definitions)
