@@ -158,6 +158,8 @@ namespace Iridium.Patches
                 () => Main.Settings.compatibility.fixMarginTrackerReset));
             _definitions.Add(new PatchDef(typeof(BugfixPatches.MarginTrackerResetFix),
                 () => Main.Settings.compatibility.fixMarginTrackerReset));
+            // Always-on: snap offsetTick calibration at start of each level
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.AsyncInputPlaySnapPatch), () => true));
             // Fix: ensures hardestDifficulty is reset when playing from editor
             _definitions.Add(new PatchDef(typeof(BugfixPatches.EditorPlayResetMistakesPatch),
                 () => Main.Settings.compatibility.fixEditorPlayResetMistakes));

@@ -78,6 +78,21 @@ namespace Iridium.Patches
         }
 
         /// <summary>
+        /// Forces a snap calibration each time a level starts playing. Without this,
+        /// offsetTick starts at 0 and the per-frame slew (error/100) takes ~1.6s to
+        /// converge to the true audio latency, causing incorrect timing at level start.
+        /// </summary>
+        [HarmonyPatch(typeof(scnGame), "Play")]
+        public static class AsyncInputPlaySnapPatch
+        {
+            public static void Prefix()
+            {
+                if (AsyncInputManager.isActive)
+                    AsyncInputUtils.UpdateOffsetTime(1L);
+            }
+        }
+
+        /// <summary>
         /// v2.10.0: When scnGame.Play() runs in editor mode, it skips WaitForStartCo()
         /// and calls Awake_Rewind() + Start_Rewind() directly. Neither resets the
         /// mistakes manager, so hardestDifficulty retains a stale value (defaults to
@@ -90,11 +105,6 @@ namespace Iridium.Patches
         {
             public static void Prefix()
             {
-                // Force snap calibration at start of play — without this, offsetTick
-                // starts at 0 and the per-frame slew (error/100) takes ~1.6s to converge.
-                if (AsyncInputManager.isActive)
-                    AsyncInputUtils.UpdateOffsetTime(1L);
-
                 if (!ADOBase.isLevelEditor) return;
                 scrController.instance?.mistakesManager.Reset();
             }
