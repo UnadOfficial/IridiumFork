@@ -819,7 +819,7 @@ AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPause
             {
                 Text(Localization.Get($"JudgeText_{key}"), options: WidthMin);
                 Fill();
-                TextField(ref value, 20, Width(120));
+                TextField(ref value, 128, Width(120));
             }
             PopAlign();
             End();
