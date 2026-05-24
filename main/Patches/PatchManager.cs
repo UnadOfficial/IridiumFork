@@ -104,6 +104,10 @@ namespace Iridium.Patches
             // 分帧加载需要额外检查 frameSpreadDecorationLoading 子开关
             _definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch),
                 () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
+            _definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.ResetDecorations_Patch),
+                () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
+            _definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.Play_Patch),
+                () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
 
             // --- DOTween Optimization Patches ---
             // 注意：DOTween优化现在不使用任何HarmonyPatch，只使用运行时配置

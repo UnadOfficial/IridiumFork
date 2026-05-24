@@ -200,6 +200,11 @@ namespace Iridium.Patches
             private static bool _isLoading = false;
             private static readonly List<GraphicRaycaster> _disabledRaycasters = new();
             private static bool _cancelled = false;
+            private static scnGame? _pendingGame;
+            private static bool _playWasBlocked;
+            private static bool _uiCompleted;
+            private static GameObject? _loadingTextObj;
+            private static Text? _loadingText;
 
             public static bool IsLoading => _isLoading;
 
@@ -246,15 +251,16 @@ namespace Iridium.Patches
 
                     BlockUIInput();
 
+                    ShowLoadingText();
+
+                    _pendingGame = __instance;
                     __instance.StartCoroutine(FrameSpreadLoadCoroutine(__instance));
                     return false;
                 }
                 catch (System.Exception ex)
                 {
                     Main.Logger?.Error($"[LoadingOptimization] FrameSpreadDecorationLoading failed: {ex}");
-                    _isLoading = false;
-                    _pendingDecorations.Clear();
-                    RestoreUIInput();
+                    CleanupState();
                     return true;
                 }
             }
@@ -310,9 +316,7 @@ namespace Iridium.Patches
 
                 if (instance == null || instance.decManager == null)
                 {
-                    _isLoading = false;
-                    _pendingDecorations.Clear();
-                    RestoreUIInput();
+                    CleanupState();
                     yield break;
                 }
 
@@ -321,7 +325,7 @@ namespace Iridium.Patches
                 int processed = 0;
                 int total = _pendingDecorations.Count;
 
-                UI.VRAMNotificationUI.ShowPersistent(Localization.Get("LoadingDecorationsProgress", 0, total));
+                UpdateLoadingText(0, total);
                 Main.Logger?.Log($"[LoadingOptimization] Starting frame-spread loading: {total} decorations");
 
                 while (_pendingDecorations.Count > 0 && !_cancelled)
@@ -329,9 +333,7 @@ namespace Iridium.Patches
                     if (instance == null || instance.decManager == null)
                     {
                         Main.Logger?.Log($"[LoadingOptimization] scnGame destroyed during loading, aborting");
-                        _isLoading = false;
-                        _pendingDecorations.Clear();
-                        RestoreUIInput();
+                        CleanupState();
                         yield break;
                     }
 
@@ -366,12 +368,8 @@ namespace Iridium.Patches
                 if (_cancelled)
                 {
                     Main.Logger?.Log($"[LoadingOptimization] Loading cancelled by user");
-                    _isLoading = false;
-                    _cancelled = false;
-                    _pendingDecorations.Clear();
-                    RestoreUIInput();
-                    UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
-                    UI.VRAMNotificationUI.Complete();
+                    CleanupState();
+                    // UI cleaned up in CleanupState()
                     yield break;
                 }
 
@@ -396,12 +394,8 @@ namespace Iridium.Patches
                 if (_cancelled)
                 {
                     Main.Logger?.Log($"[LoadingOptimization] Loading cancelled by user");
-                    _isLoading = false;
-                    _cancelled = false;
-                    _pendingDecorations.Clear();
-                    RestoreUIInput();
-                    UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
-                    UI.VRAMNotificationUI.Complete();
+                    CleanupState();
+                    // UI cleaned up in CleanupState()
                     yield break;
                 }
 
@@ -413,12 +407,10 @@ namespace Iridium.Patches
                         if (_cancelled)
                         {
                             Main.Logger?.Log($"[LoadingOptimization] Loading cancelled by user");
-                            _isLoading = false;
-                            _cancelled = false;
-                            _pendingDecorations.Clear();
-                            RestoreUIInput();
                             UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
                             UI.VRAMNotificationUI.Complete();
+                            _uiCompleted = true;
+                            CleanupState();
                             yield break;
                         }
                         var (name, path) = moveDecImages[i];
@@ -439,9 +431,6 @@ namespace Iridium.Patches
                     }
                 }
 
-                _isLoading = false;
-                _cancelled = false;
-                RestoreUIInput();
                 Main.Logger?.Log($"[LoadingOptimization] Finished loading {processed} decorations across multiple frames");
 
                 if (!Main.Settings.optimizer.dontShowSavedMemory)
@@ -456,11 +445,110 @@ namespace Iridium.Patches
                         UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
                     }
                     UI.VRAMNotificationUI.Complete();
+                    _uiCompleted = true;
                     OptimizerPatches.VRAMNotificationPatch.isFinished = true;
                 }
                 else
                 {
                     UI.VRAMNotificationUI.Complete();
+                    _uiCompleted = true;
+                }
+
+                // LoadAndPlayLevel calls ResetDecorations + Play() right after
+                // UpdateDecorationObjects returns. Since we intercepted
+                // synchronously, they ran on empty data. Replay them now.
+                // Don't set _isLoading=false yet — Play() may trigger chain
+                // calls that need to still see the loading state.
+                if (instance != null && instance.decManager != null)
+                    instance.decManager.ResetDecorations();
+
+                var gameToPlay = (_pendingGame != null && _playWasBlocked) ? _pendingGame : null;
+                CleanupState();
+                gameToPlay?.Play();
+            }
+
+            /// <summary>
+            /// During frame-spread loading, ResetDecorations is a no-op —
+            /// the coroutine calls it after all decorations are created.
+            /// </summary>
+            [HarmonyPatch(typeof(scrDecorationManager), "ResetDecorations")]
+            public static class ResetDecorations_Patch
+            {
+                [HarmonyPrefix]
+                public static bool Prefix()
+                {
+                    if (_isLoading) return false;
+                    return true;
+                }
+            }
+
+            /// <summary>
+            /// Blocks Play() while frame-spread is still running. The coroutine
+            /// replays Play() after decorations are fully loaded.
+            /// </summary>
+            [HarmonyPatch(typeof(scnGame), "Play",
+                new Type[] { typeof(int), typeof(bool) })]
+            public static class Play_Patch
+            {
+                [HarmonyPrefix]
+                public static bool Prefix()
+                {
+                    if (_isLoading)
+                    {
+                        _playWasBlocked = true;
+                        return false;
+                    }
+                    return true;
+                }
+            }
+
+            private static void CleanupState()
+            {
+                _isLoading = false;
+                _cancelled = false;
+                _pendingGame = null;
+                _playWasBlocked = false;
+                _pendingDecorations.Clear();
+                HideLoadingText();
+                RestoreUIInput();
+                if (!_uiCompleted)
+                    UI.VRAMNotificationUI.Complete();
+                _uiCompleted = false;
+            }
+
+            private static void ShowLoadingText()
+            {
+                var tp = scrUIController.instance?.transitionPanel;
+                if (tp == null) return;
+
+                _loadingTextObj = new GameObject("FrameSpreadLoadingText");
+                _loadingTextObj.transform.SetParent(tp.transform, false);
+                var rt = _loadingTextObj.AddComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0.5f, 0.35f);
+                rt.anchorMax = new Vector2(0.5f, 0.35f);
+                rt.sizeDelta = new Vector2(600, 60);
+
+                _loadingText = _loadingTextObj.AddComponent<Text>();
+                _loadingText.font = RDConstants.data.latinFont;
+                _loadingText.fontSize = 28;
+                _loadingText.alignment = TextAnchor.MiddleCenter;
+                _loadingText.color = Color.white;
+                _loadingText.text = Localization.Get("LoadingDecorationsProgress", 0, 0);
+            }
+
+            private static void UpdateLoadingText(int current, int total)
+            {
+                if (_loadingText != null)
+                    _loadingText.text = Localization.Get("LoadingDecorationsProgress", current, total);
+            }
+
+            private static void HideLoadingText()
+            {
+                if (_loadingTextObj != null)
+                {
+                    UnityEngine.Object.Destroy(_loadingTextObj);
+                    _loadingTextObj = null;
+                    _loadingText = null;
                 }
             }
         }
