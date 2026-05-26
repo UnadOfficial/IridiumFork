@@ -325,6 +325,7 @@ namespace Iridium.Patches
                 int processed = 0;
                 int total = _pendingDecorations.Count;
 
+                UI.VRAMNotificationUI.ShowPersistent(Localization.Get("LoadingDecorationsProgress", 0, total));
                 UpdateLoadingText(0, total);
                 Main.Logger?.Log($"[LoadingOptimization] Starting frame-spread loading: {total} decorations");
 
