@@ -701,15 +701,6 @@ namespace Iridium
                 Separator();
 
                 GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.fixMarginTrackerReset, "FixMarginTrackerReset");
-                if (GUI.changed)
-                {
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.MarginTrackerSetPlayerCountFix));
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.MarginTrackerResetFix));
-                }
-                Separator();
-
-                GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.fixEditorPlayResetMistakes, "FixEditorPlayResetMistakes");
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.EditorPlayResetMistakesPatch));
                 Separator();

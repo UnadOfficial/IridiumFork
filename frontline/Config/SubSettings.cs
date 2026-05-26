@@ -105,7 +105,6 @@ namespace Iridium.Config
         public bool forceAngleData = false;
         public bool scaleFilterSpeedWithPitch = false;
         public bool portalTravelFix = false;
-        public bool fixMarginTrackerReset = true;
         public bool fixEditorPlayResetMistakes = true;
         public bool fixTurnaroundCondition = true;
         public bool editorPauseEnabled = true;

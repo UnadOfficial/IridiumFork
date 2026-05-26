@@ -41,41 +41,12 @@ namespace Iridium.Patches
         }
 
         /// <summary>
-        /// Source-level fix: after SetPlayerCount allocates new marginTrackers,
-        /// update existing scrPlayer instances to reference the new trackers.
-        /// This prevents the orphaned tracker problem at the root.
+        /// v2.10.0+: scrPlayer.marginTracker changed to a read-only property
+        /// that directly returns scrMistakesManager.marginTrackers[playerID],
+        /// so the sync from SetPlayerCount is now automatic. This patch is
+        /// retained as a no-op stub for documentation clarity.
         /// </summary>
-        [HarmonyPatch(typeof(scrMistakesManager), "SetPlayerCount")]
-        public static class MarginTrackerSetPlayerCountFix
-        {
-            [HarmonyPostfix]
-            public static void Postfix(int playerCount)
-            {
-                var players = scrPlayerManager.instance?.players;
-                if (players != null)
-                {
-                    int count = Math.Min(players.Length, playerCount);
-                    for (int i = 0; i < count; i++)
-                        players[i].marginTracker = scrMistakesManager.marginTrackers[i];
-                }
-            }
-        }
-
-        /// <summary>
-        /// Defensive safety net: even with MarginTrackerSetPlayerCountFix active,
-        /// ensure Reset() always clears the actual trackers on players.
-        /// Catches any future code path that could desync player references.
-        /// </summary>
-        [HarmonyPatch(typeof(scrMistakesManager), "Reset")]
-        public static class MarginTrackerResetFix
-        {
-            [HarmonyPostfix]
-            public static void Postfix()
-            {
-                foreach (var player in scrPlayerManager.instance?.players ?? [])
-                    player?.marginTracker?.Reset();
-            }
-        }
+        // MarginTrackerSetPlayerCountFix removed in v2.10.0 — game handles sync natively.
 
         /// <summary>
         /// Forces a snap calibration each time a level starts playing. Without this,

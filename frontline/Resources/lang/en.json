@@ -182,7 +182,6 @@
   "OptimizeParticleCulling": "Pause Off-screen Particle Simulation",
   "OptimizeParticleLod": "LOD: Skip Distant Particle Updates",
   "PortalTravelFix": "Portal Travel Fix",
-  "FixMarginTrackerReset": "Fix Results Accumulation When Entering Editor",
   "FixEditorPlayResetMistakes": "Reset Mistakes on Editor Play",
   "FixTurnaroundCondition": "Fix Pause Beat Timing on Hairpin Turn Floors",
   "EditorPauseAllowed": "Enable Pause in Editor Auto-play",

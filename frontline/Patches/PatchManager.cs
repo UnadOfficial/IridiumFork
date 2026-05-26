@@ -157,11 +157,9 @@ namespace Iridium.Patches
             // --- Bugfix Patches (2.10.0 only) ---
             _definitions.Add(new PatchDef(typeof(BugfixPatches.PortalTravelFixPatch),
                 () => Main.Settings.compatibility.portalTravelFix));
-            // Always-on: fixes SetPlayerCount creating orphaned marginTrackers
-            _definitions.Add(new PatchDef(typeof(BugfixPatches.MarginTrackerSetPlayerCountFix),
-                () => Main.Settings.compatibility.fixMarginTrackerReset));
-            _definitions.Add(new PatchDef(typeof(BugfixPatches.MarginTrackerResetFix),
-                () => Main.Settings.compatibility.fixMarginTrackerReset));
+            // v2.10.0+: scrPlayer.marginTracker is now a read-only property that
+            // reads directly from scrMistakesManager.marginTrackers[playerID],
+            // so SetPlayerCount and Reset sync are handled by the game natively.
             // Always-on: snap offsetTick calibration at start of each level
             _definitions.Add(new PatchDef(typeof(BugfixPatches.AsyncInputPlaySnapPatch), () => true));
             // Fix: ensures hardestDifficulty is reset when playing from editor
