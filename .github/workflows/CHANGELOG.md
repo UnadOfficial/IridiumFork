@@ -1,6 +1,19 @@
 > [!IMPORTANT]
 > 若您在使用Iridium Beta版时出现问题，请及时向维护者报告。
 
+## r22 beta8
+
+### 变更
+
+1. **暂停菜单行星轨迹优化**: 暂停菜单打开时跳过 `DisableParticles` 调用，保留行星运动轨迹线
+2. **AsyncInput 启动快照始终启用**: 将启动偏移校准从编辑器修复中分离，确保每次关卡开始都进行快照校准
+
+### 修复
+
+1. 修复: `FrameSpreadDecorationLoading` 异步加载期间拦截 `Play`/`ResetDecorations`，添加 `CleanupState` 状态清理和加载进度文本
+2. 修复: `EditorFloorOptimizationPatches` — 改用 `RemakePath` 管线，修复残留 ffx 清理和重复 `ResetFloorState` 调用
+3. 修复: v2.10.0 `scrPlayer.marginTracker` 改为只读属性，移除已废弃的 `MarginTrackerSetPlayerCountFix` 和 `MarginTrackerResetFix` 补丁（由游戏原生处理）
+
 ## r22 beta7
 
 ### 变更
