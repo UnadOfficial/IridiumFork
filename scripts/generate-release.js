@@ -63,10 +63,10 @@ function getVersionInfo(projectDir) {
 function getLastReleaseTag(excludePrerelease = false) {
     try {
         if (excludePrerelease) {
-            // 遍历所有可从 HEAD~1 到达的 tag，找到最近的一个正式版 tag
+            // 遍历所有可从 HEAD~1 到达的 tag，找到最近的一个正式版 tag（_final 后缀）
             const tags = execSync('git tag --merged HEAD~1 --sort=-version:refname 2>/dev/null', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
             for (const tag of tags) {
-                if (!tag.includes('beta') && !tag.includes('prerelease')) {
+                if (tag.endsWith('_final')) {
                     return tag;
                 }
             }
