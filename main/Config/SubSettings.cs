@@ -105,6 +105,7 @@ namespace Iridium.Config
         public bool enableNoFailTooEarly = false;
         public bool forceAngleData = false;
         public bool scaleFilterSpeedWithPitch = false;
+        public bool fixCameraRelativeDrag = false;
         public LegacyBehaviorMode legacyFlashMode = LegacyBehaviorMode.Default;
         public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
     }

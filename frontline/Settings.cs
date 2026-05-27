@@ -690,6 +690,10 @@ namespace Iridium
                         IridiumPreset.IconText(sizes, IconStyle.Information, "EditorPauseKeyHint");
                     }
                 }
+
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.fixCameraRelativeDrag, "FixCameraRelativeDrag");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CameraRelativeDragPatches));
             }
             End();
             Separator();
