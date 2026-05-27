@@ -198,5 +198,21 @@
   "RangeBasedRedraw": "范围式重绘 (仅重绘受影响的砖块)",
   "SkipRedundantRemakePath": "跳过冗余的 RemakePath 调用",
   "OptimizeOffsetFloorEvents": "优化事件中的砖块 ID 偏移",
-  "EditorFloorOptimizationWarning": "这些优化会改变编辑器的砖块重建逻辑。如果遇到显示异常，请尝试关闭它们。"
+  "EditorFloorOptimizationWarning": "这些优化会改变编辑器的砖块重建逻辑。如果遇到显示异常，请尝试关闭它们。",
+  "EditorShortcuts": "编辑器快捷键",
+  "EnableEditorShortcuts": "启用编辑器快捷键",
+  "EditorShortcutsSettings": "快捷键设置",
+  "EditorShortcutsDecoration": "装饰物",
+  "EditorShortcutsNavigation": "导航",
+  "EditorShortcutsPopup": "弹窗",
+  "EditorShortcutsHint": "点击按键按钮绑定新按键。点击右侧修饰键按钮切换修饰键组合 (C=Ctrl, A=Alt, S=Shift)。",
+  "ShortcutSelectAll": "全选装饰物",
+  "ShortcutDeselectAll": "取消全选",
+  "ShortcutToggleVisibility": "切换装饰物可见性",
+  "ShortcutFocusDecoration": "聚焦选中装饰物",
+  "ShortcutGoToFloor": "跳转到选中砖块",
+  "CameraFollowOnFloorSelect": "选择砖块时镜头跟随",
+  "ShortcutSelectAllFloors": "全选砖块",
+  "ShortcutPopupSave": "弹窗 - 保存",
+  "ShortcutPopupDiscard": "弹窗 - 放弃"
 }

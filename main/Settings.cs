@@ -24,6 +24,7 @@ namespace Iridium
         public HitSoundSettings hitSound = new();
         public JudgeTextSettings judgeText = new();
         public PatchModeSettings patchMode = new();
+        public EditorShortcutSettings editorShortcuts = new();
 
         private string? _defaultLobbyMusicPathCache;
         private string? _fastLobbyMusicPathCache;
@@ -38,7 +39,8 @@ namespace Iridium
             "UISettings",
             "LevelSelectSettings",
             "CompatibilitySettings",
-            "HitSoundSettings"
+            "HitSoundSettings",
+            "EditorShortcuts"
         };
 
         private int _compatFlashMode = -1;
@@ -90,6 +92,7 @@ namespace Iridium
                             case 2: DrawLevelSelectTab(); break;
                             case 3: DrawCompatibilityTab(); break;
                             case 4: DrawHitSoundAndJudgeTextTab(); break;
+                            case 5: DrawEditorShortcutsTab(); break;
                         }
                     }
                     End();
@@ -843,6 +846,156 @@ AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPause
             }
             PopAlign();
             End();
+        }
+        #endregion
+
+        #region Editor Shortcuts Tab
+        private bool _isBindingShortcutKey = false;
+        private int _bindingShortcutIndex = -1;
+        private int _bindKeyStartFrame = -1;
+
+        private static readonly string[] _shortcutSettingNames = new[]
+        {
+            "ShortcutSelectAll",
+            "ShortcutDeselectAll",
+            "ShortcutToggleVisibility",
+            "ShortcutFocusDecoration",
+            "ShortcutPopupSave",
+            "ShortcutPopupDiscard"
+        };
+
+        private void DrawEditorShortcutsTab()
+        {
+            var sizes = _sizesHolder.Begin();
+            var s = editorShortcuts;
+
+            Text(Localization.Get("EditorShortcuts"), TextStyle.Title);
+            Separator();
+
+            GUI.changed = false;
+            IridiumPreset.SwitchOption(sizes, ref s.enableEditorShortcuts, "EnableEditorShortcuts");
+            if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(EditorShortcutPatches.EditorShortcutUpdatePatch));
+
+            if (s.enableEditorShortcuts)
+            {
+                int idx = 0;
+
+                Separator();
+                Text(Localization.Get("EditorShortcutsDecoration"), TextStyle.Subtitle);
+                Separator();
+                Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+                {
+                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutSelectAll",
+                        ref s.selectAllKey, ref s.selectAllModifiers);
+                    Separator();
+                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutDeselectAll",
+                        ref s.deselectAllKey, ref s.deselectAllModifiers);
+                    Separator();
+                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutToggleVisibility",
+                        ref s.toggleVisibilityKey, ref s.toggleVisibilityModifiers);
+                    Separator();
+                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutFocusDecoration",
+                        ref s.focusDecorationKey, ref s.focusDecorationModifiers);
+                }
+                End();
+
+                Separator();
+                Text(Localization.Get("EditorShortcutsNavigation"), TextStyle.Subtitle);
+                Separator();
+                Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+                {
+                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutGoToFloor",
+                        ref s.goToFloorKey, ref s.goToFloorModifiers);
+                    Separator();
+                    IridiumPreset.SwitchOption(sizes, ref s.cameraFollowOnFloorSelect, "CameraFollowOnFloorSelect");
+                    Separator();
+                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutSelectAllFloors",
+                        ref s.selectAllFloorsKey, ref s.selectAllFloorsModifiers);
+                }
+                End();
+
+                Separator();
+                Text(Localization.Get("EditorShortcutsPopup"), TextStyle.Subtitle);
+                Separator();
+                Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+                {
+                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutPopupSave",
+                        ref s.popupSaveKey, ref s.popupSaveModifiers);
+                    Separator();
+                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutPopupDiscard",
+                        ref s.popupDiscardKey, ref s.popupDiscardModifiers);
+                }
+                End();
+
+                Separator();
+                IridiumPreset.IconText(sizes, IconStyle.Information, "EditorShortcutsHint");
+            }
+        }
+
+        private void DrawShortcutKeyBinding(Sizes sizes, int index, string name,
+            ref int key, ref int modifiers)
+        {
+            string display = (_isBindingShortcutKey && _bindingShortcutIndex == index)
+                ? Localization.Get("EditorPauseKeyPress")
+                : EditorShortcutPatches.GetKeyDisplay(key, modifiers);
+
+            Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
+            PushAlign(0.5);
+            {
+                Text(Localization.Get(name), options: WidthMin);
+                Fill();
+
+                if (Button(display, ButtonStyle.Element, Width(160)))
+                {
+                    _isBindingShortcutKey = true;
+                    _bindingShortcutIndex = index;
+                    _bindKeyStartFrame = Time.frameCount;
+                }
+
+                string modLabel = GetModifierLabel(modifiers);
+                if (Button(modLabel, ButtonStyle.Element, Width(60)))
+                {
+                    modifiers = EditorShortcutPatches.CycleModifier(modifiers);
+                }
+            }
+            PopAlign();
+            End();
+
+            if (_isBindingShortcutKey && _bindingShortcutIndex == index)
+            {
+                var e = Event.current;
+                if (e.type == EventType.KeyDown)
+                {
+                    if (e.keyCode != KeyCode.None && e.keyCode != KeyCode.Escape)
+                    {
+                        key = (int)e.keyCode;
+                        _isBindingShortcutKey = false;
+                        _bindingShortcutIndex = -1;
+                        e.Use();
+                    }
+                    else if (e.keyCode == KeyCode.Escape)
+                    {
+                        _isBindingShortcutKey = false;
+                        _bindingShortcutIndex = -1;
+                        e.Use();
+                    }
+                }
+                else if (e.type == EventType.MouseDown && Time.frameCount != _bindKeyStartFrame)
+                {
+                    _isBindingShortcutKey = false;
+                    _bindingShortcutIndex = -1;
+                }
+            }
+        }
+
+        private static string GetModifierLabel(int mods)
+        {
+            if (mods == 0) return "---";
+            string result = "";
+            if ((mods & EditorShortcutPatches.MOD_CTRL) != 0) result += "C";
+            if ((mods & EditorShortcutPatches.MOD_ALT) != 0) result += "A";
+            if ((mods & EditorShortcutPatches.MOD_SHIFT) != 0) result += "S";
+            return result;
         }
         #endregion
 

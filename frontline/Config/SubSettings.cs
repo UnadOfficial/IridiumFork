@@ -188,4 +188,48 @@ namespace Iridium.Config
         /// </summary>
         public bool useILPatch = false;
     }
+
+    public class EditorShortcutSettings
+    {
+        public bool enableEditorShortcuts = false;
+
+        // --- Decoration shortcuts ---
+
+        // Select All Decorations (default: Ctrl+Shift+A)
+        public int selectAllKey = 65; // KeyCode.A
+        public int selectAllModifiers = 5; // Ctrl+Shift
+
+        // Deselect All (default: Ctrl+Shift+D)
+        public int deselectAllKey = 68; // KeyCode.D
+        public int deselectAllModifiers = 5; // Ctrl+Shift
+
+        // Toggle Visibility (default: Ctrl+E)
+        public int toggleVisibilityKey = 69; // KeyCode.E
+        public int toggleVisibilityModifiers = 1; // Ctrl
+
+        // Focus Decoration (default: Ctrl+G)
+        public int focusDecorationKey = 71; // KeyCode.G
+        public int focusDecorationModifiers = 1; // Ctrl
+
+        // --- Navigation shortcuts ---
+
+        // Go To Selected Floor (default: Ctrl+Shift+N)
+        public int goToFloorKey = 78; // KeyCode.N
+        public int goToFloorModifiers = 5; // Ctrl+Shift
+        public bool cameraFollowOnFloorSelect = true; // SelectFloor 附带镜头跟随
+
+        // Select All Floors (default: Ctrl+Shift+W)
+        public int selectAllFloorsKey = 87; // KeyCode.W
+        public int selectAllFloorsModifiers = 5; // Ctrl+Shift
+
+        // --- Popup shortcuts ---
+
+        // Popup Save (default: Return)
+        public int popupSaveKey = 13; // KeyCode.Return
+        public int popupSaveModifiers = 0;
+
+        // Popup Discard (default: D)
+        public int popupDiscardKey = 68; // KeyCode.D
+        public int popupDiscardModifiers = 0;
+    }
 }
