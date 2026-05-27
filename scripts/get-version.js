@@ -59,7 +59,7 @@ function getVersionInfo(projectDir, adofaiVer) {
         if (vtype === 'release') {
             versionTag = `${baseVersion}+adofai${adofaiVer}`;
             releaseName = `${baseVersion}+adofai${adofaiVer}`;
-            tagName = `r${releaseNumber}`;
+            tagName = `r${releaseNumber}_final`;
         } else {
             versionTag = `${baseVersion}_${vtype}${minor}+adofai${adofaiVer}`;
             releaseName = `${baseVersion}_${vtype}${minor}+adofai${adofaiVer}`;

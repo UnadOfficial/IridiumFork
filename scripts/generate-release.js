@@ -57,13 +57,24 @@ function getVersionInfo(projectDir) {
 }
 
 /**
- * 获取上一个 release 的 tag（倒数第二个 tag，排除当前发布的 tag）
+ * 获取上一个 tag
+ * @param {boolean} [excludePrerelease=false] - true 时跳过 beta/prerelease 等预发布 tag，只找正式版 tag
  */
-function getLastReleaseTag() {
+function getLastReleaseTag(excludePrerelease = false) {
     try {
-        // 找到当前提交的父节点能到达的最近 tag，即上一次 release 的 tag
-        const tag = execSync('git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo ""', { encoding: 'utf8' }).trim();
-        return tag || null;
+        if (excludePrerelease) {
+            // 遍历所有可从 HEAD~1 到达的 tag，找到最近的一个正式版 tag
+            const tags = execSync('git tag --merged HEAD~1 --sort=-version:refname 2>/dev/null', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+            for (const tag of tags) {
+                if (!tag.includes('beta') && !tag.includes('prerelease')) {
+                    return tag;
+                }
+            }
+            return null;
+        } else {
+            const tag = execSync('git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo ""', { encoding: 'utf8' }).trim();
+            return tag || null;
+        }
     } catch (error) {
         return null;
     }
@@ -71,10 +82,11 @@ function getLastReleaseTag() {
 
 /**
  * 获取从上一个 release 到现在的所有 commit
+ * @param {boolean} [excludePrerelease=false] - true 时只从上一个正式版 tag 开始算
  */
-function getCommitLogSinceLastRelease() {
+function getCommitLogSinceLastRelease(excludePrerelease = false) {
     try {
-        const lastTag = getLastReleaseTag();
+        const lastTag = getLastReleaseTag(excludePrerelease);
         let logCommand;
         
         if (lastTag) {
@@ -182,6 +194,9 @@ function generateReleaseBody(versionTag, commitSha, options = {}) {
     const buildDate = new Date().toISOString().split('T')[0];
     const { includeChangelog = true, includeCommits = true } = options;
     
+    // 判断版本类型：预发布版还是正式版
+    const isPrerelease = versionTag.includes('beta') || versionTag.includes('prerelease');
+    
     let changelogSection = '';
     let commitSection = '';
     
@@ -197,7 +212,7 @@ ${changelog}
     }
     
     if (includeCommits) {
-        const commits = getCommitLogSinceLastRelease();
+        const commits = getCommitLogSinceLastRelease(!isPrerelease);
         if (commits.length > 0) {
             commitSection = `#### 提交记录 / Commits
 

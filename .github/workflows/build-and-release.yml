@@ -144,7 +144,7 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          const { getCommitLog, generateReleaseBody } = require('./scripts/generate-release.js');
+          const { generateReleaseBody } = require('./scripts/generate-release.js');
 
           const releaseName = `${{ steps.version_info.outputs.BASE_TAG }}`;
           const versionTag = `${{ steps.version_info.outputs.BASE_TAG }}`;
@@ -161,8 +161,7 @@ jobs:
             finalTagName = `${tagName}_${shortSha}`;
           }
 
-          const commits = getCommitLog();
-          const releaseBody = generateReleaseBody(versionTag, context.sha, commits);
+          const releaseBody = generateReleaseBody(versionTag, context.sha);
 
           try {
             if (releaseExists) {
