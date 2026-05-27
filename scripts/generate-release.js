@@ -70,7 +70,9 @@ function getLastReleaseTag(excludePrerelease = false) {
                     return tag;
                 }
             }
-            return null;
+            // 没有正式版 tag 时降级到最近的一个 tag（任意类型）
+            const tag = execSync('git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo ""', { encoding: 'utf8' }).trim();
+            return tag || null;
         } else {
             const tag = execSync('git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo ""', { encoding: 'utf8' }).trim();
             return tag || null;
