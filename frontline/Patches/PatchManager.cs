@@ -169,10 +169,14 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(BugfixPatches.TurnaroundConditionFix),
                 () => Main.Settings.compatibility.fixTurnaroundCondition));
             // Always-on: fixes non-coop missAngle not forwarded to Show (non-Perfect rotation missing)
-            _definitions.Add(new PatchDef(typeof(BugfixPatches.HitTextMeshShowRotationFixPatch), () => true));
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.HitTextMeshShowRotationFixPatch), () => Main.Settings.compatibility.fixJudgeRotation));
             // Pause hotkey in editor auto-play (always applied; CheckPauseKey reads the setting at runtime)
             _definitions.Add(new PatchDef(typeof(EditorPausePatches), () => true));
             _definitions.Add(new PatchDef(typeof(FixErrorMeterCCW), () => Main.Settings.compatibility.fixErrorMeterCCW));
+            // Always-on: coop pause beat LockInput shouldn't block other players
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPauseHandleLockFix), () => Main.Settings.compatibility.fixCoopPauseLock));
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPlayerHitFix), () => Main.Settings.compatibility.fixCoopPauseLock));
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPauseLockFix), () => Main.Settings.compatibility.fixCoopPauseLock));
 
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));

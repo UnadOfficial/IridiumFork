@@ -722,6 +722,20 @@ namespace Iridium
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.FixErrorMeterCCW));
                 Separator();
 
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.fixJudgeRotation, "FixJudgeRotation");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.HitTextMeshShowRotationFixPatch));
+                Separator();
+
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.fixCoopPauseLock, "FixCoopPauseLock");
+                if (GUI.changed)
+                {
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.CoopPauseLockFix));
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.CoopPauseHandleLockFix));
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.CoopPlayerHitFix));
+                }
+                Separator();
 
             }
             End();

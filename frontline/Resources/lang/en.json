@@ -184,6 +184,8 @@
     "OptimizeParticleLod": "LOD: Skip Distant Particle Updates",
     "PortalTravelFix": "Portal Travel Fix",
     "FixErrorMeterCCW": "Fix Error Meter Direction after Twirl Miss",
+    "FixJudgeRotation": "Fix Non-Perfect Rotation Animation in ShowHitText",
+    "FixCoopPauseLock": "Fix Coop Pause Beat Locking Other Players",
     "FixEditorPlayResetMistakes": "Reset Mistakes on Editor Play",
     "FixTurnaroundCondition": "Fix Pause Beat Timing on Hairpin Turn Floors",
     "EditorPauseAllowed": "Enable Pause in Editor Auto-play",

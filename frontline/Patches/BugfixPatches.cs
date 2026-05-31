@@ -115,7 +115,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrHitTextMesh __instance)
             {
-                if (scrPlayerManager.playerCount > 1) return;
+                if (scrController.coopMode) return;
                 if (__instance.hitMargin == HitMargin.Perfect) return;
 
                 __instance.transform.DOLocalRotate(
@@ -174,6 +174,99 @@ namespace Iridium.Patches
                 }
 
                 return codes;
+            }
+        }
+
+        /// <summary>
+        /// Coop mode: LockInput is global (scrController.responsive = false),
+        /// which blocks ALL players' input when one player hits a pause beat.
+        ///
+        /// Fix uses per-player pause tracking:
+        ///   1) LockInput Prefix — coop mode skips global responsive=false
+        ///   2) HandlePause Postfix — detects pause events, stores per-player state
+        ///   3) scrPlayer.Hit Prefix — coop mode checks per-player pause state
+        /// </summary>
+        [HarmonyPatch(typeof(scrController), nameof(scrController.LockInput))]
+        public static class CoopPauseLockFix
+        {
+            internal static readonly Dictionary<int, float> _playerPauseEndTimes = new();
+
+            [HarmonyPrefix]
+            public static bool Prefix()
+            {
+                return !scrController.coopMode;
+            }
+
+            public static void SetPause(scrPlayer player, float lockTime)
+            {
+                if (player == null || lockTime <= 0f) return;
+                float pitch = Mathf.Max(ADOBase.conductor.song.pitch, 0.001f);
+                _playerPauseEndTimes[player.playerID] = Time.time + lockTime / pitch;
+            }
+
+            public static bool IsPaused(scrPlayer player)
+            {
+                if (player == null) return false;
+                if (_playerPauseEndTimes.TryGetValue(player.playerID, out var endTime))
+                {
+                    if (Time.time >= endTime)
+                    {
+                        _playerPauseEndTimes.Remove(player.playerID);
+                        return false;
+                    }
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Detects when HandlePause enters the pause branch and stores
+        /// per-player pause state for coop mode.
+        /// Postfix-only: uses floor param to confirm this is a pause floor,
+        /// then reads the private lockTime field.
+        /// </summary>
+        [HarmonyPatch(typeof(scrPlanet), nameof(scrPlanet.HandlePause))]
+        public static class CoopPauseHandleLockFix
+        {
+            private static readonly AccessTools.FieldRef<scrPlanet, float> _getLockTime = AccessTools.FieldRefAccess<scrPlanet, float>("lockTime");
+
+            [HarmonyPostfix]
+            public static void Postfix(scrPlanet __instance, scrFloor floor)
+            {
+                if (!scrController.coopMode) return;
+                if (floor == null || floor.freeroam || floor.extraBeats <= 0f) return;
+
+                // HandlePause entered the pause branch; read the lockTime it set
+                float lockTime = _getLockTime(__instance);
+                if (lockTime <= 0f) return;
+
+                // Same condition HandlePause uses before calling LockInput
+                if (scrController.instance?.currentState != States.PlayerControl) return;
+
+                CoopPauseLockFix.SetPause(__instance.player, lockTime);
+            }
+        }
+
+        /// <summary>
+        /// In coop mode, blocks scrPlayer.Hit() if this player is paused.
+        /// Only blocks the pausing player; others play normally.
+        /// </summary>
+        [HarmonyPatch(typeof(scrPlayer), nameof(scrPlayer.Hit))]
+        public static class CoopPlayerHitFix
+        {
+            [HarmonyPrefix]
+            public static bool Prefix(scrPlayer __instance, ref bool __result)
+            {
+                if (!scrController.coopMode) return true;
+
+                if (CoopPauseLockFix.IsPaused(__instance))
+                {
+                    __result = false;
+                    return false; // Skip original Hit()
+                }
+
+                return true; // Let original Hit() run normally
             }
         }
     }
