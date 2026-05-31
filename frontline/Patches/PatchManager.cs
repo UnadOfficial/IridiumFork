@@ -1,9 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Reflection;
 using HarmonyLib;
 using Iridium.Config;
 using Iridium.Core;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using static Iridium.Patches.BugfixPatches;
 
 namespace Iridium.Patches
 {
@@ -152,7 +153,6 @@ namespace Iridium.Patches
             // --- JSON Deserialize Optimization ---
             var jsonOptCond = () => Main.Settings.optimizer.customLevelReadOptimization;
             _definitions.Add(new PatchDef(typeof(JsonPatches.PatchGetCustomLevelName), jsonOptCond));
-            _definitions.Add(new PatchDef(typeof(JsonPatches.PatchLevelDataCLSLoadLevel), jsonOptCond));
 
             // --- Bugfix Patches (2.10.0 only) ---
             _definitions.Add(new PatchDef(typeof(BugfixPatches.PortalTravelFixPatch),
@@ -172,6 +172,7 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(BugfixPatches.HitTextMeshShowRotationFixPatch), () => true));
             // Pause hotkey in editor auto-play (always applied; CheckPauseKey reads the setting at runtime)
             _definitions.Add(new PatchDef(typeof(EditorPausePatches), () => true));
+            _definitions.Add(new PatchDef(typeof(FixErrorMeterCCW), () => Main.Settings.compatibility.fixErrorMeterCCW));
 
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));

@@ -119,19 +119,6 @@ namespace Iridium.Patches
             }
         }
 
-        /// <summary>
-        /// LevelDataCLS.LoadLevel 同理，跳过 actions 数组解析。
-        /// </summary>
-        [HarmonyPatch(typeof(LevelDataCLS), nameof(LevelDataCLS.LoadLevel))]
-        public static class PatchLevelDataCLSLoadLevel
-        {
-            [HarmonyTranspiler]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-            {
-                return ReplaceDeserializeWithPartially(instructions);
-            }
-        }
-
         [HarmonyPatch(typeof(LevelData), nameof(LevelData.Decode))]
         public static class ForceAngleDataPatch
         {

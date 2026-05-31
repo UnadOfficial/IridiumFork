@@ -125,5 +125,56 @@ namespace Iridium.Patches
                 );
             }
         }
+
+        /// <summary>
+        /// Fixes v2.10.0 regression: after Twirl direction change, a miss on the
+        /// first floor uses prevfloor.isCCW instead of the judged floor's isCCW,
+        /// causing the error meter hand to point the wrong direction.
+        ///
+        /// Replaces the prevfloor load chain:
+        ///   planetarySystem.chosenPlanet.player.currFloor.prevfloor.isCCW
+        /// with:
+        ///   scrPlanet2.currfloor.isCCW
+        /// (scrPlanet2 = chosenPlanet captured BEFORE SwitchChosen)
+        /// </summary>
+        [HarmonyPatch(typeof(scrPlayer), "Hit")]
+        public static class FixErrorMeterCCW
+        {
+            [HarmonyTranspiler]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                var f_planetarySystem = AccessTools.Field(typeof(scrPlayer), "planetarySystem");
+                var f_chosenPlanet = AccessTools.Field(typeof(PlanetarySystem), "chosenPlanet");
+                var f_player = AccessTools.Field(typeof(scrPlanet), "player");
+                var m_get_currFloor = AccessTools.PropertyGetter(typeof(scrPlayer), "currFloor");
+                var f_prevfloor = AccessTools.Field(typeof(scrFloor), "prevfloor");
+                var f_currfloor = AccessTools.Field(typeof(scrPlanet), "currfloor");
+
+                var codes = instructions.ToList();
+
+                for (int i = 0; i <= codes.Count - 6; i++)
+                {
+                    // Match: ldarg.0 → ldfld planetarySystem → ldfld chosenPlanet
+                    //        → ldfld player → callvirt get_currFloor → ldfld prevfloor
+                    if (codes[i].opcode == OpCodes.Ldarg_0 &&
+                        codes[i + 1].opcode == OpCodes.Ldfld && codes[i + 1].operand is FieldInfo fi1 && fi1 == f_planetarySystem &&
+                        codes[i + 2].opcode == OpCodes.Ldfld && codes[i + 2].operand is FieldInfo fi2 && fi2 == f_chosenPlanet &&
+                        codes[i + 3].opcode == OpCodes.Ldfld && codes[i + 3].operand is FieldInfo fi3 && fi3 == f_player &&
+                        codes[i + 4].opcode == OpCodes.Callvirt && codes[i + 4].operand is MethodInfo mi && mi == m_get_currFloor &&
+                        codes[i + 5].opcode == OpCodes.Ldfld && codes[i + 5].operand is FieldInfo fi4 && fi4 == f_prevfloor)
+                    {
+                        // Replace with: ldloc.1 (scrPlanet2); ldfld currfloor
+                        codes[i].opcode = OpCodes.Ldloc_1;
+                        codes[i].operand = null;
+                        codes[i + 1].opcode = OpCodes.Ldfld;
+                        codes[i + 1].operand = f_currfloor;
+                        codes.RemoveRange(i + 2, 4);
+                        break;
+                    }
+                }
+
+                return codes;
+            }
+        }
     }
 }

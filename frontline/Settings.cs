@@ -717,6 +717,12 @@ namespace Iridium
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.TurnaroundConditionFix));
                 Separator();
 
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.fixErrorMeterCCW, "FixErrorMeterCCW");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.FixErrorMeterCCW));
+                Separator();
+
+
             }
             End();
             Separator();
