@@ -183,7 +183,7 @@ jobs:
               name: finalReleaseName,
               body: releaseBody,
               draft: false,
-              prerelease: versionTag.includes('beta') || versionTag.includes('prerelease')
+              prerelease: versionTag.includes('beta') || versionTag.includes('prerelease') || versionTag.includes('nightly')
             });
 
             core.setOutput('release_id', release.data.id);
