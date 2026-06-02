@@ -172,7 +172,6 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(BugfixPatches.HitTextMeshShowRotationFixPatch), () => Main.Settings.compatibility.fixJudgeRotation));
             // Pause hotkey in editor auto-play (always applied; CheckPauseKey reads the setting at runtime)
             _definitions.Add(new PatchDef(typeof(EditorPausePatches), () => true));
-            _definitions.Add(new PatchDef(typeof(FixErrorMeterCCW), () => Main.Settings.compatibility.fixErrorMeterCCW));
             // Always-on: coop pause beat LockInput shouldn't block other players
             _definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPauseHandleLockFix), () => Main.Settings.compatibility.fixCoopPauseLock));
             _definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPlayerHitFix), () => Main.Settings.compatibility.fixCoopPauseLock));

@@ -183,7 +183,6 @@
     "OptimizeParticleCulling": "暂停屏幕外粒子模拟",
     "OptimizeParticleLod": "LOD: 跳过远处粒子更新",
     "PortalTravelFix": "修复传送卡死",
-    "FixErrorMeterCCW": "修复Twirl后空敲误计量器方向相反",
     "FixCoopPauseLock": "修复合作模式下暂停拍导致其他玩家死亡",
     "FixJudgeRotation": "修复非Perfect判定时缺少旋转动画",
     "FixEditorPlayResetMistakes": "编辑器播放时重置失误记录",

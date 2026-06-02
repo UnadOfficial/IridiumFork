@@ -718,11 +718,6 @@ namespace Iridium
                 Separator();
 
                 GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.fixErrorMeterCCW, "FixErrorMeterCCW");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.FixErrorMeterCCW));
-                Separator();
-
-                GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.fixJudgeRotation, "FixJudgeRotation");
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.HitTextMeshShowRotationFixPatch));
                 Separator();
