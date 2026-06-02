@@ -197,7 +197,7 @@ function generateReleaseBody(versionTag, commitSha, options = {}) {
     const { includeChangelog = true, includeCommits = true } = options;
     
     // 判断版本类型：预发布版还是正式版
-    const isPrerelease = versionTag.includes('beta') || versionTag.includes('prerelease');
+    const isPrerelease = versionTag.includes('beta') || versionTag.includes('prerelease') || versionTag.includes('nightly');
     
     let changelogSection = '';
     let commitSection = '';
