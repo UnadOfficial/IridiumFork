@@ -65,6 +65,9 @@ Desktop.ini
 # Recycle Bin
 $RECYCLE.BIN/
 
+# Game binaries (private submodule / manual copy)
+lib/
+
 # Other files
 TestModProject
 .adofai/

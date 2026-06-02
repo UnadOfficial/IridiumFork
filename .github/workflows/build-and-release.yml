@@ -34,6 +34,10 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Checkout game libraries (private)
+      run: |
+        git clone https://x-access-token:${{ secrets.LIBS_PAT }}@github.com/Xbodwf/adofai-libs.git lib
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
