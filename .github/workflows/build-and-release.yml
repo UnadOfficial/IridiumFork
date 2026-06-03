@@ -23,7 +23,7 @@ jobs:
           - game-version: v2.9.8
             project-dir: main
             project-file: Iridium.csproj
-          - game-version: v2.10.0
+          - game-version: v3.1.0
             project-dir: frontline
             project-file: Iridium_frontline.csproj
     runs-on: ubuntu-latest
@@ -36,17 +36,17 @@ jobs:
 
     - name: Checkout game libraries (private)
       run: |
-        git clone https://x-access-token:${{ secrets.LIBS_PAT }}@github.com/Xbodwf/adofai-libs.git lib
+        git clone https://x-access-token:${{ secrets.LIBS_PAT }}@github.com/adofaiex/adofai-libs.git lib
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '10.0.x'
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '24'
 
     - name: Build project (${{ matrix.game-version }})
       run: dotnet build ${{ matrix.project-dir }}/${{ matrix.project-file }} --configuration Release
