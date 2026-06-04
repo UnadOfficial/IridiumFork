@@ -8,6 +8,8 @@
   "MultipleOf4": "Resize to Multiple of 4 (Better Compatibility)",
   "DivideImageBy": "Decoration Scale Factor",
   "DontResizeCollider": "Don't Resize Decoration Colliders",
+  "UseLossyCompression": "Use Lossy Compression (JPEG)",
+  "LossyQuality": "JPEG Quality",
   "DisableShadows": "Disable Decoration Shadows",
   "ImageOptimizations": "Image Optimizations",
   "RenderingOptimizations": "Rendering Optimizations",

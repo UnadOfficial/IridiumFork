@@ -192,6 +192,48 @@ namespace Iridium.Patches
                 return pixels * 4;
             }
 
+            private static void ApplyCompression(Texture2D tex)
+            {
+                if (!tex.isReadable) return;
+
+                var settings = Main.Settings.optimizer;
+                if (settings.useLossyCompression)
+                {
+                    try
+                    {
+                        int w = tex.width, h = tex.height;
+                        Color32[] original = tex.GetPixels32();
+
+                        var rgbTex = new Texture2D(w, h, TextureFormat.RGB24, false);
+                        var rgbOnly = new Color32[original.Length];
+                        for (int i = 0; i < original.Length; i++)
+                            rgbOnly[i] = new Color32(original[i].r, original[i].g, original[i].b, 255);
+                        rgbTex.SetPixels32(rgbOnly);
+                        rgbTex.Apply(false);
+
+                        byte[] jpgBytes = ImageConversion.EncodeToJPG(rgbTex, Mathf.Clamp(settings.lossyQuality, 10, 100));
+                        UnityEngine.Object.DestroyImmediate(rgbTex);
+
+                        if (jpgBytes != null && jpgBytes.Length > 0)
+                        {
+                            var decoded = new Texture2D(w, h, TextureFormat.RGB24, false);
+                            ImageConversion.LoadImage(decoded, jpgBytes, false);
+                            Color32[] decodedRgb = decoded.GetPixels32();
+                            UnityEngine.Object.DestroyImmediate(decoded);
+
+                            for (int i = 0; i < original.Length; i++)
+                                original[i] = new Color32(decodedRgb[i].r, decodedRgb[i].g, decodedRgb[i].b, original[i].a);
+
+                            tex.SetPixels32(original);
+                        }
+                    }
+                    catch { }
+                }
+
+                tex.Compress(false);
+                tex.Apply(false, true);
+            }
+
             private static void TryFastCompress(ref Texture2D tex)
             {
                 if (Main.Settings.optimizer.dontCompress) return;
@@ -200,8 +242,7 @@ namespace Iridium.Patches
                 {
                     if (tex.isReadable)
                     {
-                        tex.Compress(false);
-                        tex.Apply(false, true);
+                        ApplyCompression(tex);
                     }
                 }
                 catch { }
@@ -428,8 +469,7 @@ namespace Iridium.Patches
 
                     if (!dontCompress && tex.isReadable)
                     {
-                        tex.Compress(false);
-                        tex.Apply(false, true);
+                        ApplyCompression(tex);
                     }
                     else
                     {
@@ -530,8 +570,7 @@ namespace Iridium.Patches
                             {
                                 try
                                 {
-                                    optimized.Compress(false);
-                                    optimized.Apply(false, true);
+                                    ApplyCompression(optimized);
                                 }
                                 catch { optimized.Apply(false, false); }
                             }

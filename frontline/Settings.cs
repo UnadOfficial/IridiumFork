@@ -184,18 +184,34 @@ namespace Iridium
             Separator();
             Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
             {
-                InvertedSwitchOption(sizes, ref optimizer.dontShowSavedMemory, "ShowSavedMemory");
-                Separator();
                 InvertedSwitchOption(sizes, ref optimizer.dontCompress, "CompressImage");
-                Separator();
-                InvertedSwitchOption(sizes, ref optimizer.dontResizeMultipleOf4, "MultipleOf4");
 
-                if (optimizer.dontCompress) optimizer.dontResizeMultipleOf4 = true;
+                bool compressEnabled = !optimizer.dontCompress;
+                if (compressEnabled)
+                {
+                    Separator();
+                    InvertedSwitchOption(sizes, ref optimizer.dontShowSavedMemory, "ShowSavedMemory");
 
-                Separator();
-                IridiumPreset.DoubleOption(sizes, ref optimizer.divideBy, "DivideImageBy", DoubleFormat(precision: 1));
-                Separator();
-                InvertedSwitchOption(sizes, ref optimizer.dontResizeCollider, "DontResizeCollider");
+                    Separator();
+                    IridiumPreset.SwitchOption(sizes, ref optimizer.useLossyCompression, "UseLossyCompression");
+
+                    if (optimizer.useLossyCompression)
+                    {
+                        Separator();
+                        var quality = optimizer.lossyQuality;
+                        IridiumPreset.IntOption(sizes, ref quality, "LossyQuality", IntFormat(10, 100));
+                        optimizer.lossyQuality = Mathf.Clamp(quality, 10, 100);
+                    }
+
+                    Separator();
+                    InvertedSwitchOption(sizes, ref optimizer.dontResizeMultipleOf4, "MultipleOf4");
+                    if (optimizer.dontCompress) optimizer.dontResizeMultipleOf4 = true;
+
+                    Separator();
+                    IridiumPreset.DoubleOption(sizes, ref optimizer.divideBy, "DivideImageBy", DoubleFormat(precision: 1));
+                    Separator();
+                    InvertedSwitchOption(sizes, ref optimizer.dontResizeCollider, "DontResizeCollider");
+                }
             }
             End();
             Separator();

@@ -14,6 +14,8 @@ namespace Iridium.Config
         public bool dontCompress = false;
         public bool dontResizeMultipleOf4 = false;
         public bool dontResizeCollider = false;
+        public bool useLossyCompression = false;
+        public int lossyQuality = 90;
         public bool disableShadows = false;
         public bool optimizeDecorationUpdate = false;
         public bool optimizeTileUpdate = false;

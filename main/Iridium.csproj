@@ -313,7 +313,6 @@
 		<Message Text="Files copied to: $(OutDir)" Importance="high" />
 	</Target>
 	<PropertyGroup>
-		<GameExePath>D:\Program Files (x86)\Steam\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice.exe</GameExePath>
 		<AutoLaunchGame>true</AutoLaunchGame>
 	</PropertyGroup>
 	<Target Name="DeployAndLaunch" AfterTargets="CopyToOut" Condition="'$(GameExePath)' != '' AND Exists('$(GameExePath)')">

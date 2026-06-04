@@ -19,10 +19,6 @@ namespace Iridium
         // 当前版本号（用于版本升级检测）
         private static string CurrentVersion => VersionManager.GetFullVersionString();
 
-        private static bool _showFirstRunTips = false;
-        private static bool _showUpgradeTips = false;
-        private static string _upgradeMessageKey = "";
-
         public static bool Load(UnityModManager.ModEntry modEntry)
         {
             _mainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
@@ -30,26 +26,6 @@ namespace Iridium
             Logger = new Logger(Mod.Logger);
             Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
             Localization.Load();
-
-            // 检查是否需要显示首次启动提示
-            if (Main.Settings.firstRun)
-            {
-                _showFirstRunTips = true;
-            }
-
-            // 检查是否需要显示版本升级提示
-            // 只有当从旧版本升级到 beta5 或更高版本时才触发特定提示
-            if (!Main.Settings.firstRun && Main.Settings.lastVersion != CurrentVersion)
-            {
-                // 如果是从 beta5 之前的版本升级到 beta5+
-                // 或者未来有新的重大更新提示，可以在这里根据版本号逻辑判断
-                // 目前逻辑：只要版本变了且没看过 beta5 的提示，就显示一次
-                if (string.IsNullOrEmpty(Main.Settings.lastUpgradeMessageSeen_106_beta5) || Main.Settings.lastUpgradeMessageSeen_106_beta5 != "1.0.6_beta5")
-                {
-                    _showUpgradeTips = true;
-                    _upgradeMessageKey = "UpgradeMessage_1_0_6_beta5";
-                }
-            }
 
             modEntry.OnToggle = OnToggle;
             modEntry.OnGUI = Main.Settings.OnGUI;
@@ -118,13 +94,15 @@ namespace Iridium
                 }
 
                 // 如果需要显示弹窗，使用 MainWindow
-                if (_showFirstRunTips)
+                if (Main.Settings.firstRun)
                 {
                     UI.MainWindow.ShowFirstRun();
                 }
-                else if (_showUpgradeTips)
+                else if (Main.Settings.lastVersion != CurrentVersion
+                    && (string.IsNullOrEmpty(Main.Settings.lastUpgradeMessageSeen_106_beta5)
+                        || Main.Settings.lastUpgradeMessageSeen_106_beta5 != "1.0.6_beta5"))
                 {
-                    UI.MainWindow.ShowUpgrade(_upgradeMessageKey);
+                    UI.MainWindow.ShowUpgrade("UpgradeMessage_1_0_6_beta5");
                 }
             }
             else

@@ -1,119 +1,230 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using static Iridium.UI.IridiumLayout;
 
 namespace Iridium.UI
 {
-    public class MainWindow : MonoBehaviour
+    public class IridiumWindow : MonoBehaviour
     {
-        private static MainWindow? _instance;
-        private static bool _showFirstRunTips;
-        private static bool _showUpgradeTips;
-        private static string _upgradeMessageKey = "";
-        private Rect _windowRect = new(Screen.width / 2f - 200, Screen.height / 2f - 100, 400, 200);
+        public class ButtonConfig
+        {
+            public string Text { get; set; }
+            public Action OnClick { get; set; }
+            public ButtonStyle Style { get; set; } = ButtonStyle.Primary;
+            public bool CloseOnClick { get; set; } = true;
+        }
+
+        public class Config
+        {
+            public string Title { get; set; } = "";
+            public string Message { get; set; } = "";
+            public IconStyle? Icon { get; set; }
+            public Vector2 Size { get; set; } = new(400, 200);
+            public ButtonConfig[] Buttons { get; set; } = Array.Empty<ButtonConfig>();
+            public Action OnClose { get; set; }
+        }
+
+        private Config _config;
+        private Rect _windowRect;
         private SizesGroup.Holder _sizesHolder = new();
+        private bool _isDragging;
+        private Vector2 _dragOffset;
 
-        public static void ShowFirstRun()
-        {
-            _showFirstRunTips = true;
-            _showUpgradeTips = false;
-            EnsureInstance();
-        }
+        private static readonly List<IridiumWindow> _activeWindows = new();
 
-        public static void ShowUpgrade(string messageKey)
-        {
-            _showUpgradeTips = true;
-            _showFirstRunTips = false;
-            _upgradeMessageKey = messageKey;
-            EnsureInstance();
-        }
+        private static GameObject? _root;
 
-        private static void EnsureInstance()
+        private static GameObject EnsureRoot()
         {
-            if (_instance == null)
+            if (_root == null)
             {
-                var go = new GameObject("IridiumMainWindow");
-                _instance = go.AddComponent<MainWindow>();
-                DontDestroyOnLoad(go);
+                _root = new GameObject("IridiumWindowRoot");
+                DontDestroyOnLoad(_root);
+            }
+            return _root;
+        }
+
+        public static IridiumWindow Show(Config config)
+        {
+            var root = EnsureRoot();
+            var go = new GameObject("IridiumWindow");
+            go.transform.SetParent(root.transform);
+            var window = go.AddComponent<IridiumWindow>();
+            window._config = config;
+            window._windowRect = new Rect(
+                (Screen.width - config.Size.x) / 2f,
+                (Screen.height - config.Size.y) / 2f,
+                config.Size.x,
+                config.Size.y
+            );
+            _activeWindows.Add(window);
+            return window;
+        }
+
+        public static void Close(IridiumWindow window)
+        {
+            if (window == null) return;
+            _activeWindows.Remove(window);
+            window._config?.OnClose?.Invoke();
+            Destroy(window.gameObject);
+
+            if (_activeWindows.Count == 0 && _root != null)
+            {
+                Destroy(_root);
+                _root = null;
             }
         }
+
+        public static void CloseAll()
+        {
+            foreach (var w in _activeWindows.ToArray())
+                Close(w);
+        }
+
+        public static bool HasActiveWindows => _activeWindows.Count > 0;
 
         private void OnGUI()
         {
             EnsureTexturesAlive();
-
-            if (_showFirstRunTips)
-            {
-                _windowRect = GUI.Window(998, _windowRect, DrawFirstRunWindow, Localization.Get("FirstRunTitle"));
-                return;
-            }
-
-            if (_showUpgradeTips)
-            {
-                _windowRect = GUI.Window(997, _windowRect, DrawUpgradeWindow, Localization.Get("UpgradeTitle"));
-            }
+            DrawWindow();
         }
 
-        private void DrawFirstRunWindow(int windowID)
+        private void DrawWindow()
         {
             var sizes = _sizesHolder.Begin();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Padding);
+            GUILayout.BeginArea(_windowRect);
             {
-                Space(10);
-                Text(Localization.Get("FirstRunMessage"), TextStyle.Normal, WidthMax);
-                FlexibleSpace();
-                Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
+                Begin(ContainerDirection.Vertical, ContainerStyle.Background, sizes: sizes, options: WidthMax);
                 {
-                    Fill();
-                    if (Button(Localization.Get("Understand"), ButtonStyle.Primary, Width(120)))
+                    Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
                     {
-                        _showFirstRunTips = false;
-                        Main.Settings.firstRun = false;
-                        Main.Settings.lastVersion = VersionManager.GetFullVersionString();
-                        Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
-                        if (Main.Mod != null) Main.Settings.Save(Main.Mod);
-                        if (!_showUpgradeTips)
+                        if (_config.Icon.HasValue)
                         {
-                            Destroy(gameObject);
-                            _instance = null;
+                            Icon(_config.Icon.Value);
+                            Space(8);
                         }
+                        Text(_config.Title, TextStyle.Title, WidthMax);
+                    }
+                    End();
+
+                    Space(10);
+
+                    Text(_config.Message, TextStyle.Normal, WidthMax);
+
+                    FlexibleSpace();
+
+                    if (_config.Buttons.Length > 0)
+                    {
+                        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
+                        {
+                            Fill();
+                            foreach (var btn in _config.Buttons)
+                            {
+                                if (Button(btn.Text, btn.Style, Width(120)))
+                                {
+                                    btn.OnClick?.Invoke();
+                                    if (btn.CloseOnClick)
+                                        Close(this);
+                                }
+                            }
+                        }
+                        End();
                     }
                 }
                 End();
             }
-            End();
-            GUI.DragWindow();
+            GUILayout.EndArea();
+
+            HandleWindowDrag();
         }
 
-        private void DrawUpgradeWindow(int windowID)
+        private void HandleWindowDrag()
         {
-            var sizes = _sizesHolder.Begin();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Padding);
+            var e = Event.current;
+            switch (e.type)
             {
-                Space(10);
-                Text(Localization.Get(_upgradeMessageKey), TextStyle.Normal, WidthMax);
-                FlexibleSpace();
-                Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-                {
-                    Fill();
-                    if (Button(Localization.Get("Understand"), ButtonStyle.Primary, Width(120)))
+                case EventType.MouseDown:
+                    if (_windowRect.Contains(e.mousePosition))
                     {
-                        _showUpgradeTips = false;
-                        Main.Settings.lastVersion = VersionManager.GetFullVersionString();
-                        Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
-                        if (Main.Mod != null) Main.Settings.Save(Main.Mod);
-                        Destroy(gameObject);
-                        _instance = null;
+                        _isDragging = true;
+                        _dragOffset = e.mousePosition - _windowRect.position;
+                        e.Use();
                     }
-                }
-                End();
+                    break;
+                case EventType.MouseUp:
+                    _isDragging = false;
+                    break;
+                case EventType.MouseDrag:
+                    if (_isDragging)
+                    {
+                        _windowRect.position = e.mousePosition - _dragOffset;
+                        e.Use();
+                    }
+                    break;
             }
-            End();
-            GUI.DragWindow();
         }
 
         private static void FlexibleSpace()
         {
             GUILayout.FlexibleSpace();
+        }
+    }
+
+    public static class MainWindow
+    {
+        public static void ShowFirstRun()
+        {
+            IridiumWindow.Show(new IridiumWindow.Config
+            {
+                Title = Localization.Get("FirstRunTitle"),
+                Message = Localization.Get("FirstRunMessage"),
+                Icon = IconStyle.Information,
+                Size = new Vector2(400, 200),
+                Buttons = new[]
+                {
+                    new IridiumWindow.ButtonConfig
+                    {
+                        Text = Localization.Get("Understand"),
+                        Style = ButtonStyle.Primary,
+                        CloseOnClick = true,
+                        OnClick = () =>
+                        {
+                            Main.Settings.firstRun = false;
+                            Main.Settings.lastVersion = VersionManager.GetFullVersionString();
+                            Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
+                            if (Main.Mod != null) Main.Settings.Save(Main.Mod);
+                        }
+                    }
+                }
+            });
+        }
+
+        public static void ShowUpgrade(string messageKey)
+        {
+            IridiumWindow.Show(new IridiumWindow.Config
+            {
+                Title = Localization.Get("UpgradeTitle"),
+                Message = Localization.Get(messageKey),
+                Icon = IconStyle.Warning,
+                Size = new Vector2(400, 200),
+                Buttons = new[]
+                {
+                    new IridiumWindow.ButtonConfig
+                    {
+                        Text = Localization.Get("Understand"),
+                        Style = ButtonStyle.Primary,
+                        CloseOnClick = true,
+                        OnClick = () =>
+                        {
+                            Main.Settings.lastVersion = VersionManager.GetFullVersionString();
+                            Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
+                            if (Main.Mod != null) Main.Settings.Save(Main.Mod);
+                        }
+                    }
+                }
+            });
         }
     }
 }

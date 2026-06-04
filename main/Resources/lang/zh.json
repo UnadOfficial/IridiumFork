@@ -8,6 +8,8 @@
   "MultipleOf4": "将尺寸调整为 4 的倍数 (提升兼容性)",
   "DivideImageBy": "装饰缩放倍率",
   "DontResizeCollider": "不对装饰物的碰撞箱进行缩放",
+  "UseLossyCompression": "使用有损压缩 (JPEG)",
+  "LossyQuality": "JPEG 质量",
   "DisableShadows": "禁用装饰阴影",
   "ImageOptimizations": "图像优化",
   "RenderingOptimizations": "渲染优化",
