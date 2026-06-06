@@ -1,5 +1,4 @@
 using System;
-using UnityModManagerNet;
 using UnityEngine;
 using Iridium.UI;
 using Iridium.Config;
@@ -9,7 +8,7 @@ using static Iridium.UI.IridiumLayout;
 
 namespace Iridium
 {
-    public class Settings : UnityModManager.ModSettings
+    public class Settings
     {
         public string language = "en";
         public bool firstRun = true;
@@ -59,7 +58,7 @@ namespace Iridium
             return _cachedTabDisplayNames;
         }
 
-        public void OnGUI(UnityModManager.ModEntry modEntry)
+		public void OnGUI()
         {
             // Record initial stack depth for exception safety
             int initialStackDepth = IridiumLayout.ContainerStack.Count;
@@ -117,7 +116,7 @@ namespace Iridium
                 }
                 End();
 
-                if (GUI.changed) Save(modEntry);
+    			if (GUI.changed) Save();
             }
             catch (Exception ex)
             {
@@ -1022,9 +1021,9 @@ AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPause
         }
         #endregion
 
-        public override void Save(UnityModManager.ModEntry modEntry)
-        {
-            Save(this, modEntry);
-        }
+		public void Save()
+		{
+			Main.Handler?.SaveSettings(this);
+		}
     }
 }

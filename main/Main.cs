@@ -1,14 +1,13 @@
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
-using UnityModManagerNet;
 using Iridium.UI;
 
 namespace Iridium
 {
     public static class Main
     {
-        public static UnityModManager.ModEntry? Mod { get; private set; }
+        public static IHandler? Handler { get; private set; }
         public static Harmony? Harmony { get; private set; }
         public static Settings Settings { get; private set; } = null!;
         public static Logger? Logger;
@@ -19,22 +18,27 @@ namespace Iridium
         // 当前版本号（用于版本升级检测）
         private static string CurrentVersion => VersionManager.GetFullVersionString();
 
-        public static bool Load(UnityModManager.ModEntry modEntry)
+        public static bool Load(dynamic modEntry)
+        {
+            return Initialize(new UmmHandler(modEntry));
+        }
+
+        public static bool Initialize(IHandler handler)
         {
             _mainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-            Mod = modEntry;
-            Logger = new Logger(Mod.Logger);
-            Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
+            Handler = handler;
+            Logger = new Logger();
+            Settings = handler.LoadSettings<Settings>();
             Localization.Load();
 
-            modEntry.OnToggle = OnToggle;
-            modEntry.OnGUI = Main.Settings.OnGUI;
-            modEntry.OnSaveGUI = Main.Settings.Save;
-            modEntry.OnUpdate = OnUpdate;
+            handler.OnToggle += OnToggle;
+            handler.OnGUI += () => Settings.OnGUI();
+            handler.OnSaveGUI += () => handler.SaveSettings(Settings);
+            handler.OnUpdate += OnUpdate;
 
-            Harmony = new Harmony(modEntry.Info.Id);
+            Harmony = new Harmony(handler.ModId);
 
-            Logger?.Log(Localization.Get("ModLoaded", Main.Settings.language));
+            Logger?.Log(Localization.Get("ModLoaded", Settings.language));
             return true;
         }
 
@@ -51,7 +55,7 @@ namespace Iridium
             _destroyImmObj.Enqueue(obj);
         }
 
-        private static void OnUpdate(UnityModManager.ModEntry modEntry, float dt)
+        private static void OnUpdate(float dt)
         {
             while (_destroyImmObj.TryDequeue(out var obj))
             {
@@ -71,7 +75,7 @@ namespace Iridium
             Logger.TaskRun();
         }
 
-        private static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
+        private static void OnToggle(bool value)
         {
             if (value)
             {
@@ -114,7 +118,6 @@ namespace Iridium
 
                 Iridium.Patches.PatchManager.UnpatchAll();
             }
-            return true;
         }
     }
 }

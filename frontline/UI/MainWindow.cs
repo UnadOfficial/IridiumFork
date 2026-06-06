@@ -194,7 +194,7 @@ namespace Iridium.UI
                             Main.Settings.firstRun = false;
                             Main.Settings.lastVersion = VersionManager.GetFullVersionString();
                             Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
-                            if (Main.Mod != null) Main.Settings.Save(Main.Mod);
+                            Main.Handler?.SaveSettings(Main.Settings);
                         }
                     }
                 }
@@ -220,7 +220,7 @@ namespace Iridium.UI
                         {
                             Main.Settings.lastVersion = VersionManager.GetFullVersionString();
                             Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
-                            if (Main.Mod != null) Main.Settings.Save(Main.Mod);
+                            Main.Handler?.SaveSettings(Main.Settings);
                         }
                     }
                 }

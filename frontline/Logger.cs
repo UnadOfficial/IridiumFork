@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using UnityModManagerNet;
 
 
 namespace Iridium
@@ -36,13 +35,8 @@ namespace Iridium
         private const string MODNAME_ERROR = "[Iridium/ERROR] "; // Prefix Name
         private static readonly ConcurrentQueue<LogData> _writeQueue = new();
         private static Task? _task;
-        private static readonly List<string> _history = (List<string>)
-                typeof(UnityModManager.Logger).GetField("history", HarmonyLib.AccessTools.all).GetValue(null);
-        private static readonly int _historyCapacity = (int)
-                typeof(UnityModManager.Logger).GetField("historyCapacity", HarmonyLib.AccessTools.all).GetValue(null);
-        // 不写入buffer 减少性能消耗 (因为这玩意tm是主线程做IO写入的)
-        // private static unsafe readonly List<string> _buffer = (List<string>)
-        //         typeof(UnityModManager.Logger).GetField("buffer", HarmonyLib.AccessTools.all).GetValue(null);
+        private static readonly List<string> _history = new();
+        private const int _historyCapacity = 500;
 #if UNSAFE_MODE
         public static void TaskRun()
         {
@@ -142,8 +136,6 @@ namespace Iridium
 
 #endif
 
-        private readonly UnityModManager.ModEntry.ModLogger _logger;
-
         // 定义颜色常量
         private const string COLOR_RESET = "</color>";
         private const string COLOR_KEYWORD = "<color=#569CD6>"; // 例如：class, struct
@@ -163,10 +155,7 @@ namespace Iridium
         private const int MAX_ARRAY_ELEMENTS = 100; // 数组最大显示元素数量
         private const int MAX_OBJECT_PROPERTIES = 50; // 对象最大显示属性数量
 
-        public Logger(UnityModManager.ModEntry.ModLogger logger)
-        {
-            _logger = logger;
-        }
+        public Logger() { }
 
         // Log 支持多参数和对象展开
         public void Log(params object[] args)

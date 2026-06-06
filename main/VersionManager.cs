@@ -18,7 +18,7 @@ namespace Iridium
 
         public static string GetFullVersionString()
         {
-            string baseVersion = Main.Mod?.Info.Version ?? "Error";
+            string baseVersion = Main.Handler?.ModVersion ?? "Error";
             string adofaiSuffix = $"+adofai{BuildInfo.AdofaiVersion}";
             if (Type == VersionType.Release)
             {

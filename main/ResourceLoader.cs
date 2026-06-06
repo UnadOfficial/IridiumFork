@@ -10,8 +10,8 @@ namespace Iridium
         {
             get
             {
-                if (Main.Mod == null) throw new InvalidOperationException(Localization.Get("ModNotInitialized"));
-                return Path.Combine(Main.Mod.Path, "Resources");
+                if (Main.Handler == null) throw new InvalidOperationException(Localization.Get("ModNotInitialized"));
+                return Path.Combine(Main.Handler.ModPath, "Resources");
             }
         }
 
