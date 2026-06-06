@@ -84,8 +84,8 @@ namespace Iridium.Patches
                         return false;
                     }
 
-                    string song = settings.TryGetValue("song", out var s) ? s as string : null;
-                    string artist = settings.TryGetValue("artist", out var a) ? a as string : null;
+                    string? song = settings.TryGetValue("song", out var s) ? s as string : null;
+                    string? artist = settings.TryGetValue("artist", out var a) ? a as string : null;
                     string result;
 
                     if (string.IsNullOrEmpty(song))
@@ -94,11 +94,11 @@ namespace Iridium.Patches
                     }
                     else if (string.IsNullOrEmpty(artist))
                     {
-                        result = song;
+                        result = song!;
                     }
                     else
                     {
-                        string artistTrimmed = artist.Trim();
+                        string artistTrimmed = artist!.Trim();
                         if (artistTrimmed.EndsWith(")"))
                         {
                             int idx = artistTrimmed.IndexOf("(");

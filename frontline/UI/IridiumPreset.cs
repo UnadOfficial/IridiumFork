@@ -82,26 +82,26 @@ public static class IridiumPreset
 
     public static void TextOption(
         Sizes sizes,
-        ref string option,
-        string name,
-        bool description = false
-    )
-    {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            OptionNameDescription(name, description);
-            Fill();
-            TextField(ref option, options: WidthMin);
-        }
-        PopAlign();
-        End();
-    }
+		ref string? option,
+		string name,
+		bool description = false
+	)
+	{
+		Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
+		PushAlign(0.5);
+		{
+			OptionNameDescription(name, description);
+			Fill();
+			TextField(ref option, options: WidthMin);
+		}
+		PopAlign();
+		End();
+	}
 
-    public static void CheckboxTextOption(
-        Sizes sizes,
-        ref bool enabled,
-        ref string option,
+	public static void CheckboxTextOption(
+		Sizes sizes,
+		ref bool enabled,
+		ref string? option,
         string name,
         bool description = false
     )

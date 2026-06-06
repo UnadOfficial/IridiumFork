@@ -895,7 +895,9 @@ namespace Iridium
             {
                 Text(Localization.Get($"JudgeText_{key}"), options: WidthMin);
                 Fill();
-                TextField(ref value, 128, Width(120));
+                string? nullableValue = value;
+                TextField(ref nullableValue, 128, Width(120));
+                if (nullableValue != null) value = nullableValue;
             }
             PopAlign();
             End();

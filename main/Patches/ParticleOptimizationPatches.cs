@@ -22,7 +22,7 @@ namespace Iridium.Patches
 
         // ===== 池化 =====
         private const int MaxPoolSize = 256;
-        private static Transform _poolRoot;
+        private static Transform _poolRoot = null!;
         private static readonly Stack<GameObject> _objectPool = new();
 
         private static void DrainPool(int keep = 0)

@@ -18,17 +18,17 @@ namespace Iridium.UI
         public static void Show(string message)
         {
             EnsureInstance();
-            _instance._message = message;
-            _instance._isPersistent = false;
-            _instance._timer = FadeDuration + DisplayDuration + FadeDuration;
+            _instance!._message = message;
+            _instance!._isPersistent = false;
+            _instance!._timer = FadeDuration + DisplayDuration + FadeDuration;
         }
 
         public static void ShowPersistent(string message)
         {
             EnsureInstance();
-            _instance._message = message;
-            _instance._isPersistent = true;
-            _instance._timer = float.MaxValue;
+            _instance!._message = message;
+            _instance!._isPersistent = true;
+            _instance!._timer = float.MaxValue;
         }
 
         public static void UpdateProgress(string message)
@@ -98,7 +98,7 @@ namespace Iridium.UI
         public static void RunCoroutine(IEnumerator routine)
         {
             EnsureInstance();
-            _instance.StartCoroutine(routine);
+            _instance!.StartCoroutine(routine);
         }
 
         private void Update()

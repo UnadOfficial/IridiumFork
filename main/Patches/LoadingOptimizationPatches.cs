@@ -385,7 +385,7 @@ namespace Iridium.Patches
                         object obj2;
                         if (evt.data.TryGetValue("decorationImage", out obj2))
                         {
-                            string text3 = obj2 as string;
+                            string? text3 = obj2 as string;
                             if (text3 != null && !string.IsNullOrEmpty(text3))
                             {
                                 string filePath2 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(instance.levelPath), text3);

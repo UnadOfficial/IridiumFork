@@ -82,7 +82,7 @@ public static class IridiumPreset
 
     public static void TextOption(
         Sizes sizes,
-        ref string option,
+        ref string? option,
         string name,
         bool description = false
     )
@@ -101,7 +101,7 @@ public static class IridiumPreset
     public static void CheckboxTextOption(
         Sizes sizes,
         ref bool enabled,
-        ref string option,
+        ref string? option,
         string name,
         bool description = false
     )

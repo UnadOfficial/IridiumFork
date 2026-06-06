@@ -20,6 +20,13 @@ namespace Iridium
             // public long timespan;
             public int type;
             public int flag;
+
+            public LogData(object[] contents, int type, int flag = 0)
+            {
+                this.contents = contents;
+                this.type = type;
+                this.flag = flag;
+            }
         }
 
         // 多线程队列
@@ -164,25 +171,25 @@ namespace Iridium
         // Log 支持多参数和对象展开
         public void Log(params object[] args)
         {
-            _writeQueue.Enqueue(new() { contents = args, type = 0 });
+            _writeQueue.Enqueue(new LogData(args, 0));
         }
 
         // Warning 映射到Warning
         public void Warning(params object[] args)
         {
-            _writeQueue.Enqueue(new() { contents = args, type = 1 });
+            _writeQueue.Enqueue(new LogData(args, 1));
         }
 
         // Error 映射到LogException
         public void Error(params object[] args)
         {
-            _writeQueue.Enqueue(new() { contents = args, type = 2 });
+            _writeQueue.Enqueue(new LogData(args, 2));
         }
 
         // Dir 用于显示对象的属性列表
         public void Dir(object obj)
         {
-            _writeQueue.Enqueue(new() { contents = new object[1] { obj }, type = 3 });
+            _writeQueue.Enqueue(new LogData(new object[1] { obj }, 3));
         }
 
         // Debug 等同于Log

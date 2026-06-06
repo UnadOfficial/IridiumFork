@@ -334,7 +334,7 @@ namespace Iridium.Patches
                 }
             }
 
-            private static System.Drawing.Imaging.ImageCodecInfo GetJpegCodecInfo()
+            private static System.Drawing.Imaging.ImageCodecInfo? GetJpegCodecInfo()
             {
                 foreach (var codec in System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders())
                 {
@@ -347,8 +347,8 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static bool Prefix(string filePath, ref LoadResult status, ref Texture2D __result)
             {
-                byte[] fileData = null;
-                byte[] resizedData = null;
+                byte[]? fileData = null;
+                byte[]? resizedData = null;
                 try
                 {
                     if (GCS.internalLevelName != null)

@@ -10,8 +10,8 @@ namespace Iridium.UI
     {
         public class ButtonConfig
         {
-            public string Text { get; set; }
-            public Action OnClick { get; set; }
+            public string Text { get; set; } = string.Empty;
+            public Action? OnClick { get; set; }
             public ButtonStyle Style { get; set; } = ButtonStyle.Primary;
             public bool CloseOnClick { get; set; } = true;
         }
@@ -23,10 +23,10 @@ namespace Iridium.UI
             public IconStyle? Icon { get; set; }
             public Vector2 Size { get; set; } = new(400, 200);
             public ButtonConfig[] Buttons { get; set; } = Array.Empty<ButtonConfig>();
-            public Action OnClose { get; set; }
+            public Action? OnClose { get; set; }
         }
 
-        private Config _config;
+        private Config _config = null!;
         private Rect _windowRect;
         private SizesGroup.Holder _sizesHolder = new();
         private bool _isDragging;

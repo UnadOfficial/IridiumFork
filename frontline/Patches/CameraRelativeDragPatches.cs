@@ -41,8 +41,8 @@ namespace Iridium.Patches
             bool shiftLock = RDInput.holdingShift && !ignoreModifiers;
 
             var dragStart = _dragStartPositions!(__instance);
-            ref var addX = ref _addXDragCache(__instance);
-            ref var addY = ref _addYDragCache(__instance);
+            ref var addX = ref _addXDragCache!(__instance);
+            ref var addY = ref _addYDragCache!(__instance);
 
             float absX = Mathf.Abs(translation.x) + addX;
             float absY = Mathf.Abs(translation.y) + addY;
