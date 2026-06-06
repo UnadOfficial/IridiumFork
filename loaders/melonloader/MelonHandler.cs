@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Xml.Serialization;
+using Newtonsoft.Json;
 using MelonLoader;
 
 namespace Iridium
@@ -9,19 +10,30 @@ namespace Iridium
     {
         private readonly IridiumMelonMod _mod;
         private readonly string _modPath;
+        private readonly Lazy<string> _modVersion;
 
         public MelonHandler(IridiumMelonMod mod)
         {
             _mod = mod;
-            _modPath = Path.Combine(
-                Path.GetDirectoryName(mod.MelonAssembly.Location) ?? ".",
-                "Iridium"
-            );
-            Directory.CreateDirectory(_modPath);
+            _modPath = Path.GetDirectoryName(mod.MelonAssembly.Location) ?? ".";
+            _modVersion = new Lazy<string>(() =>
+            {
+                string infoPath = Path.Combine(_modPath, "Info.json");
+                try
+                {
+                    var json = File.ReadAllText(infoPath);
+                    dynamic? info = JsonConvert.DeserializeObject(json);
+                    return (string)(info?.Version ?? "Error");
+                }
+                catch
+                {
+                    return "Error";
+                }
+            });
         }
 
         public string ModId => _mod.Info.Name;
-        public string ModVersion => _mod.Info.Version;
+        public string ModVersion => _modVersion.Value;
         public string ModPath => _modPath;
 
         public void Log(string message) => MelonLogger.Msg(message);
