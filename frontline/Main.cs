@@ -17,7 +17,7 @@ namespace Iridium
 
         private static string CurrentVersion => VersionManager.GetFullVersionString();
 
-        public static bool Load(dynamic modEntry)
+        public static bool Load(object modEntry)
         {
             return Initialize(new UmmHandler(modEntry));
         }

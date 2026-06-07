@@ -15,10 +15,9 @@ namespace Iridium
 
         public static bool IsMainThread => System.Threading.Thread.CurrentThread.ManagedThreadId == _mainThreadId;
 
-        // 当前版本号（用于版本升级检测）
         private static string CurrentVersion => VersionManager.GetFullVersionString();
 
-        public static bool Load(dynamic modEntry)
+        public static bool Load(object modEntry)
         {
             return Initialize(new UmmHandler(modEntry));
         }
@@ -81,23 +80,18 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModEnabled"));
 
-                // 启动异步 Patch 管理器
                 Iridium.Patches.AsyncPatchManager.Start();
-
-                // Strategy: Load only what's needed (lazy loading)
                 Iridium.Patches.AsyncPatchManager.UpdateAllPatchesAsync();
 
                 if (Main.Settings.optimizer.enableOptimizer)
                 {
                     Iridium.Patches.OptimizerPatches.ResetDecorOptimization(true);
-                    // 如果DOTween优化已启用，应用设置
                     if (Main.Settings.optimizer.optimizeDOTweenGlobal)
                     {
                         Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
                     }
                 }
 
-                // 如果需要显示弹窗，使用 MainWindow
                 if (Main.Settings.firstRun)
                 {
                     UI.MainWindow.ShowFirstRun();
@@ -113,9 +107,7 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModDisabled"));
 
-                // 停止异步 Patch 管理器
                 Iridium.Patches.AsyncPatchManager.Stop();
-
                 Iridium.Patches.PatchManager.UnpatchAll();
             }
         }

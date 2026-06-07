@@ -573,6 +573,32 @@ namespace Iridium.Patches
 
         #endregion
 
+        #region Patch: Skip ApplyEventsToFloors during incremental insert
+
+        /// <summary>
+        /// 增量插入砖块时跳过全量 ApplyEventsToFloors。
+        /// OffsetFloorIDsInEvents 已经处理了事件 floor ID 偏移，
+        /// 全量重新应用事件对百万砖块是灾难性的。
+        /// </summary>
+        [HarmonyPatch(typeof(scnGame), "ApplyEventsToFloors",
+            new[] { typeof(List<scrFloor>) })]
+        public static class SkipApplyEventsOnInsertPatch
+        {
+            [HarmonyPrefix]
+            public static bool Prefix()
+            {
+                if (!Main.Settings.optimizer.enableEditorFloorOptimization) return true;
+                if (!_incrementalMode) return true;
+                if (!Main.Settings.optimizer.skipApplyEventsOnInsert) return true;
+
+                // Events already offset by OffsetFloorIDsInEvents / FloorWasCreatedOrDeleted.
+                // Skip the full re-application for massive level performance.
+                return false;
+            }
+        }
+
+        #endregion
+
         #region Utility
 
         public static void ResetState()

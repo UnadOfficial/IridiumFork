@@ -282,7 +282,6 @@
 		<Reference Include="UnityEngine.XRModule">
 			<HintPath>..\lib\v2.9.8\UnityEngine.XRModule.dll</HintPath>
 		</Reference>
-		<Reference Include="Microsoft.CSharp" />
 		<ProjectReference Include="..\loaders\ummloader\Iridium.Loader.UMM.csproj">
 			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
 		</ProjectReference>

@@ -68,6 +68,7 @@ namespace Iridium.Config
         public bool rangeBasedRedraw = false;              // 范围式重绘(Holds/Planets/Nums)
         public bool skipRedundantRemakePath = false;       // 跳过重复的RemakePath调用
         public bool optimizeOffsetFloorEvents = false;     // 优化 OffsetFloorIDsInEvents
+        public bool skipApplyEventsOnInsert = false;       // 增量插入时跳过 ApplyEventsToFloors
     }
 
     public class UISettings
