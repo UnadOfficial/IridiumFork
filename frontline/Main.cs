@@ -1,14 +1,13 @@
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
-using UnityModManagerNet;
 using Iridium.UI;
 
 namespace Iridium
 {
     public static class Main
     {
-        public static UnityModManager.ModEntry? Mod { get; private set; }
+        public static IHandler? Handler { get; private set; }
         public static Harmony? Harmony { get; private set; }
         public static Settings Settings { get; private set; } = null!;
         public static Logger? Logger;
@@ -16,25 +15,29 @@ namespace Iridium
 
         public static bool IsMainThread => System.Threading.Thread.CurrentThread.ManagedThreadId == _mainThreadId;
 
-        // 当前版本号（用于版本升级检测）
         private static string CurrentVersion => VersionManager.GetFullVersionString();
 
-        public static bool Load(UnityModManager.ModEntry modEntry)
+        public static bool Load(object modEntry)
+        {
+            return Initialize(new UmmHandler(modEntry));
+        }
+
+        public static bool Initialize(IHandler handler)
         {
             _mainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-            Mod = modEntry;
-            Logger = new Logger(Mod.Logger);
-            Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
+            Handler = handler;
+            Logger = new Logger();
+            Settings = handler.LoadSettings<Settings>();
             Localization.Load();
 
-            modEntry.OnToggle = OnToggle;
-            modEntry.OnGUI = Main.Settings.OnGUI;
-            modEntry.OnSaveGUI = Main.Settings.Save;
-            modEntry.OnUpdate = OnUpdate;
+            handler.OnToggle += OnToggle;
+            handler.OnGUI += () => Settings.OnGUI();
+            handler.OnSaveGUI += () => handler.SaveSettings(Settings);
+            handler.OnUpdate += OnUpdate;
 
-            Harmony = new Harmony(modEntry.Info.Id);
+            Harmony = new Harmony(handler.ModId);
 
-            Logger?.Log(Localization.Get("ModLoaded", Main.Settings.language));
+            Logger?.Log(Localization.Get("ModLoaded", Settings.language));
             return true;
         }
 
@@ -51,7 +54,7 @@ namespace Iridium
             _destroyImmObj.Enqueue(obj);
         }
 
-        private static void OnUpdate(UnityModManager.ModEntry modEntry, float dt)
+        private static void OnUpdate(float dt)
         {
             while (_destroyImmObj.TryDequeue(out var obj))
             {
@@ -69,32 +72,26 @@ namespace Iridium
                 }
             }
             Logger.TaskRun();
-
         }
 
-        private static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
+        private static void OnToggle(bool value)
         {
             if (value)
             {
                 Logger?.Log(Localization.Get("ModEnabled"));
 
-                // 启动异步 Patch 管理器
                 Iridium.Patches.AsyncPatchManager.Start();
-
-                // Strategy: Load only what's needed (lazy loading)
                 Iridium.Patches.AsyncPatchManager.UpdateAllPatchesAsync();
 
                 if (Main.Settings.optimizer.enableOptimizer)
                 {
                     Iridium.Patches.OptimizerPatches.ResetDecorOptimization(true);
-                    // 如果DOTween优化已启用，应用设置
                     if (Main.Settings.optimizer.optimizeDOTweenGlobal)
                     {
                         Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();
                     }
                 }
 
-                // 如果需要显示弹窗，使用 MainWindow
                 if (Main.Settings.firstRun)
                 {
                     UI.MainWindow.ShowFirstRun();
@@ -110,12 +107,9 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModDisabled"));
 
-                // 停止异步 Patch 管理器
                 Iridium.Patches.AsyncPatchManager.Stop();
-
                 Iridium.Patches.PatchManager.UnpatchAll();
             }
-            return true;
         }
     }
 }

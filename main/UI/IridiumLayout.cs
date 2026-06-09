@@ -6,7 +6,6 @@ using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
-using UnityModManagerNet;
 using Iridium.Utilities;
 using Color = UnityEngine.Color;
 using FontStyle = UnityEngine.FontStyle;
@@ -64,7 +63,7 @@ public static class IridiumLayout
     private static readonly Trigger<int, ResolutionResources> ResolutionTrigger = new();
 
     private static ResolutionResources Resolution => ResolutionTrigger.Get(
-        UnityModManager.UI.Scale(1048576),
+        (int)(Main.Handler?.UIScale ?? 1048576),
         scaleTimes1M => new ResolutionResources(scaleTimes1M)
     );
 

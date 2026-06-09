@@ -13,7 +13,6 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Profiling;
-using UnityModManagerNet;
 
 namespace Iridium.Patches
 {

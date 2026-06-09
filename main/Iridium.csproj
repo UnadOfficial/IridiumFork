@@ -282,9 +282,9 @@
 		<Reference Include="UnityEngine.XRModule">
 			<HintPath>..\lib\v2.9.8\UnityEngine.XRModule.dll</HintPath>
 		</Reference>
-		<Reference Include="UnityModManager">
-			<HintPath>..\lib\ModManager\UnityModManager.dll</HintPath>
-		</Reference>
+		<ProjectReference Include="..\loaders\ummloader\Iridium.Loader.UMM.csproj">
+			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+		</ProjectReference>
 	</ItemGroup>
 	<ItemGroup>
 		<None Update="Info.json">
@@ -305,6 +305,8 @@
 		<MakeDir Directories="$(OutDir)Resources" />
 		<ItemGroup>
 			<FilesToCopy Include="$(OutputPath)$(AssemblyName).dll" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll" />
 			<FilesToCopy Include="$(ProjectDir)Info.json" />
 			<ResourceFiles Include="$(ProjectDir)Resources\**\*" Exclude="$(ProjectDir)Resources\**\*\" />
 		</ItemGroup>
