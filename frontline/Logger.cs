@@ -116,10 +116,12 @@ namespace Iridium
                         case 1: // WARN
                             _writeBack.Enqueue(MODNAME_WARN + FormatArgs2String(data.contents));
                             Console.WriteLine(MODNAME_WARN + Args2String(data.contents));
+                            Main.Handler?.Warning(Args2String(data.contents));
                             break;
                         case 2: // ERROR
                             _writeBack.Enqueue(MODNAME_ERROR + "Exception: " + FormatArgs2String(data.contents));
                             Console.WriteLine(MODNAME_ERROR + "Exception: " + Args2String(data.contents));
+                            Main.Handler?.Error(Args2String(data.contents));
                             break;
                         case 3: // Dir
                             _writeBack.Enqueue(MODNAME_INFO + "Object:\n" + FormatObject(data.contents[0], data.flag));
@@ -128,6 +130,7 @@ namespace Iridium
                         default:// INFO | Other
                             _writeBack.Enqueue(MODNAME_INFO + FormatArgs2String(data.contents));
                             Console.WriteLine(MODNAME_INFO + Args2String(data.contents));
+                            Main.Handler?.Log(Args2String(data.contents));
                             break;
                     }
                 }
