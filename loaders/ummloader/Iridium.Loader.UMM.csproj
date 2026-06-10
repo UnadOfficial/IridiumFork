@@ -24,4 +24,7 @@
 			<HintPath>..\..\lib\v2.9.8\UnityEngine.CoreModule.dll</HintPath>
 		</Reference>
 	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\main\Iridium.csproj" />
+	</ItemGroup>
 </Project>

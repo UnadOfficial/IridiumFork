@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
 using Newtonsoft.Json;
@@ -22,8 +23,8 @@ namespace Iridium
                 try
                 {
                     var json = File.ReadAllText(infoPath);
-                    dynamic? info = JsonConvert.DeserializeObject(json);
-                    return (string)(info?.Version ?? "Error");
+                    var info = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+                    return info != null && info.TryGetValue("Version", out var v) ? v.ToString() ?? "Error" : "Error";
                 }
                 catch
                 {

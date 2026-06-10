@@ -17,11 +17,6 @@ namespace Iridium
 
         private static string CurrentVersion => VersionManager.GetFullVersionString();
 
-        public static bool Load(object modEntry)
-        {
-            return Initialize(new UmmHandler(modEntry));
-        }
-
         public static bool Initialize(IHandler handler)
         {
             _mainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;

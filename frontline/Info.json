@@ -5,8 +5,8 @@
   "Version": "1.3.0",
   "Requirements": [],
   "ManagerVersion": "0.32.5.0",
-  "AssemblyName": "Iridium.dll",
-  "EntryMethod": "Iridium.Main.Load",
+  "AssemblyName": "Iridium.Loader.UMM.dll",
+  "EntryMethod": "Iridium.Loader.UmmEntry.Load",
   "HomePage": "https://github.com/adofaiex",
   "Repository": "https://github.com/Xbodwf/Iridium"
 }

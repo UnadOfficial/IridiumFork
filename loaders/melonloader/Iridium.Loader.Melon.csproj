@@ -29,7 +29,6 @@
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>..\..\lib\v2.9.8\Newtonsoft.Json.dll</HintPath>
 		</Reference>
-		<Reference Include="Microsoft.CSharp" />
 		<ProjectReference Include="..\..\main\Iridium.csproj" />
 	</ItemGroup>
 </Project>
