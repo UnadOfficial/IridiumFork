@@ -40,8 +40,8 @@ namespace Iridium
 #if UNSAFE_MODE
         public static void TaskRun()
         {
-            if (_task != null && !_task.Wait(1000))
-                throw new Exception("thread can't stop");
+            if (_task != null && !_task.IsCompleted)
+                return;
             _task = Task.Run(ThreadTask);
         }
         private static void ThreadTask()

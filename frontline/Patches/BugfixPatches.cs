@@ -135,7 +135,7 @@ namespace Iridium.Patches
         ///   2) HandlePause Postfix — detects pause events, stores per-player state
         ///   3) scrPlayer.Hit Prefix — coop mode checks per-player pause state
         /// </summary>
-        [HarmonyPatch(typeof(scrController), nameof(scrController.LockInput))]
+        [HarmonyPatch(typeof(scrPlayer), nameof(scrPlayer.LockInput))]
         public static class CoopPauseLockFix
         {
             internal static readonly Dictionary<int, float> _playerPauseEndTimes = new();
