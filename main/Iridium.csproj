@@ -306,7 +306,8 @@
 		<ItemGroup>
 			<FilesToCopy Include="$(OutputPath)$(AssemblyName).dll" />
 			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll" />
-			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll"
+						 Condition="Exists('$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll')" />
 			<FilesToCopy Include="$(ProjectDir)Info.json" />
 			<ResourceFiles Include="$(ProjectDir)Resources\**\*" Exclude="$(ProjectDir)Resources\**\*\" />
 		</ItemGroup>
