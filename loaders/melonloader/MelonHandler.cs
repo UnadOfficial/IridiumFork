@@ -92,20 +92,50 @@ namespace Iridium
         public event Action? OnGUI;
         public event Action? OnSaveGUI;
 
-        private static bool CheckModifiers(int mods)
+        private static bool CheckHotkey(string hotkey)
         {
-            if ((mods & 1) != 0 && !(Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+            if (string.IsNullOrEmpty(hotkey)) return false;
+
+            var parts = hotkey.Split('+');
+            if (parts.Length == 0) return false;
+
+            KeyCode? targetKey = null;
+            bool needCtrl = false, needAlt = false, needShift = false;
+
+            foreach (var part in parts)
+            {
+                var p = part.Trim();
+                if (string.IsNullOrEmpty(p)) continue;
+
+                var lower = p.ToLowerInvariant();
+                if (lower == "ctrl")
+                    needCtrl = true;
+                else if (lower == "alt")
+                    needAlt = true;
+                else if (lower == "shift")
+                    needShift = true;
+                else
+                {
+                    if (Enum.TryParse<KeyCode>(p, ignoreCase: true, out var kc))
+                        targetKey = kc;
+                }
+            }
+
+            if (targetKey == null) return false;
+
+            if (needCtrl && !(Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
                 return false;
-            if ((mods & 2) != 0 && !(Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)))
+            if (needAlt && !(Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)))
                 return false;
-            if ((mods & 4) != 0 && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
+            if (needShift && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
                 return false;
-            return true;
+
+            return Input.GetKeyDown(targetKey.Value);
         }
 
         public void TriggerUpdate(float dt)
         {
-            if (Main.Settings != null && Input.GetKeyDown((KeyCode)Main.Settings.panelToggleKey) && CheckModifiers(Main.Settings.panelToggleModifiers))
+            if (Main.Settings != null && CheckHotkey(Main.Settings.panelToggleHotkey))
             {
                 _uiVisible = !_uiVisible;
             }
