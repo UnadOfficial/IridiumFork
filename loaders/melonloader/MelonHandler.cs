@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Xml.Serialization;
 using Newtonsoft.Json;
 using MelonLoader;
+using UnityEngine;
 
 namespace Iridium
 {
@@ -13,6 +14,8 @@ namespace Iridium
         private readonly IridiumMelonMod _mod;
         private readonly string _modPath;
         private readonly Lazy<string> _modVersion;
+        private bool _uiVisible;
+        private Vector2 _scrollPos;
 
         private static string GetModPath()
         {
@@ -89,7 +92,28 @@ namespace Iridium
         public event Action? OnGUI;
         public event Action? OnSaveGUI;
 
-        public void TriggerUpdate(float dt) => OnUpdate?.Invoke(dt);
-        public void TriggerGUI() => OnGUI?.Invoke();
+        public void TriggerUpdate(float dt)
+        {
+            if (Input.GetKeyDown(KeyCode.F10) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+            {
+                _uiVisible = !_uiVisible;
+            }
+            OnUpdate?.Invoke(dt);
+        }
+
+        public void TriggerGUI()
+        {
+            if (!_uiVisible) return;
+
+            float w = Mathf.Min(Screen.width * 0.85f, 900);
+            float h = Mathf.Min(Screen.height * 0.8f, 700);
+            var rect = new Rect((Screen.width - w) / 2, (Screen.height - h) / 2, w, h);
+
+            GUILayout.BeginArea(rect);
+            _scrollPos = GUILayout.BeginScrollView(_scrollPos);
+            OnGUI?.Invoke();
+            GUILayout.EndScrollView();
+            GUILayout.EndArea();
+        }
     }
 }
