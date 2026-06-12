@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using System.Xml.Serialization;
 using UnityModManagerNet;
 
@@ -26,9 +27,15 @@ namespace Iridium
         public void Warning(string message) => _entry.Logger.Warning(message);
         public void Error(string message) => _entry.Logger.Error(message);
 
+        private static string SettingsDirectory()
+        {
+            var loc = Assembly.GetExecutingAssembly().Location;
+            return string.IsNullOrEmpty(loc) ? "." : Path.GetDirectoryName(loc) ?? ".";
+        }
+
         public T LoadSettings<T>() where T : class, new()
         {
-            string settingsPath = Path.Combine(_entry.Path, "Settings.xml");
+            string settingsPath = Path.Combine(SettingsDirectory(), "Settings.xml");
             if (File.Exists(settingsPath))
             {
                 try
@@ -47,7 +54,7 @@ namespace Iridium
 
         public void SaveSettings<T>(T settings) where T : class
         {
-            string settingsPath = Path.Combine(_entry.Path, "Settings.xml");
+            string settingsPath = Path.Combine(SettingsDirectory(), "Settings.xml");
             try
             {
                 var serializer = new XmlSerializer(typeof(T));
