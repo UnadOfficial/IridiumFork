@@ -26,6 +26,9 @@
 		<Reference Include="UnityEngine.IMGUIModule">
 			<HintPath>..\..\lib\v2.9.8\UnityEngine.IMGUIModule.dll</HintPath>
 		</Reference>
+		<Reference Include="UnityEngine.InputLegacyModule">
+			<HintPath>..\..\lib\v2.9.8\UnityEngine.InputLegacyModule.dll</HintPath>
+		</Reference>
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>..\..\lib\v2.9.8\Newtonsoft.Json.dll</HintPath>
 		</Reference>
