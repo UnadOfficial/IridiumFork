@@ -25,7 +25,7 @@ namespace Iridium
         public PatchModeSettings patchMode = new();
         public EditorShortcutSettings editorShortcuts = new();
 
-        public string panelToggleHotkey = "Ctrl+F10";
+        public string panelToggleHotkey = "Ctrl+F9";
 
         private string? _defaultLobbyMusicPathCache;
         private string? _fastLobbyMusicPathCache;
