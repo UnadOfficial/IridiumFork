@@ -92,9 +92,20 @@ namespace Iridium
         public event Action? OnGUI;
         public event Action? OnSaveGUI;
 
+        private static bool CheckModifiers(int mods)
+        {
+            if ((mods & 1) != 0 && !(Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+                return false;
+            if ((mods & 2) != 0 && !(Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)))
+                return false;
+            if ((mods & 4) != 0 && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
+                return false;
+            return true;
+        }
+
         public void TriggerUpdate(float dt)
         {
-            if (Input.GetKeyDown(KeyCode.F10) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
+            if (Main.Settings != null && Input.GetKeyDown((KeyCode)Main.Settings.panelToggleKey) && CheckModifiers(Main.Settings.panelToggleModifiers))
             {
                 _uiVisible = !_uiVisible;
             }
