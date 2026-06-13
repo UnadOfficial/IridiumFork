@@ -15,7 +15,10 @@ namespace Iridium.Patches
     {
         // 需要持续更新的装饰物（有活动Tween或视差效果）
         private static readonly HashSet<scrDecoration> _activeDecorations = new();
+        private static readonly List<scrDecoration> _activeSnapshot = new();
         private static readonly object _activeLock = new();
+        private static int _lastFullScanFrame = -1000;
+        private const int FullScanIntervalFrames = 20;
 
         /// <summary>
         /// 标记装饰物为活动（需要持续更新）
@@ -41,12 +44,24 @@ namespace Iridium.Patches
             }
         }
 
+        private static int ActiveCount
+        {
+            get
+            {
+                lock (_activeLock)
+                {
+                    return _activeDecorations.Count;
+                }
+            }
+        }
+
         /// <summary>
         /// 检查装饰物是否需要更新
         /// </summary>
         private static bool ShouldUpdate(scrDecoration dec)
         {
             if (dec == null || !dec.GetVisible()) return false;
+            if (ParticleOptimizationPatches.ShouldSkipParticleLogic(dec)) return false;
 
             // 检查是否有活动的Tween
             if (dec.eventTweens != null && dec.eventTweens.Count > 0)
@@ -69,6 +84,55 @@ namespace Iridium.Patches
             return false; // 静止装饰物，不需要更新
         }
 
+        private static bool ShouldFullScan()
+        {
+            return ActiveCount == 0 || Time.frameCount - _lastFullScanFrame >= FullScanIntervalFrames;
+        }
+
+        private static void UpdateAllAndRefreshActive(List<scrDecoration> allDecorations)
+        {
+            _lastFullScanFrame = Time.frameCount;
+
+            int count = allDecorations.Count;
+            for (int i = 0; i < count; i++)
+            {
+                scrDecoration dec = allDecorations[i];
+                if (ShouldUpdate(dec))
+                {
+                    MarkActive(dec);
+                    dec.UpdatePosition();
+                }
+                else
+                {
+                    UnmarkActive(dec);
+                }
+            }
+        }
+
+        private static void UpdateActiveOnly()
+        {
+            lock (_activeLock)
+            {
+                _activeSnapshot.Clear();
+                _activeSnapshot.AddRange(_activeDecorations);
+            }
+
+            for (int i = 0; i < _activeSnapshot.Count; i++)
+            {
+                scrDecoration dec = _activeSnapshot[i];
+                if (ShouldUpdate(dec))
+                {
+                    dec.UpdatePosition();
+                }
+                else
+                {
+                    UnmarkActive(dec);
+                }
+            }
+
+            _activeSnapshot.Clear();
+        }
+
         /// <summary>
         /// 优化 scrDecorationManager.LateUpdate - 只更新需要更新的装饰物
         /// 原始代码每帧更新所有可见装饰物，即使它们是静止的
@@ -83,18 +147,11 @@ namespace Iridium.Patches
 
                 try
                 {
-                    // 遍历所有装饰物，只更新需要更新的
                     var allDecorations = __instance.allDecorations;
-                    int count = allDecorations.Count;
-
-                    for (int i = 0; i < count; i++)
-                    {
-                        scrDecoration dec = allDecorations[i];
-                        if (ShouldUpdate(dec))
-                        {
-                            dec.UpdatePosition();
-                        }
-                    }
+                    if (ShouldFullScan())
+                        UpdateAllAndRefreshActive(allDecorations);
+                    else
+                        UpdateActiveOnly();
 
                     return false; // 跳过原始方法
                 }
@@ -103,6 +160,21 @@ namespace Iridium.Patches
                     Main.Logger?.Error($"[FfxOptimization] Error in OptimizeDecorationManagerLateUpdate: {ex}");
                     return true; // 出错时回退到原始方法
                 }
+            }
+        }
+
+        [HarmonyPatch(typeof(scnGame), "OnDestroy")]
+        public static class ClearActiveDecorationCachePatch
+        {
+            [HarmonyPostfix]
+            public static void Postfix()
+            {
+                lock (_activeLock)
+                {
+                    _activeDecorations.Clear();
+                    _activeSnapshot.Clear();
+                }
+                _lastFullScanFrame = -1000;
             }
         }
     }

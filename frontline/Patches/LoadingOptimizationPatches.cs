@@ -207,6 +207,7 @@ namespace Iridium.Patches
             public static bool IsLoading => _isLoading;
 
             private const float TIME_BUDGET_PER_FRAME = 0.012f;
+            private const float PROGRESS_UPDATE_INTERVAL = 0.1f;
 
             [HarmonyPrefix]
             public static bool Prefix(scnGame __instance, bool reloadDecorations)
@@ -307,6 +308,20 @@ namespace Iridium.Patches
                 _cancelled = true;
             }
 
+            private static void UpdateProgressThrottled(ref float nextUpdateTime, int current, int total, bool force = false)
+            {
+                float now = Time.realtimeSinceStartup;
+                if (!force && now < nextUpdateTime)
+                    return;
+
+                string progress = Localization.Get("LoadingDecorationsProgress", current, total);
+                UI.VRAMNotificationUI.UpdateProgress(progress);
+                if (_loadingText != null)
+                    _loadingText.text = progress;
+
+                nextUpdateTime = now + PROGRESS_UPDATE_INTERVAL;
+            }
+
             private static System.Collections.IEnumerator FrameSpreadLoadCoroutine(scnGame instance)
             {
                 int maxPerFrame = Main.Settings.optimizer.decorationsPerFrame;
@@ -323,8 +338,11 @@ namespace Iridium.Patches
                 int processed = 0;
                 int total = _pendingDecorations.Count;
 
-                UI.VRAMNotificationUI.ShowPersistent(Localization.Get("LoadingDecorationsProgress", 0, total));
-                UpdateLoadingText(0, total);
+                string initialProgress = Localization.Get("LoadingDecorationsProgress", 0, total);
+                UI.VRAMNotificationUI.ShowPersistent(initialProgress);
+                if (_loadingText != null)
+                    _loadingText.text = initialProgress;
+                float nextProgressUpdateTime = 0f;
                 Main.Logger?.Log($"[LoadingOptimization] Starting frame-spread loading: {total} decorations");
 
                 while (_pendingDecorations.Count > 0 && !_cancelled)
@@ -359,7 +377,7 @@ namespace Iridium.Patches
 
                     if (_pendingDecorations.Count > 0 && !_cancelled)
                     {
-                        UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                        UpdateProgressThrottled(ref nextProgressUpdateTime, processed, total);
                         yield return null;
                     }
                 }
@@ -408,14 +426,14 @@ namespace Iridium.Patches
                         if (_cancelled)
                         {
                             Main.Logger?.Log($"[LoadingOptimization] Loading cancelled by user");
-                            UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                            UpdateProgressThrottled(ref nextProgressUpdateTime, processed, total, force: true);
                             UI.VRAMNotificationUI.Complete();
                             _uiCompleted = true;
                             CleanupState();
                             yield break;
                         }
                         var (name, path) = moveDecImages[i];
-                        UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                        UpdateProgressThrottled(ref nextProgressUpdateTime, processed, total);
                         try
                         {
                             LoadResult status;
@@ -443,7 +461,7 @@ namespace Iridium.Patches
                     }
                     else
                     {
-                        UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                        UpdateProgressThrottled(ref nextProgressUpdateTime, processed, total, force: true);
                     }
                     UI.VRAMNotificationUI.Complete();
                     _uiCompleted = true;
@@ -505,6 +523,7 @@ namespace Iridium.Patches
 
             private static void CleanupState()
             {
+                OptimizerPatches.FlushTextureOptimizationSummary(runCleanup: true);
                 _isLoading = false;
                 _cancelled = false;
                 _pendingGame = null;
@@ -535,12 +554,6 @@ namespace Iridium.Patches
                 _loadingText.alignment = TextAnchor.MiddleCenter;
                 _loadingText.color = Color.white;
                 _loadingText.text = Localization.Get("LoadingDecorationsProgress", 0, 0);
-            }
-
-            private static void UpdateLoadingText(int current, int total)
-            {
-                if (_loadingText != null)
-                    _loadingText.text = Localization.Get("LoadingDecorationsProgress", current, total);
             }
 
             private static void HideLoadingText()
