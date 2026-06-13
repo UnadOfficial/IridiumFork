@@ -1,7 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
-using Iridium.UI;
 
 namespace Iridium
 {

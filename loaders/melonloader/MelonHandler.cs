@@ -15,6 +15,7 @@ namespace Iridium
         private readonly string _modPath;
         private readonly Lazy<string> _modVersion;
         private bool _uiVisible;
+        private Rect _rect;
         private Vector2 _scrollPos;
 
         private static string GetModPath()
@@ -138,6 +139,9 @@ namespace Iridium
             if (Main.Settings != null && CheckHotkey(Main.Settings.panelToggleHotkey))
             {
                 _uiVisible = !_uiVisible;
+                float w = Mathf.Max(Screen.width * 0.8f, 960);
+                float h = Mathf.Max(Screen.height * 0.8f, 720);
+                _rect = new Rect((Screen.width - w) / 2, (Screen.height - h) / 2, w, h);
             }
             OnUpdate?.Invoke(dt);
         }
@@ -146,15 +150,17 @@ namespace Iridium
         {
             if (!_uiVisible) return;
 
-            float w = Mathf.Min(Screen.width * 0.85f, 900);
-            float h = Mathf.Min(Screen.height * 0.8f, 700);
-            var rect = new Rect((Screen.width - w) / 2, (Screen.height - h) / 2, w, h);
-
-            GUILayout.BeginArea(rect);
+            _rect = GUILayout.Window(0, _rect, GUIFunc, "", new GUIStyle(GUI.skin.window));
+            _rect.x = (int)_rect.x;
+            _rect.y = (int)_rect.y;
+        }
+        private void GUIFunc(int id)
+        {
+            GUI.DragWindow(new Rect(0f, 0f, 10000f, 40f)); // is 24 + 16
+            GUILayout.Label("Iridium", new GUIStyle(GUI.skin.label) { fontSize = 24, alignment = TextAnchor.MiddleCenter });
             _scrollPos = GUILayout.BeginScrollView(_scrollPos);
             OnGUI?.Invoke();
             GUILayout.EndScrollView();
-            GUILayout.EndArea();
         }
     }
 }
