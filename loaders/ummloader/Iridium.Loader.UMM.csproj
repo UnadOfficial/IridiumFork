@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net481</TargetFramework>
+		<OutputType>Library</OutputType>
+		<RootNamespace>Iridium.Loader</RootNamespace>
+		<AssemblyName>Iridium.Loader.UMM</AssemblyName>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<OutputPath>..\..\bin\loaders\umm\</OutputPath>
+		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+		<GameLibDir>$(MSBuildProjectDirectory)\..\..\lib\</GameLibDir>
+		<GameManagedDir Condition="'$(GameManagedDir)' == '' and Exists('G:\SteamLibrary\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice_Data\Managed\Assembly-CSharp.dll')">G:\SteamLibrary\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice_Data\Managed\</GameManagedDir>
+		<AssemblySearchPaths>$(GameManagedDir);$(GameLibDir);$(GameLibDir)ModManager\;$(AssemblySearchPaths)</AssemblySearchPaths>
+	</PropertyGroup>
+	<ItemGroup>
+		<Reference Include="UnityModManager">
+			<HintPath>..\..\lib\ModManager\UnityModManager.dll</HintPath>
+		</Reference>
+		<Reference Include="0Harmony">
+			<HintPath>..\..\lib\ModManager\0Harmony.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine">
+			<HintPath>..\..\lib\v2.9.8\UnityEngine.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>..\..\lib\v2.9.8\UnityEngine.CoreModule.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\frontline\Iridium_frontline.csproj" />
+	</ItemGroup>
+	<Target Name="CopyLoaderToFrontlineOut" AfterTargets="Build">
+		<PropertyGroup>
+			<FrontlineOutDir>$(MSBuildProjectDirectory)\..\..\out\frontline\</FrontlineOutDir>
+		</PropertyGroup>
+		<MakeDir Directories="$(FrontlineOutDir)" />
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(FrontlineOutDir)" SkipUnchangedFiles="true" />
+	</Target>
+</Project>

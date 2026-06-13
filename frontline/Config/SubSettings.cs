@@ -1,0 +1,241 @@
+using UnityEngine;
+
+namespace Iridium.Config
+{
+    public class OptimizerSettings
+    {
+        public bool enableOptimizer = false;
+        public bool optimizeMoveTrack = false;
+        public bool optimizeRecolorTrack = false;
+        public bool optimizeFilters = false;
+        public bool optimizeCLSAsyncScan = false;
+        public double divideBy = 1.0;
+        public bool dontShowSavedMemory = false;
+        public bool dontCompress = false;
+        public bool dontResizeMultipleOf4 = false;
+        public bool dontResizeCollider = false;
+        public bool useLossyCompression = false;
+        public int lossyQuality = 90;
+        public bool disableShadows = false;
+        public bool optimizeDecorationUpdate = false;
+        public bool optimizeTileUpdate = false;
+        public bool fastLoading = false;
+        public bool skipEventIfPaused = false;
+        public bool optimizeEventIcons = false;
+        public bool optimizeScnGameUpdate = false;
+        public bool optimizeMoveDecorations = false;
+        public bool optimizeFloorMesh = false;
+        public bool optimizeFfxDecorations = false; // 新增：优化 ffx 装饰物更新
+
+        // Particle Optimization Patches (粒子优化)
+        public bool optimizeParticle = false;             // 主开关
+        public bool optimizeParticleInactive = false;     // 跳过非活跃粒子 + 对象池
+        public bool optimizeParticleCulling = false;      // 离屏暂停模拟
+        public bool optimizeParticleLod = false;          // LOD 跳过
+
+        // Scene Optimization Patches
+        public bool cacheGameObjectReferences = false;
+        public bool optimizeEventProcessing = false;
+        public bool optimizeEditorMouseDetection = false;
+        public bool optimizeEditorEventIndicators = false;
+
+        // Loading Optimization Patches
+        public bool cacheFloorEvents = false;
+        public bool optimizeMoveTrackTweens = false;
+        public bool batchMoveDecorations = false;
+
+        // DOTween Optimization Patches
+        public bool optimizeDOTweenGlobal = false;
+        public int dotweenTweenerCapacity = 500;
+        public int dotweenSequenceCapacity = 100;
+        public bool dotweenDefaultRecyclable = true;
+        public bool dotweenDisableSafeMode = false;
+
+        // Extreme Optimization Patches (极端情况优化)
+        public bool enableExtremeOptimization = false; // 启用极端优化（分帧处理）
+        public int maxTweensPerFrame = 100; // 每帧最多创建的Tween数量
+
+        // Frame-Spread Loading (分帧加载)
+        public bool frameSpreadDecorationLoading = false; // 启用装饰物分帧加载
+        public int decorationsPerFrame = 50; // 每帧加载的装饰物数量
+
+        // JSON Deserialize Optimization
+        public bool customLevelReadOptimization = true; // 自定义关卡谱面读取优化
+
+        // --- Editor Floor Performance Optimizations ---
+        public bool enableEditorFloorOptimization = false; // 主开关
+        public bool incrementalFloorInsert = false;        // 增量式砖块插入/删除
+        public bool rangeBasedRedraw = false;              // 范围式重绘(Holds/Planets/Nums)
+        public bool skipRedundantRemakePath = false;       // 跳过重复的RemakePath调用
+        public bool optimizeOffsetFloorEvents = false;     // 优化 OffsetFloorIDsInEvents
+        public bool skipApplyEventsOnInsert = false;       // 增量插入时跳过 ApplyEventsToFloors
+    }
+
+    public class UISettings
+    {
+        public bool removeNews = false;
+        public bool hideBetaWatermark = false;
+        public bool moveAutoplayText = false;
+        public float autoplayTextX = 0f;
+        public float autoplayTextY = 0f;
+        public bool forceDifficultyUI = false;
+        public bool enableCircleArc = false;
+        public bool alwaysCountdown = false;
+        public bool enablePausePlanetTrail = false;
+    }
+
+    public class LobbyMusicSettings
+    {
+        public bool enableLobbyMusicPatch = false;
+        public bool enableCustomBpm = false;
+        public float customBpm = 120f;
+        public bool fastMusic = true;
+        public bool customMusic = false;
+        public string defaultMusicPath = string.Empty;
+        public string fastMusicPath = string.Empty;
+    }
+
+    public class MemorySettings
+    {
+        public bool enableMemoryOptimization = false;
+        public bool cleanOnSceneSwitch = true;
+    }
+
+    public class CompatibilitySettings
+    {
+        public bool enableLegacyPauseFix = false;
+        public bool enableNoFailTooEarly = false;
+        public bool forceAngleData = false;
+        public bool scaleFilterSpeedWithPitch = false;
+        public bool fixCameraRelativeDrag = false;
+        public bool portalTravelFix = false;
+        public bool fixEditorPlayResetMistakes = true;
+        public bool fixTurnaroundCondition = true;
+        public bool editorPauseEnabled = true;
+        public bool editorPauseAllowed = true; // Master switch: allow pause in editor auto-play
+        public int editorPauseKey = 32; // KeyCode.Space
+        public int editorPauseModifiers = 0; // bit: 1=Ctrl 2=Alt 4=Shift 8=Win
+        public bool fixCoopPauseLock = true;
+        public bool fixJudgeRotation = true;
+        public LegacyBehaviorMode legacyFlashMode = LegacyBehaviorMode.Default;
+        public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
+    }
+
+    public enum LegacyBehaviorMode
+    {
+        Default,
+        AlwaysOff,
+        AlwaysOn
+    }
+
+    public class HitSoundSettings
+    {
+        public bool enableHitSoundPitch = false;
+    }
+
+    public class JudgeTextSettings
+    {
+        public bool enableJudgeTextCustomization = false;
+        public bool showAsOffset = false; // 显示为偏移 (如 "5ms")
+        
+        // 自定义判定文本
+        public string tooEarly = "TooEarly";
+        public string veryEarly = "VeryEarly";
+        public string earlyPerfect = "EarlyPerfect";
+        public string perfect = "Perfect";
+        public string latePerfect = "LatePerfect";
+        public string veryLate = "VeryLate";
+        public string tooLate = "TooLate";
+        public string multipress = "Multipress";
+        public string failMiss = "FailMiss";
+        public string failOverload = "FailOverload";
+        
+        public string GetTextForHitMargin(int hitMargin)
+        {
+            return hitMargin switch
+            {
+                0 => tooEarly,
+                1 => veryEarly,
+                2 => earlyPerfect,
+                3 => perfect,
+                4 => latePerfect,
+                5 => veryLate,
+                6 => tooLate,
+                7 => multipress,
+                8 => failMiss,
+                9 => failOverload,
+                _ => ""
+            };
+        }
+        
+        public void ResetToDefault()
+        {
+            tooEarly = "TooEarly";
+            veryEarly = "VeryEarly";
+            earlyPerfect = "EarlyPerfect";
+            perfect = "Perfect";
+            latePerfect = "LatePerfect";
+            veryLate = "VeryLate";
+            tooLate = "TooLate";
+            multipress = "Multipress";
+            failMiss = "FailMiss";
+            failOverload = "FailOverload";
+        }
+    }
+
+    /// <summary>
+    /// 补丁模式设置 — 控制 Transpiler / PrefixPostfix 切换
+    /// </summary>
+    public class PatchModeSettings
+    {
+        /// <summary>
+        /// true = 使用 Transpiler（IL注入，性能优先）
+        /// false = 使用 Prefix/Postfix（兼容性优先）
+        /// </summary>
+        public bool useILPatch = false;
+    }
+
+    public class EditorShortcutSettings
+    {
+        public bool enableEditorShortcuts = false;
+
+        // --- Decoration shortcuts ---
+
+        // Select All Decorations (default: Ctrl+Shift+A)
+        public int selectAllKey = 65; // KeyCode.A
+        public int selectAllModifiers = 5; // Ctrl+Shift
+
+        // Deselect All (default: Ctrl+Shift+D)
+        public int deselectAllKey = 68; // KeyCode.D
+        public int deselectAllModifiers = 5; // Ctrl+Shift
+
+        // Toggle Visibility (default: Ctrl+E)
+        public int toggleVisibilityKey = 69; // KeyCode.E
+        public int toggleVisibilityModifiers = 1; // Ctrl
+
+        // Focus Decoration (default: Ctrl+G)
+        public int focusDecorationKey = 71; // KeyCode.G
+        public int focusDecorationModifiers = 1; // Ctrl
+
+        // --- Navigation shortcuts ---
+
+        // Go To Selected Floor (default: Ctrl+Shift+N)
+        public int goToFloorKey = 78; // KeyCode.N
+        public int goToFloorModifiers = 5; // Ctrl+Shift
+        public bool cameraFollowOnFloorSelect = true; // SelectFloor 附带镜头跟随
+
+        // Select All Floors (default: Ctrl+Shift+W)
+        public int selectAllFloorsKey = 87; // KeyCode.W
+        public int selectAllFloorsModifiers = 5; // Ctrl+Shift
+
+        // --- Popup shortcuts ---
+
+        // Popup Save (default: Return)
+        public int popupSaveKey = 13; // KeyCode.Return
+        public int popupSaveModifiers = 0;
+
+        // Popup Discard (default: D)
+        public int popupDiscardKey = 68; // KeyCode.D
+        public int popupDiscardModifiers = 0;
+    }
+}
