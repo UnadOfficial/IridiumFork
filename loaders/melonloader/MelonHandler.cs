@@ -156,7 +156,7 @@ namespace Iridium
         }
         private void GUIFunc(int id)
         {
-            GUI.DragWindow(new Rect(0f, 0f, 10000f, 40f)); // is 24 + 16
+            GUI.DragWindow(new Rect(0f, 0f, 10000f, 64f)); // is 48 + 16
             GUILayout.Label("Iridium", new GUIStyle(GUI.skin.label) { fontSize = 24, alignment = TextAnchor.MiddleCenter });
             _scrollPos = GUILayout.BeginScrollView(_scrollPos);
             OnGUI?.Invoke();
