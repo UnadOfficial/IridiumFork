@@ -1,10 +1,20 @@
 ### 新增
 
-1. MelonLoader 下通过 `Ctrl+F9` 快捷键开关设置面板，面板居中显示并支持滚动
-2. 支持自定义快捷键字符串，编辑 Settings.xml 中 `<panelToggleHotkey>` 即可（如 `Ctrl+Shift+F1`）
-3. 设置加载路径改为基于程序集位置，修复加载器路径不同步导致设置读取失败的问题
+1. MelonLoader 面板改为 Iridium UI 风格（圆角深色背景），添加 × 关闭按钮
+2. 面板拖拽限制在标题栏，修复 Tab/开关/滚动条无法点击的问题
+3. UI 纹理预加载至初始化阶段，消除首次打开面板卡顿
+4. CoopPauseLockFix 改为运行时反射探测 LockInput 目标（scrPlayer ≥3.1.2 / scrController ≤3.1.1）
 
-### 改进
+### Added
 
-1. 修复 MelonLoader 下设置全为默认值（Disabled）的问题
-2. 修复 CopyToOut 中 UMM Loader 缺少 Exists 条件导致 CI 构建失败的问题
+1. MelonHandler panel restyled with Iridium UI (rounded dark bg), added close button
+2. Drag restricted to title bar — fixed Tab/Switch/scrollbar not responding to clicks
+3. Pre-load UI textures at init to eliminate first-open lag
+4. CoopPauseLockFix: runtime reflection for LockInput target (scrPlayer ≥3.1.2 / scrController ≤3.1.1)
+
+### 추가
+
+1. MelonHandler 패널 Iridium UI 스타일로 변경 (둥근 어두운 배경), 닫기 버튼 추가
+2. 드래그를 타이틀바로 제한 — Tab/스위치/스크롤바 클릭 불가 문제 해결
+3. UI 텍스처 초기화 단계에서 미리 로드하여 첫 열기 지연 제거
+4. CoopPauseLockFix: 런타임 리플렉션으로 LockInput 대상 감지 (scrPlayer ≥3.1.2 / scrController ≤3.1.1)
