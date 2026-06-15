@@ -220,6 +220,10 @@ namespace Iridium.Patches
             // Editor Shortcuts
             _definitions.Add(new PatchDef(typeof(EditorShortcutPatches.EditorShortcutUpdatePatch), () => Main.Settings.editorShortcuts.enableEditorShortcuts));
             _definitions.Add(new PatchDef(typeof(EditorShortcutPatches.FloorSelectCameraJumpPatch), () => Main.Settings.editorShortcuts.enableEditorShortcuts));
+
+            // --- Custom Easing Engine (替代 DOTween) ---
+            var easingCond = () => Main.Settings.optimizer.enableCustomEasingEngine;
+            RegisterNestedPatches(typeof(CustomEasingPatches), easingCond);
         }
 
         /// <summary>

@@ -23,7 +23,7 @@ jobs:
           - game-version: v2.9.8
             project-dir: main
             project-file: Iridium.csproj
-          - game-version: v3.1.0
+          - game-version: v3
             project-dir: frontline
             project-file: Iridium_frontline.csproj
     runs-on: ubuntu-latest

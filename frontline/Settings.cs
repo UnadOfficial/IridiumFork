@@ -233,6 +233,8 @@ namespace Iridium
                 Separator();
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeTileUpdate, "OptimizeTileUpdate");
                 Separator();
+                var prevEnabled = GUI.enabled;
+                GUI.enabled = prevEnabled && !optimizer.enableCustomEasingEngine;
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeMoveTrack, "OptimizeMoveTrack");
                 Separator();
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeRecolorTrack, "OptimizeRecolorTrack");
@@ -250,6 +252,7 @@ namespace Iridium
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeScnGameUpdate, "OptimizeScnGameUpdate");
                 Separator();
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeMoveDecorations, "OptimizeMoveDecorations");
+                GUI.enabled = prevEnabled;
                 Separator();
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeFfxDecorations, "OptimizeFfxDecorations");
                 IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationWarning");
@@ -262,6 +265,26 @@ namespace Iridium
 			}
 			End();
 			Separator();
+
+            Text(Localization.Get("CustomEasingEngine"), TextStyle.Subtitle);
+            Separator();
+            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            {
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref optimizer.enableCustomEasingEngine, "EnableCustomEasingEngine");
+                if (GUI.changed)
+                {
+                    ApplyCustomEasingMutualExclusion(optimizer);
+                    AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                }
+                if (optimizer.enableCustomEasingEngine)
+                {
+                    Separator();
+                    IridiumPreset.IconText(sizes, IconStyle.Information, "CustomEasingEngineHint");
+                }
+            }
+            End();
+            Separator();
 
 			Text(Localization.Get("ParticleOptimizations"), TextStyle.Subtitle);
 			Separator();
@@ -1154,5 +1177,38 @@ namespace Iridium
 		{
 			Main.Handler?.SaveSettings(this);
 		}
+
+        /// <summary>
+        /// 启动时检测自定义缓速引擎与三个 Patch 的冲突。
+        /// 如果引擎和任一 Patch 同时开启，强制关闭引擎并保存配置。
+        /// </summary>
+        public static void ValidateCustomEasingConflict(Settings settings)
+        {
+            if (!settings.optimizer.enableCustomEasingEngine) return;
+
+            bool hasConflict = settings.optimizer.optimizeMoveTrack
+                            || settings.optimizer.optimizeRecolorTrack
+                            || settings.optimizer.optimizeMoveDecorations;
+
+            if (hasConflict)
+            {
+                settings.optimizer.enableCustomEasingEngine = false;
+                Main.Handler?.SaveSettings(settings);
+                Main.Logger?.Warning(Localization.Get("CustomEasingEngineConflictDetected"));
+            }
+        }
+
+        private static void ApplyCustomEasingMutualExclusion(OptimizerSettings opt)
+        {
+            // 启用缓速引擎 → 关闭三个冲突 Patch
+            if (opt.enableCustomEasingEngine)
+            {
+                bool changed = false;
+                if (opt.optimizeMoveTrack) { opt.optimizeMoveTrack = false; changed = true; }
+                if (opt.optimizeRecolorTrack) { opt.optimizeRecolorTrack = false; changed = true; }
+                if (opt.optimizeMoveDecorations) { opt.optimizeMoveDecorations = false; changed = true; }
+                if (changed) AsyncPatchManager.UpdateOptimizerPatchesAsync();
+            }
+        }
     }
 }

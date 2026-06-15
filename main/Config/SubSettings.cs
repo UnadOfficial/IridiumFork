@@ -60,7 +60,9 @@ namespace Iridium.Config
         public int decorationsPerFrame = 50; // 每帧加载的装饰物数量
 
         // JSON Deserialize Optimization
-        public bool customLevelReadOptimization = true; // 自定义关卡谱面读取优化
+        public bool customLevelReadOptimization = false; // 自定义关卡谱面读取优化
+
+        public bool enableCustomEasingEngine = false; // 自定义缓速引擎（替代 DOTween）
 
         // --- Editor Floor Performance Optimizations ---
         public bool enableEditorFloorOptimization = false; // 主开关
@@ -88,7 +90,7 @@ namespace Iridium.Config
         public bool enableLobbyMusicPatch = false;
         public bool enableCustomBpm = false;
         public float customBpm = 120f;
-        public bool fastMusic = true;
+        public bool fastMusic = false;
         public bool customMusic = false;
         public string defaultMusicPath = string.Empty;
         public string fastMusicPath = string.Empty;

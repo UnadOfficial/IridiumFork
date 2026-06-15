@@ -228,12 +228,9 @@ ${commits.map(c => `| \`${c.hash}\` | ${c.message} |`).join('\n')}
     
     const body = `## ${versionTag}
 
-**构建日期 / Build Date**: ${buildDate}
-**提交 / Commit**: \`${commitSha}\`
-
 ${changelogSection}
 ${commitSection}
-> 💡 包含两个版本：\`Iridium_*+adofai2.9.8.zip\` (v2.9.8) 和 \`Iridium_*+adofai2.10.0.zip\` (v2.10.0)
+> Please Use the version that fits your ADOFAI version.
 `.trim();
     
     return body;

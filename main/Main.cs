@@ -24,6 +24,7 @@ namespace Iridium
             Logger = new Logger();
             Settings = handler.LoadSettings<Settings>();
             Localization.Load();
+            Settings.ValidateCustomEasingConflict(Settings);
 
             handler.OnToggle += OnToggle;
             handler.OnGUI += () => Settings.OnGUI();

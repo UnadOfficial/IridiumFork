@@ -1,29 +1,30 @@
 # Iridium Changelog
 
-## r31_beta3
+## r31_prerelease1
 
-### MelonLoader 面板改进 / MelonLoader Panel Improvements / MelonLoader 패널 개선
+### 自定义缓速引擎 Bug 修复 / Custom Easing Engine Bug Fixes / 사용자 정의 감속 엔진 버그 수정
 
-- **Iridium UI 风格窗口**：MelonHandler 窗口从 Unity 默认 `GUILayout.Window` 迁移至 `IridiumLayout` 渲染，与主界面风格统一（圆角深色背景、标题样式）
-- **关闭按钮**：标题栏右侧添加 × 关闭按钮，点击关闭面板
-- **拖拽修复**：拖拽区域限制在标题栏，不再拦截内容区鼠标事件，Tab 切换、Switch 开关、滚动条拖动均恢复正常
-- **首次打开卡顿优化**：UI 纹理资源预加载至 mod 初始化阶段，消除首次打开面板时的渲染阻塞
+- **装饰物缩放互斥修复**：ScaleX/ScaleY 各自独立 float tween，每帧从 `dec.scaleVec` 实时读取另一轴当前值，避免两轴互相覆盖（等效原版 AxisConstraint）
+- **装饰物旋转修复**：`r => dec.rotAngle = r` → `r => dec.SetRotation(r)`，每帧同步至 transform，不再仅在完成时跳转
+- **装饰物位置/视差偏移/枢轴修复**：`PositionX/Y`、`ParallaxOffsetX/Y`、`PivotX/Y` 改为每帧调用对应 `Set*` 方法，动画期间视觉正确更新
+- **轨道旋转修复**：float tween 每帧同时写 `target.tweenRot.z` 和 `tform.eulerAngles`，匹配原版 DOTween OnUpdate 行为
+- **轨道缩放修复**：从 Vector3 tween 改为 float tween 分别控制 X/Y 轴，实时读取另一轴，保留 Z 轴原值
 
-- **Iridium-styled window**: MelonHandler panel migrated from default `GUILayout.Window` to `IridiumLayout` rendering for visual consistency (rounded dark background, title styling)
-- **Close button**: Added × close button on the title bar right side
-- **Drag fix**: Drag area restricted to title bar; no longer intercepts content-area mouse events — Tab switching, Switch toggles, and scrollbar dragging all work correctly
-- **First-open lag fix**: Pre-load UI texture resources during mod initialization to eliminate render blocking on first panel open
+- **Decoration scale fix**: Split into independent float tweens for X/Y; each reads the other axis live from `dec.scaleVec` to prevent fighting (equivalent to original AxisConstraint)
+- **Decoration rotation fix**: `r => dec.rotAngle = r` → `r => dec.SetRotation(r)`, synced to transform every frame instead of snapping on completion
+- **Decoration position/parallaxOffset/pivot fix**: `PositionX/Y`, `ParallaxOffsetX/Y`, `PivotX/Y` now call the respective `Set*` methods each frame for correct visual updates during animation
+- **Track rotation fix**: Float tween writes both `target.tweenRot.z` and `tform.eulerAngles` each frame, matching original DOTween OnUpdate behavior
+- **Track scale fix**: Changed from Vector3 tweens to per-axis float tweens reading the other axis live, preserving original Z value
 
-- **Iridium 스타일 창**: MelonHandler 패널이 기본 `GUILayout.Window`에서 `IridiumLayout` 렌더링으로 마이그레이션되어 메인 인터페이스와 시각적 일관성 확보 (둥근 어두운 배경, 제목 스타일)
-- **닫기 버튼**: 타이틀바 우측에 × 닫기 버튼 추가
-- **드래그 수정**: 드래그 영역을 타이틀바로 제한하여 콘텐츠 영역의 마우스 이벤트 차단 해제 — Tab 전환, Switch 토글, 스크롤바 드래그 정상 작동
-- **첫 열기 지연 최적화**: UI 텍스처 리소스를 모드 초기화 단계에서 미리 로드하여 첫 패널 열기 시 렌더링 블로킹 제거
+- **장식 스케일 수정**: ScaleX/ScaleY를 독립 float tween으로 분리, 각각 `dec.scaleVec`에서 실시간으로 다른 축 값을 읽어 충돌 방지 (원본 AxisConstraint와 동일)
+- **장식 회전 수정**: `r => dec.rotAngle = r` → `r => dec.SetRotation(r)`, 완료 시 스냅 대신 매 프레임 transform에 동기화
+- **장식 위치/시차오프셋/피벗 수정**: `PositionX/Y`, `ParallaxOffsetX/Y`, `PivotX/Y`가 매 프레임 해당 `Set*` 메서드를 호출하여 애니메이션 중 시각적 업데이트 정상화
+- **트랙 회전 수정**: float tween이 매 프레임 `target.tweenRot.z`와 `tform.eulerAngles`를 함께 기록, 원본 DOTween OnUpdate 동작 일치
+- **트랙 스케일 수정**: Vector3 tween에서 축별 float tween으로 변경, 실시간으로 다른 축 값을 읽고 Z 값 유지
 
-### CoopPauseLockFix 版本兼容性修复 / CoopPauseLockFix Version Compatibility Fix / CoopPauseLockFix 버전 호환성 수정
+### 新增 / New / 신규
 
-- **运行时目标探测**：移除硬编码 `[HarmonyPatch(typeof(scrPlayer), nameof(scrPlayer.LockInput))]`；改为运行时反射探测 `scrPlayer.LockInput` (≥3.1.2) 或 `scrController.LockInput` (≤3.1.1)，自动选择正确目标
-- **PatchManager 适配**：`ApplyPatch`/`RemovePatch` 对 `CoopPauseLockFix` 走手动 patch/卸载分支
-- **Runtime target detection**: Removed hardcoded `[HarmonyPatch(typeof(scrPlayer))]`; now uses runtime reflection to detect `scrPlayer.LockInput` (≥3.1.2) or `scrController.LockInput` (≤3.1.1) and auto-selects correct target
-- **PatchManager adaptation**: `ApplyPatch`/`RemovePatch` use dedicated manual patch/unpatch branches for `CoopPauseLockFix`
-- **런타임 대상 감지**: 하드코딩된 `[HarmonyPatch(typeof(scrPlayer))]` 제거; 런타임 리플렉션으로 `scrPlayer.LockInput` (≥3.1.2) 또는 `scrController.LockInput` (≤3.1.1) 감지 및 자동 선택
-- **PatchManager 적응**: `ApplyPatch`/`RemovePatch`가 `CoopPauseLockFix`에 대해 수동 패치/언패치 분기 사용
+- **自定义缓速引擎**：新增 `enableCustomEasingEngine` 设置，使用轻量级 struct-based IrTween 替代 DOTween 处理 MoveTrack/RecolorTrack/MoveDecoration，零 GC 分配、对象池管理
+- **Mutual exclusion**: Auto-disables conflicting optimize options (`optimizeMoveTrack`/`optimizeRecolorTrack`/`optimizeMoveDecorations`) when custom easing engine is enabled
+- **상호 배제**: 사용자 정의 감속 엔진 활성화 시 충돌하는 최적화 옵션(`optimizeMoveTrack`/`optimizeRecolorTrack`/`optimizeMoveDecorations`) 자동 비활성화
+
