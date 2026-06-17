@@ -473,7 +473,8 @@ namespace Iridium.Patches
 
                     if (origW != newW || origH != newH)
                     {
-                        decorRatios[filePath] = new Vector3((float)origW / newW, (float)origH / newH, 1f);
+                        // 使用统一的 scaleFactor 作为缩放比，避免 AlignTo4 分别对宽高取整导致的不等比缩放
+                        decorRatios[filePath] = new Vector3((float)scaleFactor, (float)scaleFactor, 1f);
                     }
 
                     if (!Main.Settings.optimizer.dontShowSavedMemory)
@@ -566,7 +567,10 @@ namespace Iridium.Patches
                         var optimized = CreateProcessedTexture(__result, newW, newH);
                             if (optimized != null)
                             {
-                                decorRatios[texName] = new((float)__result.width / newW, (float)__result.height / newH, 1f);
+                                // 基于实际像素尺寸计算缩放比，取两轴平均值确保等比
+                                // 避免 AlignTo4 分别对宽高取整导致的不等比缩放变形
+                                float avgRatio = ((float)__result.width / newW + (float)__result.height / newH) * 0.5f;
+                                decorRatios[texName] = new Vector3(avgRatio, avgRatio, 1f);
                                 if (!Main.Settings.optimizer.dontCompress)
                                 {
                                     try

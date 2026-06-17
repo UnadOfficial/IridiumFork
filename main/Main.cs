@@ -33,6 +33,9 @@ namespace Iridium
 
             Harmony = new Harmony(handler.ModId);
 
+            // 初始化自定义缓速引擎
+            Iridium.Core.CustomEasingEngine.Initialize();
+
             Logger?.Log(Localization.Get("ModLoaded", Settings.language));
             return true;
         }
@@ -68,6 +71,10 @@ namespace Iridium
                 }
             }
             Logger.TaskRun();
+
+            // 自定义缓速引擎帧驱动
+            if (Settings.optimizer.enableCustomEasingEngine)
+                Iridium.Core.CustomEasingEngine.Update(dt);
         }
 
         private static void OnToggle(bool value)

@@ -120,6 +120,13 @@ namespace Iridium.Patches
             var tweenSafetyCond = () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.dotweenDefaultRecyclable;
             RegisterNestedPatches(typeof(TweenSafetyPatches), tweenSafetyCond);
 
+            // --- Event Tween Optimization Patches ---
+            var eventTweenCond = () => Main.Settings.optimizer.optimizeEventProcessing;
+            _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxMoveFloorPlusEventTweensPatch), eventTweenCond));
+            _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxMoveDecorationsPlusEventTweensPatch), eventTweenCond));
+            _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxRecolorFloorPlusEventTweensPatch), eventTweenCond));
+            _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxPlusBaseKillCacheInvalidationPatch), eventTweenCond));
+
             // --- JSON Deserialize Optimization ---
             var jsonOptCond = () => Main.Settings.optimizer.customLevelReadOptimization;
             _definitions.Add(new PatchDef(typeof(JsonPatches.PatchLevelDataCLSLoadLevel), jsonOptCond));
@@ -188,6 +195,10 @@ _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Ap
             // Editor Shortcuts
             _definitions.Add(new PatchDef(typeof(EditorShortcutPatches.EditorShortcutUpdatePatch), () => Main.Settings.editorShortcuts.enableEditorShortcuts));
             _definitions.Add(new PatchDef(typeof(EditorShortcutPatches.FloorSelectCameraJumpPatch), () => Main.Settings.editorShortcuts.enableEditorShortcuts));
+
+            // --- Custom Easing Engine (替代 DOTween) ---
+            var easingCond = () => Main.Settings.optimizer.enableCustomEasingEngine;
+            RegisterNestedPatches(typeof(CustomEasingPatches), easingCond);
         }
 
         /// <summary>

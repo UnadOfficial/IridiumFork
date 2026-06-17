@@ -226,8 +226,13 @@ namespace Iridium.Patches
                 float dur = __instance.duration;
                 Ease ease = __instance.ease;
 
-                foreach (scrDecoration dec in __instance.decManager.GetTaggedDecorations(__instance.targetTags))
+                // 2.9.8 兼容：遍历 targetTags，从 taggedDecorations 字典中查找装饰物
+                foreach (string tag in __instance.targetTags)
                 {
+                    if (!__instance.decManager.taggedDecorations.TryGetValue(tag, out var taggedList))
+                        continue;
+                    foreach (scrDecoration dec in taggedList)
+                    {
                     Dictionary<TweenType, Tween> tweens = dec.eventTweens;
                     bool isVisual = dec is scrVisualDecoration;
                     bool isParticle = dec is scrParticleDecoration;
@@ -397,48 +402,10 @@ namespace Iridium.Patches
                         var sprites = scrDecorationManager.instance.imageHolder.customSprites;
                         ((scrParticleDecoration)dec).SetSprite(hasImg ? sprites[__instance.targetImageFilename] : null);
                     }
-                    if (isVisual && __instance.imageFilenameUsed)
-                    {
-                        bool hasImg = !string.IsNullOrEmpty(__instance.targetImageFilename);
-                        var sprites = scrDecorationManager.instance.imageHolder.customSprites;
-                        var cs = hasImg ? sprites[__instance.targetImageFilename] : null;
-                        ((scrVisualDecoration)dec).SetSprite(cs?.GetSprite(TextureManager.ImageOptions.None), TextureManager.ImageOptions.None);
-                    }
-                    // --- Masking 属性 (仅 scrVisualDecoration) ---
-                    if (isVisual)
-                    {
-                        var visDec = (scrVisualDecoration)dec;
-                        if (__instance.maskingTypeUsed)
-                            visDec.SetMaskingType(__instance.targetMaskingType);
-                        if (__instance.maskingTargetUsed)
-                            visDec.SetMaskingTarget(__instance.targetmaskingTarget);
-                        if (__instance.useMaskingDepthUsed)
-                            visDec.SetMaskingDepth(__instance.targetUseMaskingDepth);
-                        if (__instance.maskingFrontDepthUsed || __instance.maskingBackDepthUsed)
-                            visDec.SetMaskingDepth(
-                                __instance.maskingFrontDepthUsed ? new int?(__instance.targetMaskingFrontDepth) : null,
-                                __instance.maskingBackDepthUsed ? new int?(__instance.targetMaskingBackDepth) : null);
-                    }
-                }
+                    } // end foreach dec
+                } // end foreach tag
 
                 return false;
-            }
-        }
-
-        // ==================== DOTween.KillAll 桥接 ====================
-
-        /// <summary>
-        /// 补丁 DOTween.KillAll：游戏退出播放/倒带/切关时调用 DOTween.KillAll 清理所有 tween。
-        /// 我们在此同步清理自定义缓速引擎的所有 IrTween，确保状态复位。
-        /// </summary>
-        [HarmonyPatch(typeof(DOTween), "KillAll")]
-        public static class DotweenKillAllPatch
-        {
-            [HarmonyPostfix]
-            public static void Postfix()
-            {
-                if (Main.Settings.optimizer.enableCustomEasingEngine)
-                    CustomEasingEngine.KillAll();
             }
         }
     }
