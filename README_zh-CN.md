@@ -8,6 +8,10 @@
 
 [English](README.md)
 
+欢迎加入我们的Discord服务器!
+
+https://discord.gg/ddndY4xXeK
+
 ---
 
 > [!IMPORTANT]
