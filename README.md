@@ -8,6 +8,11 @@ An optimized mod for A Dance of Fire and Ice, focusing on performance, visual cu
 
 [中文](README_zh-CN.md)
 
+
+Welcome to join our discord server!
+
+https://discord.gg/ddndY4xXeK
+
 ---
 
 > [!IMPORTANT]
