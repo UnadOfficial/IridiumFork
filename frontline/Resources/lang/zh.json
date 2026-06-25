@@ -203,6 +203,7 @@
   "SkipRedundantRemakePath": "跳过冗余的 RemakePath 调用",
   "OptimizeOffsetFloorEvents": "优化事件中的砖块 ID 偏移",
   "EditorFloorOptimizationWarning": "这些优化会改变编辑器的砖块重建逻辑。如果遇到显示异常，请尝试关闭它们。",
+
   "EditorShortcuts": "编辑器快捷键",
   "EnableEditorShortcuts": "启用编辑器快捷键",
   "EditorShortcutsSettings": "快捷键设置",

@@ -57,12 +57,12 @@ function getVersionInfo(projectDir, adofaiVer) {
         let tagName;
 
         if (vtype === 'release') {
-            versionTag = `${baseVersion}+adofai${adofaiVer}`;
-            releaseName = `${baseVersion}+adofai${adofaiVer}`;
+            versionTag = `${baseVersion}+adofai_v${adofaiVer}`;
+            releaseName = `${baseVersion}+adofai_v${adofaiVer}`;
             tagName = `r${releaseNumber}_final`;
         } else {
-            versionTag = `${baseVersion}_${vtype}${minor}+adofai${adofaiVer}`;
-            releaseName = `${baseVersion}_${vtype}${minor}+adofai${adofaiVer}`;
+            versionTag = `${baseVersion}_${vtype}${minor}+adofai_v${adofaiVer}`;
+            releaseName = `${baseVersion}_${vtype}${minor}+adofai_v${adofaiVer}`;
             tagName = `r${releaseNumber}_${vtype}${minor}`;
         }
 

@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - game-version: v2.9.8
+          - game-version: v2
             project-dir: main
             project-file: Iridium.csproj
           - game-version: v3

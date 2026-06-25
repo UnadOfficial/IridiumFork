@@ -13,16 +13,16 @@ namespace Iridium
 
     public static class VersionManager
     {
-        public static VersionType Type => VersionType.Prerelease;
-        public const int MinorVersion = 2;
+        public static VersionType Type => VersionType.Release;
+        public const int MinorVersion = 0;
 
         public static string GetFullVersionString()
         {
             string baseVersion = Main.Handler?.ModVersion ?? "Error";
-            string adofaiSuffix = $"+adofai{BuildInfo.AdofaiVersion}";
+            string adofaiSuffix = $"+adofai_{BuildInfo.AdofaiVersion}";
             if (Type == VersionType.Release)
             {
-                return $"{baseVersion}{adofaiSuffix}";
+                return $"{baseVersion}_{adofaiSuffix}";
             }
             return $"{baseVersion}_{Type.ToString().ToLower()}{MinorVersion}{adofaiSuffix}";
         }

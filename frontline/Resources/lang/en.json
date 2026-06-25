@@ -203,6 +203,7 @@
   "SkipRedundantRemakePath": "Skip Redundant RemakePath Calls",
   "OptimizeOffsetFloorEvents": "Optimize Floor ID Offset in Events",
   "EditorFloorOptimizationWarning": "These optimizations alter the editor's floor rebuild logic. If you encounter visual glitches, disable them.",
+
   "EditorShortcuts": "Editor Shortcuts",
   "EnableEditorShortcuts": "Enable Editor Keyboard Shortcuts",
   "EditorShortcutsSettings": "Shortcut Keys",

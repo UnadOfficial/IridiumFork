@@ -175,8 +175,6 @@ namespace Iridium.Patches
                 if (!Main.Settings.optimizer.batchMoveDecorations) return;
 
                 // 已在 OptimizerPatches.MoveDecorationsOptimizationPatch 中优化
-                // 这里记录性能数据
-                Main.Logger?.Log($"[LoadingOptimization] MoveDecoration effect started");
             }
         }
 
