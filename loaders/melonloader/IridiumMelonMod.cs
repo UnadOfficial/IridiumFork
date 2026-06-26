@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 
-[assembly: MelonInfo(typeof(Iridium.IridiumMelonMod), BuildInfo.ModName, BuildInfo.ModVersion, BuildInfo.ModAuthor)]
+[assembly: MelonInfo(typeof(Iridium.IridiumMelonMod), Iridium.BuildInfo.ModName, Iridium.BuildInfo.ModVersion, Iridium.BuildInfo.ModAuthor)]
 [assembly: MelonGame("7th Beat Games", "A Dance of Fire and Ice")]
 
 namespace Iridium
