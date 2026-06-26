@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Xml.Serialization;
-using Newtonsoft.Json;
 using MelonLoader;
 using UnityEngine;
 using static Iridium.UI.IridiumLayout;
@@ -14,7 +12,6 @@ namespace Iridium
     {
         private readonly IridiumMelonMod _mod;
         private readonly string _modPath;
-        private readonly Lazy<string> _modVersion;
         private bool _uiVisible;
         private Rect _rect;
         private Vector2 _scrollPos;
@@ -32,24 +29,10 @@ namespace Iridium
         {
             _mod = mod;
             _modPath = GetModPath();
-            _modVersion = new Lazy<string>(() =>
-            {
-                string infoPath = Path.Combine(_modPath, "Info.json");
-                try
-                {
-                    var json = File.ReadAllText(infoPath);
-                    var info = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
-                    return info != null && info.TryGetValue("Version", out var v) ? v.ToString() ?? "Error" : "Error";
-                }
-                catch
-                {
-                    return "Error";
-                }
-            });
         }
 
         public string ModId => _mod.Info.Name;
-        public string ModVersion => _modVersion.Value;
+        public string ModVersion => BuildInfo.ModVersion;
         public string ModPath => _modPath;
 
         public void Log(string message) => MelonLogger.Msg(message);

@@ -230,6 +230,8 @@ namespace Iridium.Patches
                     return;
                 }
 
+                bool fast = Main.Settings.lobbyMusic.fastMusic;
+
                 if (!_loadingDefault)
                 {
                     if ((scrConductor.instance.song.clip = _defaultBgm) is null)
@@ -240,6 +242,8 @@ namespace Iridium.Patches
                     {
                         scrConductor.instance.song.volume = 1f;
                         scrConductor.instance.song.pitch = 1f;
+                        scrConductor.instance.song.Stop();
+                        if (!fast) scrConductor.instance.song.Play();
                     }
                 }
 
@@ -252,10 +256,12 @@ namespace Iridium.Patches
                     else
                     {
                         scrConductor.instance.song2.pitch = 1f;
-                        if (!Main.Settings.lobbyMusic.fastMusic)
-                        {
-                            scrConductor.instance.song2.volume = 0f;
-                        }
+                        scrConductor.instance.song2.Stop();
+                        if (fast) scrConductor.instance.song2.Play();
+
+                        // 确保只有一个 AudioSource 有声
+                        scrConductor.instance.song.volume = fast ? 0f : 1f;
+                        scrConductor.instance.song2.volume = fast ? 1f : 0f;
                     }
                 }
             }
