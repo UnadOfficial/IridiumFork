@@ -1,0 +1,314 @@
+<Iris>
+    <VBox gap="4">
+        <HBox align="center" gap="4">
+            <Switch value="{settings.optimizer.enableOptimizer}" on-changed="OnOptimizerToggled" />
+            <Text text="{localize('EnableOptimizer')}" style="title" />
+        </HBox>
+
+        <If condition="{settings.optimizer.enableOptimizer}">
+            <Separator />
+
+            <Text text="{localize('ImageOptimizations')}" style="subtitle" />
+            <Separator />
+            
+            <HBox align="center">
+                <Text text="{localize('CompressImage')}" style="label" />
+                <Switch value="{!settings.optimizer.dontCompress}" on-changed="OnCompressToggled" />
+            </HBox>
+
+            <If condition="{!settings.optimizer.dontCompress}">
+                <HBox align="center">
+                    <Text text="{localize('ShowSavedMemory')}" style="label" />
+                    <Switch value="{!settings.optimizer.dontShowSavedMemory}" on-changed="OnShowSavedMemoryToggled" />
+                </HBox>
+
+                <HBox align="center">
+                    <Text text="{localize('UseLossyCompression')}" style="label" />
+                    <Switch value="{settings.optimizer.useLossyCompression}" on-changed="OnLossyCompressionToggled" />
+                </HBox>
+
+                <If condition="{settings.optimizer.useLossyCompression}">
+                    <HBox align="center">
+                        <Text text="{localize('LossyQuality')}" style="label" />
+                        <Slider value="{settings.optimizer.lossyQuality}" min="10" max="100" showValue="true" on-changed="OnLossyQualityChanged" />
+                    </HBox>
+                </If>
+
+                <HBox align="center">
+                    <Text text="{localize('MultipleOf4')}" style="label" />
+                    <Switch value="{!settings.optimizer.dontResizeMultipleOf4}" on-changed="OnMultipleOf4Toggled" />
+                </HBox>
+
+                <HBox align="center">
+                    <Text text="{localize('DivideImageBy')}" style="label" />
+                    <Slider value="{settings.optimizer.divideBy}" min="1" max="4" step="0.1" showValue="true" on-changed="OnDivideByChanged" />
+                </HBox>
+
+                <HBox align="center">
+                    <Text text="{localize('DontResizeCollider')}" style="label" />
+                    <Switch value="{settings.optimizer.dontResizeCollider}" on-changed="OnDontResizeColliderToggled" />
+                </HBox>
+            </If>
+
+            <Separator />
+            <Text text="{localize('RenderingOptimizations')}" style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text="{localize('DisableShadows')}" style="label" />
+                <Switch value="{settings.optimizer.disableShadows}" on-changed="OnDisableShadowsToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeDecorationUpdate')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeDecorationUpdate}" on-changed="OnOptimizeDecorationUpdateToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeTileUpdate')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeTileUpdate}" on-changed="OnOptimizeTileUpdateToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeMoveTrack')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeMoveTrack}" on-changed="OnOptimizeMoveTrackToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeRecolorTrack')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeRecolorTrack}" on-changed="OnOptimizeRecolorTrackToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('SkipEventIfPaused')}" style="label" />
+                <Switch value="{settings.optimizer.skipEventIfPaused}" on-changed="OnSkipEventIfPausedToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeEventIcons')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeEventIcons}" on-changed="OnOptimizeEventIconsToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeScnGameUpdate')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeScnGameUpdate}" on-changed="OnOptimizeScnGameUpdateToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeMoveDecorations')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeMoveDecorations}" on-changed="OnOptimizeMoveDecorationsToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeFfxDecorations')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeFfxDecorations}" on-changed="OnOptimizeFfxDecorationsToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeFloorMesh')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeFloorMesh}" on-changed="OnOptimizeFloorMeshToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeFilters')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeFilters}" on-changed="OnOptimizeFiltersToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('FastLoading')}" style="label" />
+                <Switch value="{settings.optimizer.fastLoading}" on-changed="OnFastLoadingToggled" />
+            </HBox>
+
+            <Separator />
+            <Text text="{localize('CustomEasingEngine')}" style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text="{localize('EnableCustomEasingEngine')}" style="label" />
+                <Switch value="{settings.optimizer.enableCustomEasingEngine}" on-changed="OnCustomEasingEngineToggled" />
+            </HBox>
+
+            <Separator />
+            <Text text="{localize('ParticleOptimizations')}" style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeParticle')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeParticle}" on-changed="OnOptimizeParticleToggled" />
+            </HBox>
+
+            <If condition="{settings.optimizer.optimizeParticle}">
+                <HBox align="center">
+                    <Text text="{localize('OptimizeParticleInactive')}" style="label" />
+                    <Switch value="{settings.optimizer.optimizeParticleInactive}" on-changed="OnOptimizeParticleInactiveToggled" />
+                </HBox>
+
+                <HBox align="center">
+                    <Text text="{localize('OptimizeParticleCulling')}" style="label" />
+                    <Switch value="{settings.optimizer.optimizeParticleCulling}" on-changed="OnOptimizeParticleCullingToggled" />
+                </HBox>
+
+                <HBox align="center">
+                    <Text text="{localize('OptimizeParticleLod')}" style="label" />
+                    <Switch value="{settings.optimizer.optimizeParticleLod}" on-changed="OnOptimizeParticleLodToggled" />
+                </HBox>
+            </If>
+
+            <Separator />
+            <Text text="{localize('SceneOptimizations')}" style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text="{localize('CacheGameObjectReferences')}" style="label" />
+                <Switch value="{settings.optimizer.cacheGameObjectReferences}" on-changed="OnCacheGameObjectReferencesToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeEventProcessing')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeEventProcessing}" on-changed="OnOptimizeEventProcessingToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeEditorMouseDetection')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeEditorMouseDetection}" on-changed="OnOptimizeEditorMouseDetectionToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeEditorEventIndicators')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeEditorEventIndicators}" on-changed="OnOptimizeEditorEventIndicatorsToggled" />
+            </HBox>
+
+            <Separator />
+            <Text text="{localize('LoadingOptimizations')}" style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text="{localize('CacheFloorEvents')}" style="label" />
+                <Switch value="{settings.optimizer.cacheFloorEvents}" on-changed="OnCacheFloorEventsToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('OptimizeMoveTrackTweens')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeMoveTrackTweens}" on-changed="OnOptimizeMoveTrackTweensToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('BatchMoveDecorations')}" style="label" />
+                <Switch value="{settings.optimizer.batchMoveDecorations}" on-changed="OnBatchMoveDecorationsToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('CustomLevelReadOptimization')}" style="label" />
+                <Switch value="{settings.optimizer.customLevelReadOptimization}" on-changed="OnCustomLevelReadOptimizationToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text="{localize('FrameSpreadDecorationLoading')}" style="label" />
+                <Switch value="{settings.optimizer.frameSpreadDecorationLoading}" on-changed="OnFrameSpreadDecorationLoadingToggled" />
+            </HBox>
+
+            <If condition="{settings.optimizer.frameSpreadDecorationLoading}">
+                <HBox align="center">
+                    <Text text="{localize('DecorationsPerFrame')}" style="label" />
+                    <Slider value="{settings.optimizer.decorationsPerFrame}" min="10" max="500" showValue="true" on-changed="OnDecorationsPerFrameChanged" />
+                </HBox>
+            </If>
+
+            <Separator />
+            <Text text="{localize('DOTweenOptimizations')}" style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text="{localize('EnableDOTweenOptimization')}" style="label" />
+                <Switch value="{settings.optimizer.optimizeDOTweenGlobal}" on-changed="OnDOTweenGlobalToggled" />
+            </HBox>
+
+            <If condition="{settings.optimizer.optimizeDOTweenGlobal}">
+                <HBox align="center">
+                    <Text text="{localize('TweenerCapacity')}" style="label" />
+                    <Slider value="{settings.optimizer.dotweenTweenerCapacity}" min="200" max="2000" showValue="true" on-changed="OnTweenerCapacityChanged" />
+                </HBox>
+
+                <HBox align="center">
+                    <Text text="{localize('SequenceCapacity')}" style="label" />
+                    <Slider value="{settings.optimizer.dotweenSequenceCapacity}" min="50" max="500" showValue="true" on-changed="OnSequenceCapacityChanged" />
+                </HBox>
+
+                <HBox align="center">
+                    <Text text="{localize('DOTweenDefaultRecyclable')}" style="label" />
+                    <Switch value="{settings.optimizer.dotweenDefaultRecyclable}" on-changed="OnDOTweenDefaultRecyclableToggled" />
+                </HBox>
+
+                <HBox align="center">
+                    <Text text="{localize('DOTweenDisableSafeMode')}" style="label" />
+                    <Switch value="{settings.optimizer.dotweenDisableSafeMode}" on-changed="OnDOTweenDisableSafeModeToggled" />
+                </HBox>
+            </If>
+
+            <Separator />
+            <Text text="{localize('ExtremeOptimizations')}" style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text="{localize('EnableExtremeOptimization')}" style="label" />
+                <Switch value="{settings.optimizer.enableExtremeOptimization}" on-changed="OnExtremeOptimizationToggled" />
+            </HBox>
+
+            <If condition="{settings.optimizer.enableExtremeOptimization}">
+                <HBox align="center">
+                    <Text text="{localize('MaxTweensPerFrame')}" style="label" />
+                    <Slider value="{settings.optimizer.maxTweensPerFrame}" min="50" max="500" showValue="true" on-changed="OnMaxTweensPerFrameChanged" />
+                </HBox>
+            </If>
+
+            <Separator />
+            <Text text="{localize('MemorySettings')}" style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text="{localize('MemorySettings')}" style="label" />
+                <Switch value="{settings.memory.enableMemoryOptimization}" on-changed="OnMemoryOptimizationToggled" />
+            </HBox>
+
+            <If condition="{settings.memory.enableMemoryOptimization}">
+                <HBox align="center">
+                    <Text text="{localize('CleanOnSceneSwitch')}" style="label" />
+                    <Switch value="{settings.memory.cleanOnSceneSwitch}" on-changed="OnCleanOnSceneSwitchToggled" />
+                </HBox>
+            </If>
+
+            <Separator />
+            <Text text="{localize('EditorFloorOptimizations')}" style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text="{localize('EnableEditorFloorOptimization')}" style="label" />
+                <Switch value="{settings.optimizer.enableEditorFloorOptimization}" on-changed="OnEditorFloorOptimizationToggled" />
+            </HBox>
+
+            <If condition="{settings.optimizer.enableEditorFloorOptimization}">
+                <HBox align="center">
+                    <Text text="{localize('IncrementalFloorInsert')}" style="label" />
+                    <Switch value="{settings.optimizer.incrementalFloorInsert}" on-changed="OnIncrementalFloorInsertToggled" />
+                </HBox>
+
+                <If condition="{settings.optimizer.incrementalFloorInsert}">
+                    <HBox align="center">
+                        <Text text="{localize('RangeBasedRedraw')}" style="label" />
+                        <Switch value="{settings.optimizer.rangeBasedRedraw}" on-changed="OnRangeBasedRedrawToggled" />
+                    </HBox>
+
+                    <HBox align="center">
+                        <Text text="{localize('SkipRedundantRemakePath')}" style="label" />
+                        <Switch value="{settings.optimizer.skipRedundantRemakePath}" on-changed="OnSkipRedundantRemakePathToggled" />
+                    </HBox>
+
+                    <HBox align="center">
+                        <Text text="{localize('OptimizeOffsetFloorEvents')}" style="label" />
+                        <Switch value="{settings.optimizer.optimizeOffsetFloorEvents}" on-changed="OnOptimizeOffsetFloorEventsToggled" />
+                    </HBox>
+                </If>
+            </If>
+        </If>
+    </VBox>
+</Iris>

@@ -22,7 +22,7 @@ namespace Iridium
             string adofaiSuffix = $"+adofai_{BuildInfo.AdofaiVersion}";
             if (Type == VersionType.Release)
             {
-                return $"{baseVersion}_{adofaiSuffix}";
+                return $"{baseVersion}{adofaiSuffix}";
             }
             return $"{baseVersion}_{Type.ToString().ToLower()}{MinorVersion}{adofaiSuffix}";
         }

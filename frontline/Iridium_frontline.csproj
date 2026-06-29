@@ -26,6 +26,7 @@
 		<Reference Include="0Harmony">
 			<HintPath>..\lib\ModManager\0Harmony.dll</HintPath>
 		</Reference>
+		<ProjectReference Include="..\architectury\Iris.Iml\Iris.Iml.csproj" />
 		<Reference Include="Assembly-CSharp">
 			<HintPath>..\lib\v2.10.0\Assembly-CSharp.dll</HintPath>
 		</Reference>
@@ -310,6 +311,8 @@
 						 Condition="Exists('$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll')" />
 			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll"
 						 Condition="Exists('$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll')" />
+			<FilesToCopy Include="$(ProjectDir)..\out\Iris.Iml\Iris.Iml.dll"
+						 Condition="Exists('$(ProjectDir)..\out\Iris.Iml\Iris.Iml.dll')" />
 			<FilesToCopy Include="$(ProjectDir)Info.json" />
 			<ResourceFiles Include="$(ProjectDir)Resources\**\*" Exclude="$(ProjectDir)Resources\**\*\" />
 		</ItemGroup>

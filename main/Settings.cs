@@ -183,7 +183,9 @@ namespace Iridium
             Separator();
             Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
             {
+                GUI.changed = false;
                 InvertedSwitchOption(sizes, ref optimizer.dontCompress, "CompressImage");
+                if (GUI.changed) OptimizerPatches.ResetTextureOptimizationState();
 
                 bool compressEnabled = !optimizer.dontCompress;
                 if (compressEnabled)
@@ -192,22 +194,32 @@ namespace Iridium
                     InvertedSwitchOption(sizes, ref optimizer.dontShowSavedMemory, "ShowSavedMemory");
 
                     Separator();
+                    GUI.changed = false;
                     IridiumPreset.SwitchOption(sizes, ref optimizer.useLossyCompression, "UseLossyCompression");
+                    if (GUI.changed) OptimizerPatches.ResetTextureOptimizationState();
 
                     if (optimizer.useLossyCompression)
                     {
                         Separator();
                         var quality = optimizer.lossyQuality;
                         IridiumPreset.IntOption(sizes, ref quality, "LossyQuality", IntFormat(10, 100));
-                        optimizer.lossyQuality = Mathf.Clamp(quality, 10, 100);
+                        if (quality != optimizer.lossyQuality)
+                        {
+                            optimizer.lossyQuality = Mathf.Clamp(quality, 10, 100);
+                            OptimizerPatches.ResetTextureOptimizationState();
+                        }
                     }
 
                     Separator();
+                    GUI.changed = false;
                     InvertedSwitchOption(sizes, ref optimizer.dontResizeMultipleOf4, "MultipleOf4");
+                    if (GUI.changed) OptimizerPatches.ResetTextureOptimizationState();
                     if (optimizer.dontCompress) optimizer.dontResizeMultipleOf4 = true;
 
                     Separator();
+                    var prevDivideBy = optimizer.divideBy;
                     IridiumPreset.DoubleOption(sizes, ref optimizer.divideBy, "DivideImageBy", DoubleFormat(precision: 1));
+                    if (prevDivideBy != optimizer.divideBy) OptimizerPatches.ResetTextureOptimizationState();
                     Separator();
                     InvertedSwitchOption(sizes, ref optimizer.dontResizeCollider, "DontResizeCollider");
                 }

@@ -19,6 +19,8 @@ namespace Iridium.Patches
     public static class OptimizerPatches
     {
         public static ConcurrentDictionary<string, Vector3> decorRatios = new();
+        // 纹理 -> 原始文件路径映射，解决 CustomSprite.GetSprite 创建新纹理时 name 丢失的问题
+        public static ConditionalWeakTable<Texture2D, string> textureNameMap = new();
         public static float savedVRAM_MB = 0f;
         private static int processedTextureCount = 0;
         private const int GC_INTERVAL = 50;
@@ -26,6 +28,7 @@ namespace Iridium.Patches
         public static void ResetDecorOptimization(bool fullReset)
         {
             decorRatios.Clear();
+            textureNameMap = new ConditionalWeakTable<Texture2D, string>();
             savedVRAM_MB = 0f;
             processedTextureCount = 0;
             VRAMNotificationPatch.isFinished = false;
@@ -37,6 +40,17 @@ namespace Iridium.Patches
             }
         }
 
+        /// <summary>
+        /// 仅重置纹理优化状态（不清空已加载的纹理），用于设置改变时调用
+        /// </summary>
+        public static void ResetTextureOptimizationState()
+        {
+            decorRatios.Clear();
+            textureNameMap = new ConditionalWeakTable<Texture2D, string>();
+            savedVRAM_MB = 0f;
+            processedTextureCount = 0;
+        }
+
         private static bool TryGetDecorRatio(string id, out Vector3 scale)
         {
             if (!decorRatios.TryGetValue(id, out scale))
@@ -45,6 +59,33 @@ namespace Iridium.Patches
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// 通过纹理获取 ratio，先尝试 texture.name，再尝试 textureNameMap
+        /// </summary>
+        private static bool TryGetDecorRatioForTexture(Texture2D tex, out Vector3 scale)
+        {
+            if (tex == null)
+            {
+                scale = Vector3.one;
+                return false;
+            }
+
+            // 首先尝试 texture.name
+            if (!string.IsNullOrEmpty(tex.name) && decorRatios.TryGetValue(tex.name, out scale))
+            {
+                return true;
+            }
+
+            // 如果 texture.name 查找失败，尝试从 textureNameMap 中查找原始名称
+            if (textureNameMap.TryGetValue(tex, out string originalName) && !string.IsNullOrEmpty(originalName))
+            {
+                return TryGetDecorRatio(originalName, out scale);
+            }
+
+            scale = Vector3.one;
+            return false;
         }
 
         public static Texture2D? CreateProcessedTexture(Texture2D source, int targetW, int targetH)
@@ -477,6 +518,9 @@ namespace Iridium.Patches
                         decorRatios[filePath] = new Vector3((float)scaleFactor, (float)scaleFactor, 1f);
                     }
 
+                    // 将纹理添加到 nameMap，解决 CustomSprite.GetSprite 创建新纹理时 name 丢失的问题
+                    try { textureNameMap.Add(tex, filePath); } catch { /* 已存在则忽略 */ }
+
                     if (!Main.Settings.optimizer.dontShowSavedMemory)
                     {
                         long oldSizeEst = (long)origW * origH * 4L;
@@ -595,6 +639,8 @@ namespace Iridium.Patches
                                     Main.DestroyImmediate(oldTex);
 
                                 __result = optimized;
+                                // 将优化后的纹理添加到 nameMap
+                                try { textureNameMap.Add(optimized, texName); } catch { /* 已存在则忽略 */ }
                                 resized = true;
                                 Main.Logger?.Log($"[Optimizer] Successfully resized {texName}");
                             }
@@ -608,6 +654,8 @@ namespace Iridium.Patches
                     if (!resized)
                     {
                         decorRatios[texName] = Vector3.one;
+                        // 将纹理添加到 nameMap
+                        try { textureNameMap.Add(__result, texName); } catch { /* 已存在则忽略 */ }
                         if (!Main.Settings.optimizer.dontCompress)
                         {
                             if (__result.isReadable)
@@ -702,7 +750,8 @@ namespace Iridium.Patches
                 var sprite = __instance.displayedSprite?.sprite;
                 if (sprite?.texture == null) return;
 
-                if (TryGetDecorRatio(sprite.texture.name, out Vector3 ratio))
+                // 使用 TryGetDecorRatioForTexture 解决 name 丢失问题
+                if (TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
                 {
                     __instance.imgSize = Vector2.Scale(__instance.imgSize, ratio);
                 }
@@ -747,7 +796,8 @@ namespace Iridium.Patches
                 var sprite = __instance.spriteRenderer?.sprite;
                 if (sprite?.texture == null) return;
 
-                if (TryGetDecorRatio(sprite.texture.name, out Vector3 ratio))
+                // 使用 TryGetDecorRatioForTexture 解决 CustomSprite.GetSprite 创建新纹理时 name 丢失的问题
+                if (TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
                 {
                     if (__instance.spriteRenderer != null) __instance.spriteRenderer.transform.localScale = ratio;
 
@@ -845,7 +895,8 @@ namespace Iridium.Patches
             {
                 if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
                 var tex = __instance.spriteRenderer?.sprite?.texture;
-                if (tex != null && TryGetDecorRatio(tex.name, out Vector3 ratio))
+                // 使用 TryGetDecorRatioForTexture 解决 name 丢失问题
+                if (tex != null && TryGetDecorRatioForTexture(tex, out Vector3 ratio))
                 {
                     __result = Vector2.Scale(__result, ratio);
                 }
