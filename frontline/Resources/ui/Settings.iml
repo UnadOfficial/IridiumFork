@@ -20,24 +20,54 @@
             <Setter property="background" value="#313338" />
             <Setter property="color" value="#E9ECEF" />
         </Style>
+
+        <Template name="LangBtn">
+            <Button text="{item.displayName}" class="{settings.language == item.key ? 'primary' : 'element'}" on-click="OnLanguageClick(item.key)" />
+        </Template>
     </Resources>
 
-    <If condition="{settings.currentTab == 'optimizer'}">
-        <Reference path="@Optimizer.iml" />
-    </If>
-    <If condition="{settings.currentTab == 'ui'}">
-        <Reference path="@UISettings.iml" />
-    </If>
-    <If condition="{settings.currentTab == 'levelSelect'}">
-        <Reference path="@LevelSelect.iml" />
-    </If>
-    <If condition="{settings.currentTab == 'compatibility'}">
-        <Reference path="@Compatibility.iml" />
-    </If>
-    <If condition="{settings.currentTab == 'hitSound'}">
-        <Reference path="@HitSound.iml" />
-    </If>
-    <If condition="{settings.currentTab == 'editorShortcuts'}">
-        <Reference path="@EditorShortcuts.iml" />
-    </If>
+    <VBox class="padding">
+        <!-- Tab bar -->
+        <HBox>
+            <Button text="{localize('EnableOptimizer')}" class="{settings.currentTab == 'optimizer' ? 'primary' : 'element'}" on-click="OnTabClick('optimizer')" />
+            <Button text="{localize('UISettings')}" class="{settings.currentTab == 'ui' ? 'primary' : 'element'}" on-click="OnTabClick('ui')" />
+            <Button text="{localize('LevelSelectSettings')}" class="{settings.currentTab == 'levelSelect' ? 'primary' : 'element'}" on-click="OnTabClick('levelSelect')" />
+            <Button text="{localize('CompatibilitySettings')}" class="{settings.currentTab == 'compatibility' ? 'primary' : 'element'}" on-click="OnTabClick('compatibility')" />
+            <Button text="{localize('HitSoundSettings')}" class="{settings.currentTab == 'hitSound' ? 'primary' : 'element'}" on-click="OnTabClick('hitSound')" />
+            <Button text="{localize('EditorShortcuts')}" class="{settings.currentTab == 'editorShortcuts' ? 'primary' : 'element'}" on-click="OnTabClick('editorShortcuts')" />
+            <Text text="Iridium {getVersion()}" style="secondary" />
+        </HBox>
+
+        <!-- Content area -->
+        <View class="background">
+            <ScrollView scrollPosition="contentScroll" height="500">
+                <If condition="{settings.currentTab == 'optimizer'}">
+                    <Reference path="@Optimizer.iml" />
+                </If>
+                <If condition="{settings.currentTab == 'ui'}">
+                    <Reference path="@UISettings.iml" />
+                </If>
+                <If condition="{settings.currentTab == 'levelSelect'}">
+                    <Reference path="@LevelSelect.iml" />
+                </If>
+                <If condition="{settings.currentTab == 'compatibility'}">
+                    <Reference path="@Compatibility.iml" />
+                </If>
+                <If condition="{settings.currentTab == 'hitSound'}">
+                    <Reference path="@HitSound.iml" />
+                </If>
+                <If condition="{settings.currentTab == 'editorShortcuts'}">
+                    <Reference path="@EditorShortcuts.iml" />
+                </If>
+            </ScrollView>
+        </View>
+
+        <!-- Async processing status -->
+        <Text text="{getAsyncStatus()}" style="secondary" />
+
+        <!-- Language selector -->
+        <HBox>
+            <ForEach items="{getLanguages()}" template="LangBtn" />
+        </HBox>
+    </VBox>
 </Iris>

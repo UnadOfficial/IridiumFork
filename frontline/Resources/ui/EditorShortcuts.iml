@@ -15,22 +15,22 @@
 
             <HBox align="center">
                 <Text text="{localize('ShortcutSelectAll')}" style="label" />
-                <Button text="{getShortcutDisplay(selectAllKey, selectAllModifiers)}" on-click="OnBindSelectAllKey" />
+                <Button text="{getShortcutDisplay(settings.editorShortcuts.selectAllKey, settings.editorShortcuts.selectAllModifiers)}" on-click="OnBindSelectAllKey" />
             </HBox>
 
             <HBox align="center">
                 <Text text="{localize('ShortcutDeselectAll')}" style="label" />
-                <Button text="{getShortcutDisplay(deselectAllKey, deselectAllModifiers)}" on-click="OnBindDeselectAllKey" />
+                <Button text="{getShortcutDisplay(settings.editorShortcuts.deselectAllKey, settings.editorShortcuts.deselectAllModifiers)}" on-click="OnBindDeselectAllKey" />
             </HBox>
 
             <HBox align="center">
                 <Text text="{localize('ShortcutToggleVisibility')}" style="label" />
-                <Button text="{getShortcutDisplay(toggleVisibilityKey, toggleVisibilityModifiers)}" on-click="OnBindToggleVisibilityKey" />
+                <Button text="{getShortcutDisplay(settings.editorShortcuts.toggleVisibilityKey, settings.editorShortcuts.toggleVisibilityModifiers)}" on-click="OnBindToggleVisibilityKey" />
             </HBox>
 
             <HBox align="center">
                 <Text text="{localize('ShortcutFocusDecoration')}" style="label" />
-                <Button text="{getShortcutDisplay(focusDecorationKey, focusDecorationModifiers)}" on-click="OnBindFocusDecorationKey" />
+                <Button text="{getShortcutDisplay(settings.editorShortcuts.focusDecorationKey, settings.editorShortcuts.focusDecorationModifiers)}" on-click="OnBindFocusDecorationKey" />
             </HBox>
 
             <Separator />
@@ -39,7 +39,7 @@
 
             <HBox align="center">
                 <Text text="{localize('ShortcutGoToFloor')}" style="label" />
-                <Button text="{getShortcutDisplay(goToFloorKey, goToFloorModifiers)}" on-click="OnBindGoToFloorKey" />
+                <Button text="{getShortcutDisplay(settings.editorShortcuts.goToFloorKey, settings.editorShortcuts.goToFloorModifiers)}" on-click="OnBindGoToFloorKey" />
             </HBox>
 
             <HBox align="center">
@@ -49,7 +49,7 @@
 
             <HBox align="center">
                 <Text text="{localize('ShortcutSelectAllFloors')}" style="label" />
-                <Button text="{getShortcutDisplay(selectAllFloorsKey, selectAllFloorsModifiers)}" on-click="OnBindSelectAllFloorsKey" />
+                <Button text="{getShortcutDisplay(settings.editorShortcuts.selectAllFloorsKey, settings.editorShortcuts.selectAllFloorsModifiers)}" on-click="OnBindSelectAllFloorsKey" />
             </HBox>
 
             <Separator />
@@ -58,12 +58,12 @@
 
             <HBox align="center">
                 <Text text="{localize('ShortcutPopupSave')}" style="label" />
-                <Button text="{getShortcutDisplay(popupSaveKey, popupSaveModifiers)}" on-click="OnBindPopupSaveKey" />
+                <Button text="{getShortcutDisplay(settings.editorShortcuts.popupSaveKey, settings.editorShortcuts.popupSaveModifiers)}" on-click="OnBindPopupSaveKey" />
             </HBox>
 
             <HBox align="center">
                 <Text text="{localize('ShortcutPopupDiscard')}" style="label" />
-                <Button text="{getShortcutDisplay(popupDiscardKey, popupDiscardModifiers)}" on-click="OnBindPopupDiscardKey" />
+                <Button text="{getShortcutDisplay(settings.editorShortcuts.popupDiscardKey, settings.editorShortcuts.popupDiscardModifiers)}" on-click="OnBindPopupDiscardKey" />
             </HBox>
         </If>
     </VBox>

@@ -29,7 +29,13 @@
         <If condition="{settings.compatibility.editorPauseAllowed}">
             <HBox align="center">
                 <Text text="{localize('EditorPauseEnabled')}" style="label" />
+                <Fill />
                 <Switch value="{settings.compatibility.editorPauseEnabled}" on-changed="OnEditorPauseEnabledToggled" />
+            </HBox>
+            <HBox align="center">
+                <Text text="{localize('EditorPauseKey')}" style="label" />
+                <Fill />
+                <Button text="{getShortcutDisplay(settings.compatibility.editorPauseKey, settings.compatibility.editorPauseModifiers)}" on-click="OnBindEditorPauseKey" />
             </HBox>
         </If>
 

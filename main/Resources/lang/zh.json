@@ -209,7 +209,7 @@
   "ShortcutSelectAllFloors": "全选砖块",
   "ShortcutPopupSave": "弹窗 - 保存",
   "ShortcutPopupDiscard": "弹窗 - 放弃",
-  "CustomEasingEngine": "自定义缓速引擎 (替代 DOTween)",
+  "CustomEasingEngine": "自定义缓速引擎",
   "EnableCustomEasingEngine": "启用自定义缓速引擎",
   "CustomEasingEngineHint": "使用轻量级缓速引擎替代 DOTween 处理移动轨道/重新着色/移动装饰物。与上方的单独优化选项互斥。",
   "CustomEasingEngineConflictDetected": "自定义缓速引擎因与优化设置冲突已自动禁用。"

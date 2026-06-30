@@ -220,7 +220,7 @@
   "ShortcutSelectAllFloors": "Select All Floors",
   "ShortcutPopupSave": "Popup - Save",
   "ShortcutPopupDiscard": "Popup - Discard",
-  "CustomEasingEngine": "Custom Easing Engine (Replace DOTween)",
+  "CustomEasingEngine": "Custom Easing Engine",
   "EnableCustomEasingEngine": "Enable Custom Easing Engine",
   "CustomEasingEngineHint": "Replaces DOTween with a lightweight easing engine for MoveTrack/RecolorTrack/MoveDecoration. Incompatible with individual optimize options above.",
   "CustomEasingEngineConflictDetected": "Custom Easing Engine was auto-disabled due to conflicting optimization settings. Please re-enable it after disabling MoveTrack/RecolorTrack/MoveDecoration optimizations."

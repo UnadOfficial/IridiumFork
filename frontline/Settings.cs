@@ -41,11 +41,13 @@ namespace Iridium
         private int _compatCamRelMode = -1;
         private bool _isBindingPauseKey = false;
         private int _bindKeyStartFrame = -1;
+        private string _bindingTarget = null;
+        private int _bindingOldKey, _bindingOldMods;
 
         private string[] _cachedTabDisplayNames = System.Array.Empty<string>();
         private string _cachedLanguage = "";
 
-        private IrisRenderer _renderer;
+        private IrisGuiRenderer _renderer;
         private bool _rendererInitialized = false;
 
         private string[] GetTabDisplayNames()
@@ -63,7 +65,7 @@ namespace Iridium
         {
             if (_rendererInitialized) return;
 
-            _renderer = new IrisRenderer();
+            _renderer = new IrisGuiRenderer();
             if (Main.Logger != null)
                 _renderer.LogDelegate = msg => Main.Logger.Log(msg);  // 适配签名
             _renderer.SetHotReload(false);
@@ -78,6 +80,30 @@ namespace Iridium
                     return Localization.Get(key);
                 return "";
             });
+
+            _renderer.RegisterFunction("getVersion", args => VersionManager.GetFullVersionString());
+            _renderer.RegisterFunction("getAsyncStatus", args =>
+                AsyncPatchManager.IsProcessing ? "⏳ " + Localization.Get("AsyncPatchProcessing") : "");
+            _renderer.RegisterFunction("getLanguages", args =>
+            {
+                var langs = Localization.AvailableLanguages;
+                var result = new List<object>();
+                foreach (var l in langs)
+                    result.Add(new { key = l, displayName = Localization.GetDisplayName(l) });
+                return result;
+            });
+
+            _renderer.RegisterFunction("getShortcutDisplay", args =>
+            {
+                if (args.Length >= 2 && args[0] is int key && args[1] is int mods)
+                    return ShortcutDisplay(key, mods);
+                return "";
+            });
+
+            _renderer.RegisterHandler<string>("OnTabClick", key => { _currentTab = key; });
+            _renderer.RegisterHandler<string>("OnLanguageClick", lang => { language = lang; Save(); });
+
+            RegisterShortcutHandlers();
 
             _renderer.SetLayout(new IridiumLayoutAdapter());
 
@@ -820,6 +846,83 @@ namespace Iridium
             });
         }
 
+        private void RegisterShortcutHandlers()
+        {
+            var keys = new[] {
+                ("selectAll",       (Action)(() => StartBinding("selectAll"))),
+                ("deselectAll",     () => StartBinding("deselectAll")),
+                ("toggleVisibility",() => StartBinding("toggleVisibility")),
+                ("focusDecoration", () => StartBinding("focusDecoration")),
+                ("goToFloor",       () => StartBinding("goToFloor")),
+                ("selectAllFloors", () => StartBinding("selectAllFloors")),
+                ("popupSave",       () => StartBinding("popupSave")),
+                ("popupDiscard",    () => StartBinding("popupDiscard")),
+            };
+            foreach (var (name, handler) in keys)
+            {
+                var cap = char.ToUpper(name[0]) + name.Substring(1);
+                _renderer.RegisterHandler($"OnBind{cap}Key", (obj) => handler());
+            }
+            _renderer.RegisterHandler("OnBindEditorPauseKey", (obj) => StartBinding("editorPause"));
+        }
+
+        private void StartBinding(string target)
+        {
+            // Save old values for cancel
+            GetBinding(target, out _bindingOldKey, out _bindingOldMods);
+            _bindingTarget = target;
+            _isBindingPauseKey = true;
+            _bindKeyStartFrame = Time.frameCount;
+        }
+
+        private void GetBinding(string target, out int key, out int mods)
+        {
+            key = 0; mods = 0;
+            switch (target)
+            {
+                case "selectAll":          key = editorShortcuts.selectAllKey; mods = editorShortcuts.selectAllModifiers; break;
+                case "deselectAll":        key = editorShortcuts.deselectAllKey; mods = editorShortcuts.deselectAllModifiers; break;
+                case "toggleVisibility":   key = editorShortcuts.toggleVisibilityKey; mods = editorShortcuts.toggleVisibilityModifiers; break;
+                case "focusDecoration":    key = editorShortcuts.focusDecorationKey; mods = editorShortcuts.focusDecorationModifiers; break;
+                case "goToFloor":          key = editorShortcuts.goToFloorKey; mods = editorShortcuts.goToFloorModifiers; break;
+                case "selectAllFloors":    key = editorShortcuts.selectAllFloorsKey; mods = editorShortcuts.selectAllFloorsModifiers; break;
+                case "popupSave":          key = editorShortcuts.popupSaveKey; mods = editorShortcuts.popupSaveModifiers; break;
+                case "popupDiscard":       key = editorShortcuts.popupDiscardKey; mods = editorShortcuts.popupDiscardModifiers; break;
+                case "editorPause":        key = compatibility.editorPauseKey; mods = compatibility.editorPauseModifiers; break;
+            }
+        }
+
+        private void ApplyBinding(string target, int key, int mods)
+        {
+            switch (target)
+            {
+                case "selectAll":          editorShortcuts.selectAllKey = key; editorShortcuts.selectAllModifiers = mods; break;
+                case "deselectAll":        editorShortcuts.deselectAllKey = key; editorShortcuts.deselectAllModifiers = mods; break;
+                case "toggleVisibility":   editorShortcuts.toggleVisibilityKey = key; editorShortcuts.toggleVisibilityModifiers = mods; break;
+                case "focusDecoration":    editorShortcuts.focusDecorationKey = key; editorShortcuts.focusDecorationModifiers = mods; break;
+                case "goToFloor":          editorShortcuts.goToFloorKey = key; editorShortcuts.goToFloorModifiers = mods; break;
+                case "selectAllFloors":    editorShortcuts.selectAllFloorsKey = key; editorShortcuts.selectAllFloorsModifiers = mods; break;
+                case "popupSave":          editorShortcuts.popupSaveKey = key; editorShortcuts.popupSaveModifiers = mods; break;
+                case "popupDiscard":       editorShortcuts.popupDiscardKey = key; editorShortcuts.popupDiscardModifiers = mods; break;
+                case "editorPause":        compatibility.editorPauseKey = key; compatibility.editorPauseModifiers = mods; break;
+            }
+            Save();
+        }
+
+        private static string ShortcutDisplay(int key, int modifiers)
+        {
+            var modStr = "";
+            if ((modifiers & 1) != 0) modStr += "Ctrl+";
+            if ((modifiers & 2) != 0) modStr += "Shift+";
+            if ((modifiers & 4) != 0) modStr += "Alt+";
+            if ((modifiers & 8) != 0) modStr += "Win+";
+            if (key == 0 && modStr != "") return modStr.TrimEnd('+');
+            if (key == 0) return "…";
+            var keyName = key >= 32 && key <= 126 ? ((char)key).ToString() : 
+                          Enum.IsDefined(typeof(KeyCode), key) ? ((KeyCode)key).ToString() : "?";
+            return modStr + keyName;
+        }
+
         public void OnGUI()
         {
             int initialStackDepth = IridiumLayout.ContainerStack.Count;
@@ -833,79 +936,64 @@ namespace Iridium
 
                 InitializeRenderer();
 
-                Begin(ContainerDirection.Vertical, ContainerStyle.Padding);
+                string imlPath = System.IO.Path.Combine(
+                    Main.Handler?.ModPath ?? "",
+                    "Resources", "ui", "Settings.iml");
+
+                if (System.IO.File.Exists(imlPath))
                 {
-                    Begin(ContainerDirection.Horizontal);
-                    {
-                        Space(4);
-
-                        var tabNames = GetTabDisplayNames();
-                        var tabKeys = new[] { "optimizer", "ui", "levelSelect", "compatibility", "hitSound", "editorShortcuts" };
-
-                        for (int i = 0; i < tabNames.Length; i++)
-                        {
-                            var isActive = _currentTab == tabKeys[i];
-                            if (Button(tabNames[i], isActive ? ButtonStyle.Primary : ButtonStyle.Element))
-                            {
-                                _currentTab = tabKeys[i];
-                            }
-                            Space(2);
-                        }
-
-                        Fill();
-                        Space(4);
-                        Text($"Iridium {VersionManager.GetFullVersionString()}", TextStyle.Secondary);
-                    }
-                    End();
-
-                    Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
-                    {
-                        _contentScrollPosition = GUILayout.BeginScrollView(_contentScrollPosition);
-                        {
-                            try
-                            {
-                                string imlPath = System.IO.Path.Combine(
-                                    Main.Handler?.ModPath ?? "",
-                                    "Resources", "ui", "Settings.iml");
-
-                                if (System.IO.File.Exists(imlPath))
-                                {
-                                    _renderer.Render(imlPath);
-                                }
-                                else
-                                {
-                                    Text("IML file not found: Settings.iml", TextStyle.Secondary);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Main.Logger?.Error($"IML rendering error: {ex}");
-                                Text($"IML Error: {ex.Message}", TextStyle.Secondary);
-                            }
-                        }
-                        GUILayout.EndScrollView();
-                    }
-                    End();
-
-                    Space(2);
-                    string asyncStatus = AsyncPatchManager.IsProcessing ? "⏳ " + Localization.Get("AsyncPatchProcessing") : "";
-                    Text(asyncStatus, TextStyle.Secondary, WidthMax);
-                    Space(2);
-                    Begin(ContainerDirection.Horizontal);
-                    {
-                        Fill();
-                        foreach (var lang in Localization.AvailableLanguages)
-                        {
-                            var isCurrent = language == lang;
-                            var displayName = Localization.GetDisplayName(lang);
-                            if (Button(displayName.ToUpper(), isCurrent ? ButtonStyle.Primary : ButtonStyle.Element, Height(28)))
-                                language = lang;
-                            Space(2);
-                        }
-                    }
-                    End();
+                    _renderer.Render(imlPath);
                 }
-                End();
+                else
+                {
+                    // fallback: hardcoded minimal UI if IML file missing
+                    IridiumLayout.Begin(IridiumLayout.ContainerDirection.Vertical, IridiumLayout.ContainerStyle.Padding);
+                    IridiumLayout.Text("IML file not found: Settings.iml", IridiumLayout.TextStyle.Secondary);
+                    IridiumLayout.End();
+                }
+
+                // Key binding capture — real-time display
+                if (_isBindingPauseKey)
+                {
+                    var ev = Event.current;
+                    if (ev != null && ev.type == EventType.KeyDown)
+                    {
+                        var kc = ev.keyCode;
+                        bool isMod = kc == KeyCode.LeftControl || kc == KeyCode.RightControl ||
+                            kc == KeyCode.LeftShift || kc == KeyCode.RightShift ||
+                            kc == KeyCode.LeftAlt || kc == KeyCode.RightAlt ||
+                            kc == KeyCode.LeftCommand || kc == KeyCode.RightCommand;
+
+                        int mods = 0;
+                        if (ev.control) mods |= 1;
+                        if (ev.shift) mods |= 2;
+                        if (ev.alt) mods |= 4;
+                        if (ev.command) mods |= 8;
+
+                        if (isMod)
+                        {
+                            // Real-time modifier display: show "Ctrl+..." etc.
+                            ApplyBinding(_bindingTarget, 0, mods);
+                            ev.Use();
+                        }
+                        else if (kc != KeyCode.None && kc != KeyCode.Escape)
+                        {
+                            // Final key pressed — save binding
+                            ApplyBinding(_bindingTarget, (int)kc, mods);
+                            _isBindingPauseKey = false;
+                            _bindingTarget = null;
+                            ev.Use();
+                        }
+                        else if (kc == KeyCode.Escape)
+                        {
+                            // Cancel — restore old binding
+                            ApplyBinding(_bindingTarget, _bindingOldKey, _bindingOldMods);
+                            _isBindingPauseKey = false;
+                            _bindingTarget = null;
+                            ev.Use();
+                        }
+                    }
+                }
 
                 if (GUI.changed) Save();
             }
@@ -918,14 +1006,8 @@ namespace Iridium
             {
                 while (IridiumLayout.ContainerStack.Count > initialStackDepth)
                 {
-                    try
-                    {
-                        IridiumLayout.End();
-                    }
-                    catch
-                    {
-                        break;
-                    }
+                    try { IridiumLayout.End(); }
+                    catch { break; }
                 }
             }
         }
@@ -984,6 +1066,7 @@ namespace Iridium
         public bool? Checkbox(bool on) => IridiumLayout.Checkbox(on);
         public void Separator() => IridiumLayout.Separator();
         public void Space(double size) => IridiumLayout.Space(size);
+        public void Fill() => IridiumLayout.Fill();
         public string? TextField(string content) => IridiumLayout.TextField(content);
 
         public bool Icon(Iris.Iml.IrrIconStyle style)
