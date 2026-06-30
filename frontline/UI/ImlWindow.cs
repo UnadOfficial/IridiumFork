@@ -74,6 +74,61 @@ namespace Iridium.UI
 
         public static bool HasActiveWindows => _activeWindows.Count > 0;
 
+        /// <summary>Show the first-run welcome dialog. Called once on initial mod enable.</summary>
+        public static void ShowFirstRun()
+        {
+            Show(new Config
+            {
+                Title = Localization.Get("FirstRunTitle"),
+                Message = Localization.Get("FirstRunMessage"),
+                Icon = IconStyle.Information,
+                Size = new Vector2(400, 200),
+                Buttons = new[]
+                {
+                    new ButtonConfig
+                    {
+                        Text = Localization.Get("Understand"),
+                        Style = ButtonStyle.Primary,
+                        CloseOnClick = true,
+                        OnClick = () =>
+                        {
+                            Main.Settings.firstRun = false;
+                            Main.Settings.lastVersion = VersionManager.GetFullVersionString();
+                            Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
+                            Main.Handler?.SaveSettings(Main.Settings);
+                        }
+                    }
+                }
+            });
+        }
+
+        /// <summary>Show a version-upgrade notice dialog with content keyed by <paramref name="messageKey"/>.</summary>
+        public static void ShowUpgrade(string messageKey)
+        {
+            Show(new Config
+            {
+                Title = Localization.Get("UpgradeTitle"),
+                Message = Localization.Get(messageKey),
+                Icon = IconStyle.Warning,
+                Size = new Vector2(400, 200),
+                Buttons = new[]
+                {
+                    new ButtonConfig
+                    {
+                        Text = Localization.Get("Understand"),
+                        Style = ButtonStyle.Primary,
+                        CloseOnClick = true,
+                        OnClick = () =>
+                        {
+                            Main.Settings.lastVersion = VersionManager.GetFullVersionString();
+                            Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
+                            Main.Handler?.SaveSettings(Main.Settings);
+                        }
+                    }
+                }
+            });
+        }
+
         private void SetupRenderer()
         {
             _renderer = new IrisGoRenderer
