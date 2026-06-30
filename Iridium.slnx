@@ -3,4 +3,5 @@
   <Project Path="loaders/ummloader/Iridium.Loader.UMM.csproj" />
   <Project Path="frontline/Iridium_frontline.csproj" />
   <Project Path="main/Iridium.csproj" />
+  <Project Path="architectury/Iris.Iml/Iris.Iml.csproj" />
 </Solution>
