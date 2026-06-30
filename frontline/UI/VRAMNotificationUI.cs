@@ -154,19 +154,31 @@ namespace Iridium.UI
         private void _PostProcessLayout()
         {
             if (_renderer.RootObject == null) return;
-            // The renderer always wraps its content in a "DialogWrapper" RectTransform
-            // anchored at (0.5, 0.5). For a notification we want top-left instead.
-            var wrapper = _renderer.RootObject.transform.Find("DialogWrapper") as RectTransform;
-            if (wrapper != null)
-            {
-                wrapper.anchorMin = new Vector2(0, 1);
-                wrapper.anchorMax = new Vector2(0, 1);
-                wrapper.pivot = new Vector2(0, 1);
-                wrapper.anchoredPosition = new Vector2(20, -20);
-            }
+            // IMPORTANT: the renderer's RebuildUI loop only queues the previous-frame
+            // wrapper for destruction (Destroy is end-of-frame). The new wrapper is
+            // appended to the end of the children list, so we must pick the LAST
+            // child — Transform.Find("DialogWrapper") would otherwise return the
+            // old pending-destroy wrapper, leaving the new one at its default
+            // center anchor and stale text.
+            int lastIdx = _renderer.RootObject.transform.childCount - 1;
+            if (lastIdx < 0) return;
+            var wrapper = _renderer.RootObject.transform.GetChild(lastIdx) as RectTransform;
+            if (wrapper == null || wrapper.gameObject.name != "DialogWrapper") return;
+
+            // Pin to top-left with a fixed size. The renderer's ContentSizeFitter
+            // would otherwise pick the HBox's preferred width (~104px because the
+            // Text has no LayoutElement), while the HBox's minWidth=400 forces the
+            // HBox itself to 400px — the HBox then overflows the 104px wrapper,
+            // pushing the rightmost children (Stop button) off the right side.
+            wrapper.anchorMin = new Vector2(0, 1);
+            wrapper.anchorMax = new Vector2(0, 1);
+            wrapper.pivot = new Vector2(0, 1);
+            wrapper.anchoredPosition = new Vector2(20, -20);
+            wrapper.sizeDelta = new Vector2(400, 50);
+
             // Make the panel background non-blocking so the rest of the screen still
             // receives clicks. The Stop button itself keeps its raycastTarget.
-            var hbox = wrapper?.Find("HBox");
+            var hbox = wrapper.Find("HBox");
             if (hbox != null)
             {
                 var img = hbox.GetComponent<Image>();
@@ -178,17 +190,17 @@ namespace Iridium.UI
         {
             _messageText = null;
             if (_renderer.RootObject == null) return;
-            // Find the inner Text component (the one bound to "{message}"). The
-            // renderer names the UGUI Text GameObject "Text".
-            var all = _renderer.RootObject.GetComponentsInChildren<Text>(true);
-            foreach (var t in all)
-            {
-                if (t.gameObject.name == "Text")
-                {
-                    _messageText = t;
-                    break;
-                }
-            }
+            // Same caveat as _PostProcessLayout: the previous-frame Text is still
+            // in the hierarchy (pending destroy) until end of frame, so we must
+            // walk only the new wrapper (last child of RootObject) to find the
+            // Text that UpdateProgress should actually write to.
+            int lastIdx = _renderer.RootObject.transform.childCount - 1;
+            if (lastIdx < 0) return;
+            var wrapper = _renderer.RootObject.transform.GetChild(lastIdx);
+            if (wrapper == null || wrapper.gameObject.name != "DialogWrapper") return;
+            // The renderer names the UGUI Text GameObject "Text".
+            var txt = wrapper.Find("HBox/Text");
+            if (txt != null) _messageText = txt.GetComponent<Text>();
         }
 
         private void _StartFadeIn()
