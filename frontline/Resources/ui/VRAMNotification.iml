@@ -1,0 +1,28 @@
+<Iris>
+    <Resources>
+        <Style name="panel">
+            <Setter property="background" value="#151617" />
+            <Setter property="padding" value="12,12,12,12" />
+            <Setter property="radius" value="8" />
+        </Style>
+        <Style name="text">
+            <Setter property="color" value="#E9ECEF" />
+            <Setter property="fontSize" value="14" />
+        </Style>
+        <Style name="stop">
+            <Setter property="background" value="#D973A5" />
+            <Setter property="color" value="#F8F9FA" />
+            <Setter property="fontSize" value="12" />
+            <Setter property="radius" value="8" />
+        </Style>
+    </Resources>
+
+    <HBox class="panel" minWidth="400" minHeight="40">
+        <Icon type="{iconType}" />
+        <Text text="{message}" style="text" />
+        <Fill />
+        <If condition="{showStop}">
+            <Button text="{stopText}" style="stop" on-click="OnStop" width="80" />
+        </If>
+    </HBox>
+</Iris>
