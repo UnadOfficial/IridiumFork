@@ -17,7 +17,7 @@
         </Style>
     </Resources>
 
-    <HBox class="panel" minWidth="400" minHeight="40">
+    <HBox class="panel" gap="8">
         <Icon type="{iconType}" />
         <Text text="{message}" style="text" />
         <Fill />

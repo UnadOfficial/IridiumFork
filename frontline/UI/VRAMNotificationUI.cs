@@ -165,25 +165,62 @@ namespace Iridium.UI
             var wrapper = _renderer.RootObject.transform.GetChild(lastIdx) as RectTransform;
             if (wrapper == null || wrapper.gameObject.name != "DialogWrapper") return;
 
-            // Pin to top-left with a fixed size. The renderer's ContentSizeFitter
-            // would otherwise pick the HBox's preferred width (~104px because the
-            // Text has no LayoutElement), while the HBox's minWidth=400 forces the
-            // HBox itself to 400px — the HBox then overflows the 104px wrapper,
-            // pushing the rightmost children (Stop button) off the right side.
+            // Disable the wrapper's ContentSizeFitter — without this, every layout
+            // pass would overwrite our sizeDelta with the HBox's preferred width
+            // (~254px), making the wrapper oscillate between 254 and 400.
+            DisableContentSizeFitter(wrapper);
+
+            // Pin to top-left with a fixed size.
             wrapper.anchorMin = new Vector2(0, 1);
             wrapper.anchorMax = new Vector2(0, 1);
             wrapper.pivot = new Vector2(0, 1);
             wrapper.anchoredPosition = new Vector2(20, -20);
             wrapper.sizeDelta = new Vector2(400, 50);
 
-            // Make the panel background non-blocking so the rest of the screen still
-            // receives clicks. The Stop button itself keeps its raycastTarget.
-            var hbox = wrapper.Find("HBox");
+            // The HBox (built by BuildContainer) also carries a ContentSizeFitter
+            // that would shrink it to its preferred width, leaving the right
+            // portion of the wrapper empty. Disable it so the HBox stretches to
+            // fill the wrapper.
+            var hbox = wrapper.Find("HBox") as RectTransform;
             if (hbox != null)
             {
+                DisableContentSizeFitter(hbox);
+                // Drop the minWidth constraint from the HBox's LayoutElement too —
+                // the wrapper now drives the width, so the HBox's minWidth would
+                // otherwise pin it to 400 and cause it to overflow the wrapper if
+                // the wrapper ever ends up smaller.
+                var le = hbox.GetComponent<LayoutElement>();
+                if (le != null) { le.minWidth = 0; le.minHeight = 0; }
+
+                // Make the panel background non-blocking so the rest of the screen
+                // still receives clicks. The Stop button itself keeps its
+                // raycastTarget.
                 var img = hbox.GetComponent<Image>();
                 if (img != null) img.raycastTarget = false;
+
+                // Belt-and-suspenders for the Stop button: make sure it's enabled
+                // and its image accepts raycasts. BuildButton already sets these,
+                // but if anything ever flipped them off the click would silently
+                // stop registering.
+                var btn = hbox.Find("Button");
+                if (btn != null)
+                {
+                    var btnComp = btn.GetComponent<Button>();
+                    if (btnComp != null) btnComp.enabled = true;
+                    var btnImg = btn.GetComponent<Image>();
+                    if (btnImg != null) btnImg.raycastTarget = true;
+                }
             }
+        }
+
+        private static void DisableContentSizeFitter(RectTransform rt)
+        {
+            if (rt == null) return;
+            var csf = rt.GetComponent<ContentSizeFitter>();
+            if (csf == null) return;
+            csf.enabled = false;
+            csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            csf.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
         }
 
         private void _CacheUIRefs()
