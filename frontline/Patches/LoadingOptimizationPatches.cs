@@ -201,8 +201,6 @@ namespace Iridium.Patches
             private static scnGame? _pendingGame;
             private static bool _playWasBlocked;
             private static bool _uiCompleted;
-            private static GameObject? _loadingTextObj;
-            private static Text? _loadingText;
 
             public static bool IsLoading => _isLoading;
 
@@ -248,8 +246,6 @@ namespace Iridium.Patches
                     }
 
                     BlockUIInput();
-
-                    ShowLoadingText();
 
                     _pendingGame = __instance;
                     __instance.StartCoroutine(FrameSpreadLoadCoroutine(__instance));
@@ -303,9 +299,12 @@ namespace Iridium.Patches
             }
 
             public static void Cancel()
-            {
-                _cancelled = true;
-            }
+        {
+            _cancelled = true;
+            // User explicitly cancelled — let the UI fade out immediately rather
+            // than wait for the min-display window.
+            UI.VRAMNotificationUI.Complete(forceImmediate: true);
+        }
 
             private static System.Collections.IEnumerator FrameSpreadLoadCoroutine(scnGame instance)
             {
@@ -324,7 +323,6 @@ namespace Iridium.Patches
                 int total = _pendingDecorations.Count;
 
                 UI.VRAMNotificationUI.ShowPersistent(Localization.Get("LoadingDecorationsProgress", 0, total));
-                UpdateLoadingText(0, total);
                 Main.Logger?.Log($"[LoadingOptimization] Starting frame-spread loading: {total} decorations");
 
                 while (_pendingDecorations.Count > 0 && !_cancelled)
@@ -508,47 +506,10 @@ namespace Iridium.Patches
                 _pendingGame = null;
                 _playWasBlocked = false;
                 _pendingDecorations.Clear();
-                HideLoadingText();
                 RestoreUIInput();
                 if (!_uiCompleted)
                     UI.VRAMNotificationUI.Complete();
                 _uiCompleted = false;
-            }
-
-            private static void ShowLoadingText()
-            {
-                var tp = scrUIController.instance?.transitionPanel;
-                if (tp == null) return;
-
-                _loadingTextObj = new GameObject("FrameSpreadLoadingText");
-                _loadingTextObj.transform.SetParent(tp.transform, false);
-                var rt = _loadingTextObj.AddComponent<RectTransform>();
-                rt.anchorMin = new Vector2(0.5f, 0.35f);
-                rt.anchorMax = new Vector2(0.5f, 0.35f);
-                rt.sizeDelta = new Vector2(600, 60);
-
-                _loadingText = _loadingTextObj.AddComponent<Text>();
-                _loadingText.font = RDConstants.data.latinFont;
-                _loadingText.fontSize = 28;
-                _loadingText.alignment = TextAnchor.MiddleCenter;
-                _loadingText.color = Color.white;
-                _loadingText.text = Localization.Get("LoadingDecorationsProgress", 0, 0);
-            }
-
-            private static void UpdateLoadingText(int current, int total)
-            {
-                if (_loadingText != null)
-                    _loadingText.text = Localization.Get("LoadingDecorationsProgress", current, total);
-            }
-
-            private static void HideLoadingText()
-            {
-                if (_loadingTextObj != null)
-                {
-                    UnityEngine.Object.Destroy(_loadingTextObj);
-                    _loadingTextObj = null;
-                    _loadingText = null;
-                }
             }
         }
 

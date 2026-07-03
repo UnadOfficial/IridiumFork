@@ -15,6 +15,7 @@ namespace Iridium.UI
         private IrisGoRenderer _renderer = null!;
         private CanvasGroup _canvasGroup = null!;
         private Coroutine? _fadeCoroutine;
+        private Coroutine? _completeDelayCoroutine;
 
         // Cached references — captured right after each Rebuild so UpdateProgress
         // can change text without rebuilding the whole UI tree.
@@ -22,9 +23,14 @@ namespace Iridium.UI
 
         private string _message = "";
         private float _timer = 0f;
+        private float _showStartTime = 0f;
         private bool _isPersistent = false;
         private const float FadeDuration = 0.5f;
         private const float DisplayDuration = 2.5f;
+        // Minimum time the persistent UI must stay fully visible after ShowPersistent,
+        // so that fast loads (< 0.5s) still show the progress to the player instead of
+        // fading in / out at low alpha while the screen is still black.
+        private const float MinPersistentDisplay = 0.6f;
 
         public static void Show(string message)
         {
@@ -37,8 +43,16 @@ namespace Iridium.UI
         public static void ShowPersistent(string message)
         {
             EnsureInstance();
+            // Cancel any pending delayed Complete from a previous Show so the new
+            // persistent UI gets a fresh minimum-display window.
+            if (_instance!._completeDelayCoroutine != null)
+            {
+                _instance.StopCoroutine(_instance._completeDelayCoroutine);
+                _instance._completeDelayCoroutine = null;
+            }
             _instance!._isPersistent = true;
             _instance!._timer = float.MaxValue;
+            _instance!._showStartTime = Time.realtimeSinceStartup;
             _instance!._SetContent(message, iconType: "information", showStop: true);
         }
 
@@ -53,12 +67,49 @@ namespace Iridium.UI
                 _instance._messageText.text = message;
         }
 
-        public static void Complete()
+        /// <summary>
+        /// Complete the persistent loading UI. If <paramref name="forceImmediate"/> is
+        /// false and less than <see cref="MinPersistentDisplay"/> seconds have elapsed
+        /// since <see cref="ShowPersistent"/>, the fade-out is delayed so the user
+        /// actually sees the progress for fast loads.
+        /// </summary>
+        public static void Complete(bool forceImmediate = false)
         {
             if (_instance == null) return;
+            // Cancel any in-flight delay coroutine so we don't double-fade.
+            if (_instance._completeDelayCoroutine != null)
+            {
+                _instance.StopCoroutine(_instance._completeDelayCoroutine);
+                _instance._completeDelayCoroutine = null;
+            }
+            if (!forceImmediate)
+            {
+                // Enforce a minimum visible time for the persistent UI so that fast loads
+                // (where ShowPersistent was called < MinPersistentDisplay seconds ago) still
+                // get a chance to display the progress to the player before fading out.
+                float elapsedSinceShow = Time.realtimeSinceStartup - _instance._showStartTime;
+                float wait = MinPersistentDisplay - elapsedSinceShow;
+                if (wait > 0f)
+                {
+                    _instance._isPersistent = true;
+                    _instance._timer = wait;
+                    _instance._completeDelayCoroutine = _instance.StartCoroutine(_instance._CompleteAfterDelay(wait));
+                    return;
+                }
+            }
             _instance._isPersistent = false;
             _instance._timer = FadeDuration + DisplayDuration + FadeDuration;
             _instance._StartFadeOut();
+        }
+
+        private IEnumerator _CompleteAfterDelay(float delay)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+            _completeDelayCoroutine = null;
+            if (_instance == null) yield break;
+            _isPersistent = false;
+            _timer = FadeDuration + DisplayDuration + FadeDuration;
+            _StartFadeOut();
         }
 
         public static void RunCoroutine(IEnumerator routine)
@@ -272,8 +323,14 @@ namespace Iridium.UI
 
         private void _StartFadeIn()
         {
+            // Stop any in-flight fade so the persistent UI snaps fully visible
+            // (Complete uses _StartFadeOut to fade back down). A 0.5s fade-in was
+            // tried originally, but when frame-spread loading finishes in <0.5s
+            // (typical for levels with 100-1000 decorations) the fade-in gets
+            // interrupted by Complete at low alpha and the user sees nothing.
             if (_fadeCoroutine != null) StopCoroutine(_fadeCoroutine);
-            _fadeCoroutine = StartCoroutine(_FadeCanvasGroup(0, 1, FadeDuration));
+            _canvasGroup.alpha = 1f;
+            _fadeCoroutine = null;
         }
 
         private void _StartFadeOut()
