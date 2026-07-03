@@ -178,19 +178,44 @@ namespace Iridium.UI
             wrapper.sizeDelta = new Vector2(400, 50);
 
             // The HBox (built by BuildContainer) also carries a ContentSizeFitter
-            // that would shrink it to its preferred width, leaving the right
-            // portion of the wrapper empty. Disable it so the HBox stretches to
-            // fill the wrapper.
+            // and a LayoutElement. The ContentSizeFitter was shrinking it to the
+            // HBox's preferred width; the LayoutElement — even with minWidth=0
+            // and minHeight=0 — was driving the HBox's height to the LayoutGroup's
+            // intrinsic preferred height (max of children's preferred heights ≈
+            // 150px after text + padding), which made the HBox much taller than
+            // the 50px wrapper and turned the Icon into a tall pill and the
+            // message text into one character per line.
+            //
+            // Strip both entirely so the HBox's RectTransform is governed solely
+            // by its anchor (stretch to fill wrapper).
             var hbox = wrapper.Find("HBox") as RectTransform;
             if (hbox != null)
             {
                 DisableContentSizeFitter(hbox);
-                // Drop the minWidth constraint from the HBox's LayoutElement too —
-                // the wrapper now drives the width, so the HBox's minWidth would
-                // otherwise pin it to 400 and cause it to overflow the wrapper if
-                // the wrapper ever ends up smaller.
                 var le = hbox.GetComponent<LayoutElement>();
-                if (le != null) { le.minWidth = 0; le.minHeight = 0; }
+                if (le != null) UnityEngine.Object.Destroy(le);
+
+                // Stop the HBox from forcing its children to expand to fill its
+                // height (BuildContainer sets childForceExpandHeight = true). With
+                // a 50px wrapper the children would otherwise be stretched into
+                // tall pills / 50px-tall buttons. Instead let each child keep its
+                // own preferred size and center them vertically in the HBox.
+                var hlg = hbox.GetComponent<HorizontalLayoutGroup>();
+                if (hlg != null)
+                {
+                    hlg.childForceExpandHeight = false;
+                    hlg.childControlHeight = true;
+                    hlg.childAlignment = TextAnchor.MiddleLeft;
+                }
+
+                // Re-assert the stretch anchor post-BuildContainer so the HBox
+                // is guaranteed to fill the wrapper, not fall back to a fixed
+                // preferred size.
+                hbox.anchorMin = Vector2.zero;
+                hbox.anchorMax = Vector2.one;
+                hbox.offsetMin = Vector2.zero;
+                hbox.offsetMax = Vector2.zero;
+                hbox.sizeDelta = Vector2.zero; // (anchor stretch) → fill wrapper
 
                 // Make the panel background non-blocking so the rest of the screen
                 // still receives clicks. The Stop button itself keeps its
@@ -211,6 +236,11 @@ namespace Iridium.UI
                     if (btnImg != null) btnImg.raycastTarget = true;
                 }
             }
+
+            // Force a layout rebuild on the wrapper so the HBox's newly-stripped
+            // LayoutElement + reassigned anchor take effect this frame instead of
+            // next.
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(wrapper);
         }
 
         private static void DisableContentSizeFitter(RectTransform rt)
