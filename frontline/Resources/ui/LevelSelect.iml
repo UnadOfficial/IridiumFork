@@ -1,55 +1,55 @@
 <Iris>
     <VBox gap="4">
-        <Text text="{localize('LevelSelectSettings')}" style="title" />
+        <Text text={localize('LevelSelectSettings')} style="title" />
         <Separator />
 
         <HBox align="center">
-            <Text text="{localize('LevelSelectSettings')}" style="label" />
-            <Switch value="{settings.lobbyMusic.enableLobbyMusicPatch}" on-changed="OnLobbyMusicPatchToggled" />
+            <Text text={localize('LevelSelectSettings')} style="label" />
+            <Switch value={settings.lobbyMusic.enableLobbyMusicPatch} on-changed="OnLobbyMusicPatchToggled" />
         </HBox>
 
-        <If condition="{settings.lobbyMusic.enableLobbyMusicPatch}">
+        {settings.lobbyMusic.enableLobbyMusicPatch && <>
             <Separator />
 
             <HBox align="center">
-                <Text text="{localize('EnableCustomBpm')}" style="label" />
-                <Switch value="{settings.lobbyMusic.enableCustomBpm}" on-changed="OnEnableCustomBpmToggled" />
+                <Text text={localize('EnableCustomBpm')} style="label" />
+                <Switch value={settings.lobbyMusic.enableCustomBpm} on-changed="OnEnableCustomBpmToggled" />
             </HBox>
 
-            <If condition="{settings.lobbyMusic.enableCustomBpm}">
+            {settings.lobbyMusic.enableCustomBpm && <>
                 <HBox align="center">
-                    <Text text="{localize('CustomBpm')}" style="label" />
-                    <Slider value="{settings.lobbyMusic.customBpm}" min="60" max="240" step="1" showValue="true" on-changed="OnCustomBpmChanged" />
+                    <Text text={localize('CustomBpm')} style="label" />
+                    <Slider value={settings.lobbyMusic.customBpm} min="60" max="240" step="1" showValue="true" on-changed="OnCustomBpmChanged" />
                 </HBox>
-            </If>
+            </>}
 
             <HBox align="center">
-                <Text text="{localize('LobbyFastMusic')}" style="label" />
-                <Switch value="{settings.lobbyMusic.fastMusic}" on-changed="OnLobbyFastMusicToggled" />
+                <Text text={localize('LobbyFastMusic')} style="label" />
+                <Switch value={settings.lobbyMusic.fastMusic} on-changed="OnLobbyFastMusicToggled" />
             </HBox>
 
             <HBox align="center">
-                <Text text="{localize('LobbyCustomMusic')}" style="label" />
-                <Switch value="{settings.lobbyMusic.customMusic}" on-changed="OnLobbyCustomMusicToggled" />
+                <Text text={localize('LobbyCustomMusic')} style="label" />
+                <Switch value={settings.lobbyMusic.customMusic} on-changed="OnLobbyCustomMusicToggled" />
             </HBox>
 
-            <If condition="{settings.lobbyMusic.customMusic}">
+            {settings.lobbyMusic.customMusic && <>
                 <Separator />
 
                 <HBox align="center">
-                    <Text text="{localize('LobbyDefaultMusicPath')}" style="label" />
-                    <TextField value="{defaultMusicPath}" on-text-submit="OnDefaultMusicPathChanged" />
-                    <Button text="{localize('Apply')}" on-click="OnApplyDefaultMusic" />
+                    <Text text={localize('LobbyDefaultMusicPath')} style="label" />
+                    <TextField value={defaultMusicPath} on-text-submit="OnDefaultMusicPathChanged" />
+                    <Button text={localize('Apply')} on-click="OnApplyDefaultMusic" />
                 </HBox>
 
                 <HBox align="center">
-                    <Text text="{localize('LobbyFastMusicPath')}" style="label" />
-                    <TextField value="{fastMusicPath}" on-text-submit="OnFastMusicPathChanged" />
-                    <Button text="{localize('Apply')}" on-click="OnApplyFastMusic" />
+                    <Text text={localize('LobbyFastMusicPath')} style="label" />
+                    <TextField value={fastMusicPath} on-text-submit="OnFastMusicPathChanged" />
+                    <Button text={localize('Apply')} on-click="OnApplyFastMusic" />
                 </HBox>
 
-                <Button text="{localize('LobbyReloadMusic')}" on-click="OnLobbyReloadMusic" />
-            </If>
-        </If>
+                <Button text={localize('LobbyReloadMusic')} on-click="OnLobbyReloadMusic" />
+            </>}
+        </>}
     </VBox>
 </Iris>

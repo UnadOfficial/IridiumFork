@@ -1,70 +1,70 @@
 <Iris>
     <VBox gap="4">
-        <Text text="{localize('EditorShortcuts')}" style="title" />
+        <Text text={localize('EditorShortcuts')} style="title" />
         <Separator />
 
         <HBox align="center">
-            <Text text="{localize('EnableEditorShortcuts')}" style="label" />
-            <Switch value="{settings.editorShortcuts.enableEditorShortcuts}" on-changed="OnEnableEditorShortcutsToggled" />
+            <Text text={localize('EnableEditorShortcuts')} style="label" />
+            <Switch value={settings.editorShortcuts.enableEditorShortcuts} on-changed="OnEnableEditorShortcutsToggled" />
         </HBox>
 
-        <If condition="{settings.editorShortcuts.enableEditorShortcuts}">
+        {settings.editorShortcuts.enableEditorShortcuts && <>
             <Separator />
-            <Text text="{localize('EditorShortcutsDecoration')}" style="subtitle" />
-            <Separator />
-
-            <HBox align="center">
-                <Text text="{localize('ShortcutSelectAll')}" style="label" />
-                <Button text="{getShortcutDisplay(settings.editorShortcuts.selectAllKey, settings.editorShortcuts.selectAllModifiers)}" on-click="OnBindSelectAllKey" />
-            </HBox>
-
-            <HBox align="center">
-                <Text text="{localize('ShortcutDeselectAll')}" style="label" />
-                <Button text="{getShortcutDisplay(settings.editorShortcuts.deselectAllKey, settings.editorShortcuts.deselectAllModifiers)}" on-click="OnBindDeselectAllKey" />
-            </HBox>
-
-            <HBox align="center">
-                <Text text="{localize('ShortcutToggleVisibility')}" style="label" />
-                <Button text="{getShortcutDisplay(settings.editorShortcuts.toggleVisibilityKey, settings.editorShortcuts.toggleVisibilityModifiers)}" on-click="OnBindToggleVisibilityKey" />
-            </HBox>
-
-            <HBox align="center">
-                <Text text="{localize('ShortcutFocusDecoration')}" style="label" />
-                <Button text="{getShortcutDisplay(settings.editorShortcuts.focusDecorationKey, settings.editorShortcuts.focusDecorationModifiers)}" on-click="OnBindFocusDecorationKey" />
-            </HBox>
-
-            <Separator />
-            <Text text="{localize('EditorShortcutsNavigation')}" style="subtitle" />
+            <Text text={localize('EditorShortcutsDecoration')} style="subtitle" />
             <Separator />
 
             <HBox align="center">
-                <Text text="{localize('ShortcutGoToFloor')}" style="label" />
-                <Button text="{getShortcutDisplay(settings.editorShortcuts.goToFloorKey, settings.editorShortcuts.goToFloorModifiers)}" on-click="OnBindGoToFloorKey" />
+                <Text text={localize('ShortcutSelectAll')} style="label" />
+                <Button text={getShortcutDisplay(settings.editorShortcuts.selectAllKey, settings.editorShortcuts.selectAllModifiers)} on-click="OnBindSelectAllKey" />
             </HBox>
 
             <HBox align="center">
-                <Text text="{localize('CameraFollowOnFloorSelect')}" style="label" />
-                <Switch value="{settings.editorShortcuts.cameraFollowOnFloorSelect}" on-changed="OnCameraFollowOnFloorSelectToggled" />
+                <Text text={localize('ShortcutDeselectAll')} style="label" />
+                <Button text={getShortcutDisplay(settings.editorShortcuts.deselectAllKey, settings.editorShortcuts.deselectAllModifiers)} on-click="OnBindDeselectAllKey" />
             </HBox>
 
             <HBox align="center">
-                <Text text="{localize('ShortcutSelectAllFloors')}" style="label" />
-                <Button text="{getShortcutDisplay(settings.editorShortcuts.selectAllFloorsKey, settings.editorShortcuts.selectAllFloorsModifiers)}" on-click="OnBindSelectAllFloorsKey" />
+                <Text text={localize('ShortcutToggleVisibility')} style="label" />
+                <Button text={getShortcutDisplay(settings.editorShortcuts.toggleVisibilityKey, settings.editorShortcuts.toggleVisibilityModifiers)} on-click="OnBindToggleVisibilityKey" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('ShortcutFocusDecoration')} style="label" />
+                <Button text={getShortcutDisplay(settings.editorShortcuts.focusDecorationKey, settings.editorShortcuts.focusDecorationModifiers)} on-click="OnBindFocusDecorationKey" />
             </HBox>
 
             <Separator />
-            <Text text="{localize('EditorShortcutsPopup')}" style="subtitle" />
+            <Text text={localize('EditorShortcutsNavigation')} style="subtitle" />
             <Separator />
 
             <HBox align="center">
-                <Text text="{localize('ShortcutPopupSave')}" style="label" />
-                <Button text="{getShortcutDisplay(settings.editorShortcuts.popupSaveKey, settings.editorShortcuts.popupSaveModifiers)}" on-click="OnBindPopupSaveKey" />
+                <Text text={localize('ShortcutGoToFloor')} style="label" />
+                <Button text={getShortcutDisplay(settings.editorShortcuts.goToFloorKey, settings.editorShortcuts.goToFloorModifiers)} on-click="OnBindGoToFloorKey" />
             </HBox>
 
             <HBox align="center">
-                <Text text="{localize('ShortcutPopupDiscard')}" style="label" />
-                <Button text="{getShortcutDisplay(settings.editorShortcuts.popupDiscardKey, settings.editorShortcuts.popupDiscardModifiers)}" on-click="OnBindPopupDiscardKey" />
+                <Text text={localize('CameraFollowOnFloorSelect')} style="label" />
+                <Switch value={settings.editorShortcuts.cameraFollowOnFloorSelect} on-changed="OnCameraFollowOnFloorSelectToggled" />
             </HBox>
-        </If>
+
+            <HBox align="center">
+                <Text text={localize('ShortcutSelectAllFloors')} style="label" />
+                <Button text={getShortcutDisplay(settings.editorShortcuts.selectAllFloorsKey, settings.editorShortcuts.selectAllFloorsModifiers)} on-click="OnBindSelectAllFloorsKey" />
+            </HBox>
+
+            <Separator />
+            <Text text={localize('EditorShortcutsPopup')} style="subtitle" />
+            <Separator />
+
+            <HBox align="center">
+                <Text text={localize('ShortcutPopupSave')} style="label" />
+                <Button text={getShortcutDisplay(settings.editorShortcuts.popupSaveKey, settings.editorShortcuts.popupSaveModifiers)} on-click="OnBindPopupSaveKey" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('ShortcutPopupDiscard')} style="label" />
+                <Button text={getShortcutDisplay(settings.editorShortcuts.popupDiscardKey, settings.editorShortcuts.popupDiscardModifiers)} on-click="OnBindPopupDiscardKey" />
+            </HBox>
+        </>}
     </VBox>
 </Iris>

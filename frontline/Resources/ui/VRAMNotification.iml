@@ -1,15 +1,15 @@
 <Iris>
     <Resources>
-        <Style name="panel">
+        <Style name="panel" on=".panel">
             <Setter property="background" value="#151617" />
             <Setter property="padding" value="12,12,12,12" />
             <Setter property="radius" value="8" />
         </Style>
-        <Style name="text">
+        <Style name="text" on=".text">
             <Setter property="color" value="#E9ECEF" />
             <Setter property="fontSize" value="14" />
         </Style>
-        <Style name="stop">
+        <Style name="stop" on=".stop">
             <Setter property="background" value="#D973A5" />
             <Setter property="color" value="#F8F9FA" />
             <Setter property="fontSize" value="12" />
@@ -18,11 +18,9 @@
     </Resources>
 
     <HBox class="panel" gap="8">
-        <Icon type="{iconType}" />
-        <Text text="{message}" style="text" />
+        <Icon type={iconType} />
+        <Text text={message} style="text" />
         <Fill />
-        <If condition="{showStop}">
-            <Button text="{stopText}" style="stop" on-click="OnStop" width="80" />
-        </If>
+        {showStop && <Button text={stopText} style="stop" on-click="OnStop" width="80" />}
     </HBox>
 </Iris>
