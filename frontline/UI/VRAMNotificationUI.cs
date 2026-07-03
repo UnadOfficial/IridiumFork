@@ -62,9 +62,22 @@ namespace Iridium.UI
             _instance._message = message;
             _instance._isPersistent = true;
             _instance._timer = float.MaxValue;
-            // Direct text update on the cached reference — no Rebuild, no allocation.
-            if (_instance._messageText != null)
-                _instance._messageText.text = message;
+            // Re-resolve the Text component on every progress update instead of
+            // trusting the cached reference. The OLD IMGUI implementation
+            // (commit 538c294^) read `_message` fresh in OnGUI() every frame —
+            // the new UGUI/IML path cannot rely on a single cached Text
+            // reference because:
+            //   (a) _SetContent can be called from outside (e.g. OptimizerPatches'
+            //       VRAMNotificationPatch.Postfix → Show), which Rebuilds the
+            //       UI and leaves the cached reference pointing at a destroyed
+            //       Text component, and
+            //   (b) the wrapper's child ordering can shift between rebuilds
+            //       (pending-destroy wrappers vs new wrapper), making the
+            //       cached _messageText point at a stale object.
+            // Walking the hierarchy each call is cheap (one GetChild + Find)
+            // and matches the "always-read-the-latest-value" semantics of the
+            // old IMGUI version, which never had this "0/129 stuck" problem.
+            _instance._SetMessageText(message);
         }
 
         /// <summary>
@@ -319,6 +332,32 @@ namespace Iridium.UI
             // The renderer names the UGUI Text GameObject "Text".
             var txt = wrapper.Find("HBox/Text");
             if (txt != null) _messageText = txt.GetComponent<Text>();
+        }
+
+        /// <summary>
+        /// Walk the live UI tree to find the message Text and set its text.
+        /// Mirrors the OLD IMGUI behavior of re-reading <c>_message</c> in
+        /// OnGUI() every frame, but for UGUI: instead of trusting the cached
+        /// <c>_messageText</c> reference (which can be invalidated by an
+        /// external Rebuild), re-resolve the Text each call. Cheap (one
+        /// GetChild + Find) and immune to stale-reference issues.
+        /// </summary>
+        private void _SetMessageText(string message)
+        {
+            if (_renderer?.RootObject == null) return;
+            int lastIdx = _renderer.RootObject.transform.childCount - 1;
+            if (lastIdx < 0) return;
+            var wrapper = _renderer.RootObject.transform.GetChild(lastIdx);
+            if (wrapper == null || wrapper.gameObject.name != "DialogWrapper") return;
+            var txt = wrapper.Find("HBox/Text");
+            if (txt == null) return;
+            var textComp = txt.GetComponent<Text>();
+            if (textComp == null) return;
+            textComp.text = message;
+            // Refresh the cached reference too — keeps _CacheUIRefs's result
+            // consistent with what we just wrote, in case anyone else reads
+            // _messageText.
+            _messageText = textComp;
         }
 
         private void _StartFadeIn()

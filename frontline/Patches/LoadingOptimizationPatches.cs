@@ -337,7 +337,13 @@ namespace Iridium.Patches
                     float frameStart = Time.realtimeSinceStartup;
                     int batchLimit = Mathf.Min(maxPerFrame, _pendingDecorations.Count);
 
-                    for (int i = 0; i < batchLimit && _pendingDecorations.Count > 0; i++)
+                    // Add `!_cancelled` to the inner loop condition so a stop-button
+                    // click is honored *immediately* — without this, the inner
+                    // for-loop keeps running its full batch (up to `decorationsPerFrame`
+                    // iterations or until the time budget is hit) before the
+                    // outer while-loop's _cancelled check gets a chance to run,
+                    // making the cancel feel laggy.
+                    for (int i = 0; i < batchLimit && _pendingDecorations.Count > 0 && !_cancelled; i++)
                     {
                         var ev = _pendingDecorations.Dequeue();
                         try
@@ -404,8 +410,10 @@ namespace Iridium.Patches
                         if (_cancelled)
                         {
                             Main.Logger?.Log($"[LoadingOptimization] Loading cancelled by user");
-                            UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
-                            UI.VRAMNotificationUI.Complete();
+                            // Switch to non-persistent Show() (no Stop button) so the
+                            // button doesn't linger during the 0.5s fade-out — the
+                            // user already clicked it, there's nothing more to stop.
+                            UI.VRAMNotificationUI.Show(Localization.Get("LoadingDecorationsProgress", processed, total));
                             _uiCompleted = true;
                             CleanupState();
                             yield break;
@@ -434,33 +442,52 @@ namespace Iridium.Patches
                 {
                     if (OptimizerPatches.savedVRAM_MB > 0.1f)
                     {
-                        UI.VRAMNotificationUI.UpdateProgress(Localization.Get("SavedMemoryMsg", OptimizerPatches.savedVRAM_MB.ToString("F2")));
+                        // Switch to non-persistent Show() (no Stop button) instead of
+                        // UpdateProgress+Complete. UpdateProgress only writes to the
+                        // existing Text and never Rebuilds, so the persistent UI's
+                        // Stop button would stay visible after the load is already
+                        // done — both confusing (nothing to stop) and ugly. Show()
+                        // Rebuilds with showStop:false, then Complete can fade it out
+                        // on the standard 0.5s in / 2.5s hold / 0.5s out timeline.
+                        UI.VRAMNotificationUI.Show(Localization.Get("SavedMemoryMsg", OptimizerPatches.savedVRAM_MB.ToString("F2")));
                         Main.Logger?.Log(Localization.Get("SavedMemoryLog", OptimizerPatches.savedVRAM_MB.ToString("F2")));
                     }
                     else
                     {
-                        UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                        // Same fix for the "no saved memory" case — we still want
+                        // a final non-persistent confirmation without a Stop button.
+                        UI.VRAMNotificationUI.Show(Localization.Get("LoadingDecorationsProgress", processed, total));
                     }
-                    UI.VRAMNotificationUI.Complete();
                     _uiCompleted = true;
                     OptimizerPatches.VRAMNotificationPatch.isFinished = true;
                 }
                 else
                 {
-                    UI.VRAMNotificationUI.Complete();
+                    // dontShowSavedMemory = true — we just want the persistent UI
+                    // to fade out without showing anything else, so we still
+                    // need to switch to non-persistent (no Stop button) before
+                    // Complete runs.
+                    UI.VRAMNotificationUI.Show(Localization.Get("LoadingDecorationsProgress", processed, total));
                     _uiCompleted = true;
                 }
 
-                // LoadAndPlayLevel calls ResetDecorations + Play() right after
-                // UpdateDecorationObjects returns. Since we intercepted
-                // synchronously, they ran on empty data. Replay them now.
-                // Don't set _isLoading=false yet — Play() may trigger chain
-                // calls that need to still see the loading state.
-                if (instance != null && instance.decManager != null)
-                    instance.decManager.ResetDecorations();
-
+                // ResetDecorations + Play() were about to run synchronously
+                // after UpdateDecorationObjects returned, but we intercepted
+                // synchronously so they ran on empty data. Replay them now.
+                // Critical: ResetDecorations_Patch blocks any ResetDecorations
+                // call while _isLoading is true, and the OLD IMGUI version
+                // (commit 538c294^, no such patch) had no problem because
+                // ResetDecorations was always allowed to run. So we must call
+                // CleanupState() FIRST to flip _isLoading off, then call
+                // ResetDecorations. The original sequence attempted to keep
+                // _isLoading=true through Play() to guard against chain calls,
+                // but in practice Play() doesn't re-trigger UpdateDecorationObjects,
+                // and a missing ResetDecorations is exactly what was causing
+                // "decorations missing" after the popup disappeared.
                 var gameToPlay = (_pendingGame != null && _playWasBlocked) ? _pendingGame : null;
                 CleanupState();
+                if (instance != null && instance.decManager != null)
+                    instance.decManager.ResetDecorations();
                 gameToPlay?.Play();
             }
 
