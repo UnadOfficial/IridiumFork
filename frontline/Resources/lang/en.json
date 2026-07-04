@@ -63,9 +63,6 @@
   "ResourcesFolderNotFound": "Resources folder not found: {0}",
   "FailedToGetFiles": "Failed to get files: {0}",
   "MemorySettings": "Memory Optimization",
-  "CleanOnSceneSwitch": "Clean on Scene Change",
-  "CleaningMemory": "Cleaning memory...",
-  "CleanedMemory": "Memory cleanup finished",
   "LegacyLevelBehavior": "Legacy Level Behavior",
   "LegacyFlashMode": "Legacy Flash Behavior",
   "LegacyCamRelativeToMode": "Legacy Camera Relative Behavior",
@@ -223,5 +220,6 @@
   "CustomEasingEngine": "Custom Easing Engine",
   "EnableCustomEasingEngine": "Enable Custom Easing Engine",
   "CustomEasingEngineHint": "Replaces DOTween with a lightweight easing engine for MoveTrack/RecolorTrack/MoveDecoration. Incompatible with individual optimize options above.",
-  "CustomEasingEngineConflictDetected": "Custom Easing Engine was auto-disabled due to conflicting optimization settings. Please re-enable it after disabling MoveTrack/RecolorTrack/MoveDecoration optimizations."
+  "CustomEasingEngineConflictDetected": "Custom Easing Engine was auto-disabled due to conflicting optimization settings. Please re-enable it after disabling MoveTrack/RecolorTrack/MoveDecoration optimizations.",
+  "IridiumHint": ""
 }

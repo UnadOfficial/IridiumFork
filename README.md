@@ -58,19 +58,10 @@ Choose between IL Transpiler (performance-oriented) and Prefix/Postfix (compatib
 
 ## Installation
 
-1. Go to [Releases](https://github.com/Xbodwf/Iridium/releases) to download the latest stable release. For new features, download the latest beta or prerelease.
+Select your modloader below for installation instructions:
 
-> [!NOTE]
-> Each release provides multiple builds for different ADOFAI game versions — please choose the one that matches your game version.
-
-2. Ensure that [UnityModManager](https://www.nexusmods.com/site/mods/21) is installed.
-
-> [!WARNING]
-> We do not enforce a specific UnityModManager version. However, for ADOFAI versions 2.10.0 and above, using a UnityModManager version lower than **0.32.5.0** can easily cause crashes. Therefore, in Iridium builds targeting ADOFAI **2.10.0+**, we **require UnityModManager 0.32.5.0** to ensure stability.
-
-3. Extract the downloaded files to: `Game Directory/Mods/Iridium` (same level as `A Dance of Fire And Ice_Data`). Create the folder if it does not exist.
-
-4. Launch the game. If the game is already running, restart it.
+- [UnityModManager](docs/loader/umm.md)
+- [MelonLoader](docs/loader/melonloader.md)
 
 > [!CAUTION]
 > Unless it is a specially tuned version of the mod released for older game versions, do not attempt to run Iridium on ADOFAI **2.9.7 or below**. We do not guarantee functional stability or compatibility in such cases.

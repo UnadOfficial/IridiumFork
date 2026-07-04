@@ -19,68 +19,6 @@ namespace Iridium.Patches
 
 		#endregion
 
-		#region Tween Batch Processing
-
-		private static class TweenBatchQueue
-		{
-			private static readonly Queue<TweenRequest> _pendingTweens = new Queue<TweenRequest>();
-			private static int _tweensCreatedThisFrame = 0;
-			private static bool _isProcessing = false;
-
-			public static void Enqueue(TweenRequest request)
-			{
-				_pendingTweens.Enqueue(request);
-				if (!_isProcessing)
-				{
-					StartProcessing();
-				}
-			}
-
-			public static void StartProcessing()
-			{
-				if (_isProcessing) return;
-				_isProcessing = true;
-				ProcessBatch();
-			}
-
-			private static void ProcessBatch()
-			{
-				_tweensCreatedThisFrame = 0;
-
-				while (_pendingTweens.Count > 0 && _tweensCreatedThisFrame < MAX_TWEENS_PER_FRAME)
-				{
-					var request = _pendingTweens.Dequeue();
-					request.Execute();
-					_tweensCreatedThisFrame++;
-				}
-
-				if (_pendingTweens.Count > 0)
-				{
-					Main.Logger?.Log($"[ExtremeOpt] Deferred {_pendingTweens.Count} tweens to next frame");
-				}
-				else
-				{
-					_isProcessing = false;
-				}
-			}
-
-			public static void Clear()
-			{
-				_pendingTweens.Clear();
-				_isProcessing = false;
-				_tweensCreatedThisFrame = 0;
-			}
-
-			public static int PendingCount => _pendingTweens.Count;
-		}
-
-		private abstract class TweenRequest
-		{
-			public abstract void Execute();
-		}
-
-		#endregion
-
 		#region MoveTrack Extreme Optimization
 
 		[HarmonyPatch(typeof(ffxMoveFloorPlus), nameof(ffxMoveFloorPlus.StartEffect))]
@@ -336,40 +274,6 @@ namespace Iridium.Patches
 				}
 
 				Main.Logger?.Log($"[ExtremeOpt] Processed {processed} MoveDecor events in batches");
-			}
-		}
-
-		#endregion
-
-		#region Update Hook
-
-		[HarmonyPatch(typeof(scnGame), "Update")]
-		public static class ProcessPendingTweensPatch
-		{
-			[HarmonyPostfix]
-			public static void Postfix()
-			{
-				if (!Main.Settings.optimizer.enableOptimizer) return;
-
-				if (TweenBatchQueue.PendingCount > 0)
-				{
-					TweenBatchQueue.StartProcessing();
-				}
-			}
-		}
-
-		#endregion
-
-		#region Cleanup
-
-		[HarmonyPatch(typeof(scnGame), "OnDestroy")]
-		public static class CleanupBatchQueuePatch
-		{
-			[HarmonyPostfix]
-			public static void Postfix()
-			{
-				TweenBatchQueue.Clear();
-				Main.Logger?.Log("[ExtremeOpt] Cleared batch queue");
 			}
 		}
 

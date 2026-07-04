@@ -335,13 +335,6 @@
                 <Switch value={settings.memory.enableMemoryOptimization} on-changed="OnMemoryOptimizationToggled" />
             </HBox>
 
-            {settings.memory.enableMemoryOptimization && <>
-                <HBox align="center">
-                    <Text text={localize('CleanOnSceneSwitch')} style="label" />
-                    <Fill />
-                <Switch value={settings.memory.cleanOnSceneSwitch} on-changed="OnCleanOnSceneSwitchToggled" />
-                </HBox>
-            </>}
             </View>
 
             <Separator />

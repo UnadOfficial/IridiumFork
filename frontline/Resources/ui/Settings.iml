@@ -57,5 +57,6 @@
         <HBox>
             <ForEach items={getLanguages()} template="LangBtn" />
         </HBox>
+        <Text text={localize('IridiumHint')} style="secondary" visible={localize('IridiumHint') != ''} />
     </VBox>
 </Iris>

@@ -63,9 +63,6 @@
   "ResourcesFolderNotFound": "Resources 文件夹未找到: {0}",
   "FailedToGetFiles": "获取文件失败: {0}",
   "MemorySettings": "内存优化",
-  "CleanOnSceneSwitch": "切换场景时清理内存",
-  "CleaningMemory": "正在清理内存...",
-  "CleanedMemory": "内存清理完成",
   "LegacyLevelBehavior": "旧版谱面行为",
   "LegacyFlashMode": "旧版闪烁行为 (Legacy Flash)",
   "LegacyCamRelativeToMode": "旧版摄像机相对行为 (Legacy Camera Relative)",
@@ -223,5 +220,6 @@
   "CustomEasingEngine": "自定义缓速引擎",
   "EnableCustomEasingEngine": "启用自定义缓速引擎",
   "CustomEasingEngineHint": "使用轻量级缓速引擎替代 DOTween 处理移动轨道/重新着色/移动装饰物。与上方的单独优化选项互斥。",
-  "CustomEasingEngineConflictDetected": "自定义缓速引擎因与优化设置冲突已自动禁用。请先关闭移动轨道/重新着色/移动装饰物优化后再启用。"
+  "CustomEasingEngineConflictDetected": "自定义缓速引擎因与优化设置冲突已自动禁用。请先关闭移动轨道/重新着色/移动装饰物优化后再启用。",
+  "IridiumHint": ""
 }

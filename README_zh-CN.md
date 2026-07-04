@@ -66,19 +66,10 @@ https://discord.gg/ddndY4xXeK
 
 ## 安装方法
 
-1. 前往 [Releases](https://github.com/Xbodwf/Iridium/releases) 下载最新稳定版本。如需体验新功能，可下载最新的 beta 或 prerelease 版本。
+根据你的 Mod 加载器选择对应的安装指南：
 
-> [!NOTE]
-> 每个 Release 提供适用于不同 ADOFAI 游戏版本的多个构建包，请根据您的游戏版本选择对应的版本下载。
-
-2. 确保已安装 [UnityModManager](https://www.nexusmods.com/site/mods/21)。
-
-> [!WARNING]
-> 我们不强制要求特定的 UnityModManager 版本。但对于 2.10.0 及以上版本的 ADOFAI，使用低于 **0.32.5.0** 的 UnityModManager 版本极易导致崩溃。因此，在适用于 **ADOFAI 2.10.0+** 的 Iridium 构建中，我们将**要求 UnityModManager 0.32.5.0**，以确保稳定并提醒用户注意此要求。
-
-3. 将下载的文件解压到游戏目录下的 `Mods/Iridium` 文件夹（与 `A Dance of Fire And Ice_Data` 同级）。如文件夹不存在请手动创建。
-
-4. 启动游戏。若游戏已在运行，请重启游戏。
+- [UnityModManager](docs/loader/umm_zh-CN.md)
+- [MelonLoader](docs/loader/melonloader_zh-CN.md)
 
 > [!CAUTION]
 > 除非是维护者推出的针对旧版游戏的特调版本，否则请勿在 ADOFAI **2.9.7 及以下**版本运行 Iridium。我们不保障此情况下的功能稳定性和兼容性。

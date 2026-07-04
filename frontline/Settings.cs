@@ -469,15 +469,6 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 memory.enableMemoryOptimization = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.CleanOnSceneSwitchPatch));
-                Save();
-            });
-
-            _renderer.RegisterHandler("OnCleanOnSceneSwitchToggled", (obj) =>
-            {
-                bool value = obj is bool b ? b : false;
-                memory.cleanOnSceneSwitch = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.CleanOnSceneSwitchPatch));
                 Save();
             });
 
@@ -757,7 +748,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 compatibility.fixJudgeRotation = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.HitTextMeshShowRotationFixPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowRotationFixPatch));
                 Save();
             });
 
@@ -804,7 +795,6 @@ namespace Iridium
                 judgeText.enableJudgeTextCustomization = value;
                 AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshInitPatch));
                 AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.ResetTimingOnRewindPatch));
                 Save();
             });
 
