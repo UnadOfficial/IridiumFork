@@ -8,5 +8,5 @@
   "AssemblyName": "Iridium.Loader.UMM.dll",
   "EntryMethod": "Iridium.Loader.UmmEntry.Load",
   "HomePage": "https://github.com/adofaiex",
-  "Repository": "https://github.com/Xbodwf/Iridium"
+  "Repository": "https://raw.githubusercontent.com/adofaiex/Iridium/refs/heads/main/Repository.json"
 }
