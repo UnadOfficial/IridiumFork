@@ -71,3 +71,6 @@ lib/
 # Other files
 TestModProject
 .adofai/
+
+# Separate repo for UMM auto-update
+mod-update/
