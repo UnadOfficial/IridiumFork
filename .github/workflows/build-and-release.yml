@@ -67,7 +67,22 @@ jobs:
             version="${BASH_REMATCH[1]}"
             echo "VERSION_TAG=$version" >> $GITHUB_OUTPUT
           fi
+          if [[ $line =~ ^BASE_TAG=(.*)$ ]]; then
+            baseTag="${BASH_REMATCH[1]}"
+            echo "BASE_TAG=$baseTag" >> $GITHUB_OUTPUT
+          fi
         done <<< "$output"
+
+    - name: Patch Info.json version
+      shell: bash
+      run: |
+        node -e "
+          const fs = require('fs');
+          const path = 'out/${{ matrix.project-dir }}/Info.json';
+          const info = JSON.parse(fs.readFileSync(path, 'utf8'));
+          info.Version = '${{ steps.get_version.outputs.BASE_TAG }}';
+          fs.writeFileSync(path, JSON.stringify(info, null, 2) + '\n');
+        "
 
     - name: Package artifacts
       shell: bash
