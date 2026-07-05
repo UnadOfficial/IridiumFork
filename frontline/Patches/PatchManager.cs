@@ -204,12 +204,12 @@ namespace Iridium.Patches
 			_definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
 
 			// Judge Text
-			// InitPatch: Handles custom text mode
+			// InitPatch: Sets template text (may contain {offset} placeholders)
 			_definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
-			// HitTextManagerShowPatch: Always captures missAngle (needed by rotation fix)
+			// HitTextManagerShowPatch: Captures missAngle for Show (game doesn't forward it in non-coop)
 			_definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextManagerShowPatch), () => true));
-			// ShowPatch: Handles offset mode text replacement
-			_definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
+			// ShowPatch: Replaces {offset} placeholders with calculated timing
+			_definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
 
 
 			// Editor Shortcuts

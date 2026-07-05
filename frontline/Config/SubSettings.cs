@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Iridium.Config
@@ -138,9 +139,8 @@ namespace Iridium.Config
     public class JudgeTextSettings
     {
         public bool enableJudgeTextCustomization = false;
-        public bool showAsOffset = false; // 显示为偏移 (如 "5ms")
-        
-        // 自定义判定文本
+
+        // 自定义判定文本（支持 {offset} / {offset:x} 占位符）
         public string tooEarly = "TooEarly";
         public string veryEarly = "VeryEarly";
         public string earlyPerfect = "EarlyPerfect";
@@ -151,7 +151,7 @@ namespace Iridium.Config
         public string multipress = "Multipress";
         public string failMiss = "FailMiss";
         public string failOverload = "FailOverload";
-        
+
         public string GetTextForHitMargin(int hitMargin)
         {
             return hitMargin switch
@@ -169,7 +169,47 @@ namespace Iridium.Config
                 _ => ""
             };
         }
-        
+
+        public static string ReplaceOffset(string template, double offsetMs)
+        {
+            if (double.IsNaN(offsetMs) || double.IsInfinity(offsetMs))
+                offsetMs = 0;
+
+            return System.Text.RegularExpressions.Regex.Replace(template, @"\{offset(?::(\d+))?\}", match =>
+            {
+                double abs = Math.Abs(offsetMs);
+                bool isZero;
+                string formatted;
+                if (match.Groups[1].Success)
+                {
+                    int decimals = int.Parse(match.Groups[1].Value);
+                    formatted = abs.ToString("F" + decimals);
+                    isZero = Math.Round(abs, decimals) == 0;
+                }
+                else
+                {
+                    formatted = Math.Round(abs).ToString();
+                    isZero = Math.Round(abs) == 0;
+                }
+                string sign = offsetMs < 0 && !isZero ? "-" : "";
+                return sign + formatted;
+            });
+        }
+
+        public void ConvertAllToOffset()
+        {
+            tooEarly = "{offset}ms";
+            veryEarly = "{offset}ms";
+            earlyPerfect = "{offset}ms";
+            perfect = "{offset}ms";
+            latePerfect = "{offset}ms";
+            veryLate = "{offset}ms";
+            tooLate = "{offset}ms";
+            multipress = "{offset}ms";
+            failMiss = "{offset}ms";
+            failOverload = "{offset}ms";
+        }
+
         public void ResetToDefault()
         {
             tooEarly = "TooEarly";

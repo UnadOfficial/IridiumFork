@@ -18,67 +18,64 @@
         </HBox>
 
         {settings.judgeText.enableJudgeTextCustomization && <>
+            <Text text={localize('CustomJudgeText')} style="label" />
+            <Text text={localize('JudgeTextOffsetHint')} style="hint" />
+            <Separator />
+
             <HBox align="center">
-                <Text text={localize('ShowAsOffset')} style="label" />
-                <Switch value={settings.judgeText.showAsOffset} on-changed="OnShowAsOffsetToggled" />
+                <Text text={localize('JudgeText_TooEarly')} style="label" />
+                <TextField value={settings.judgeText.tooEarly} on-text-submit="OnJudgeTextChanged" />
             </HBox>
 
-            {!settings.judgeText.showAsOffset && <>
-                <Text text={localize('CustomJudgeText')} style="label" />
-                <Separator />
+            <HBox align="center">
+                <Text text={localize('JudgeText_VeryEarly')} style="label" />
+                <TextField value={settings.judgeText.veryEarly} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
 
-                <HBox align="center">
-                    <Text text={localize('JudgeText_TooEarly')} style="label" />
-                    <TextField value={settings.judgeText.tooEarly} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
+            <HBox align="center">
+                <Text text={localize('JudgeText_EarlyPerfect')} style="label" />
+                <TextField value={settings.judgeText.earlyPerfect} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
 
-                <HBox align="center">
-                    <Text text={localize('JudgeText_VeryEarly')} style="label" />
-                    <TextField value={settings.judgeText.veryEarly} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
+            <HBox align="center">
+                <Text text={localize('JudgeText_Perfect')} style="label" />
+                <TextField value={settings.judgeText.perfect} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
 
-                <HBox align="center">
-                    <Text text={localize('JudgeText_EarlyPerfect')} style="label" />
-                    <TextField value={settings.judgeText.earlyPerfect} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
+            <HBox align="center">
+                <Text text={localize('JudgeText_LatePerfect')} style="label" />
+                <TextField value={settings.judgeText.latePerfect} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
 
-                <HBox align="center">
-                    <Text text={localize('JudgeText_Perfect')} style="label" />
-                    <TextField value={settings.judgeText.perfect} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
+            <HBox align="center">
+                <Text text={localize('JudgeText_VeryLate')} style="label" />
+                <TextField value={settings.judgeText.veryLate} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
 
-                <HBox align="center">
-                    <Text text={localize('JudgeText_LatePerfect')} style="label" />
-                    <TextField value={settings.judgeText.latePerfect} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
+            <HBox align="center">
+                <Text text={localize('JudgeText_TooLate')} style="label" />
+                <TextField value={settings.judgeText.tooLate} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
 
-                <HBox align="center">
-                    <Text text={localize('JudgeText_VeryLate')} style="label" />
-                    <TextField value={settings.judgeText.veryLate} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
+            <HBox align="center">
+                <Text text={localize('JudgeText_Multipress')} style="label" />
+                <TextField value={settings.judgeText.multipress} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
 
-                <HBox align="center">
-                    <Text text={localize('JudgeText_TooLate')} style="label" />
-                    <TextField value={settings.judgeText.tooLate} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
+            <HBox align="center">
+                <Text text={localize('JudgeText_FailMiss')} style="label" />
+                <TextField value={settings.judgeText.failMiss} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
 
-                <HBox align="center">
-                    <Text text={localize('JudgeText_Multipress')} style="label" />
-                    <TextField value={settings.judgeText.multipress} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
+            <HBox align="center">
+                <Text text={localize('JudgeText_FailOverload')} style="label" />
+                <TextField value={settings.judgeText.failOverload} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
 
-                <HBox align="center">
-                    <Text text={localize('JudgeText_FailMiss')} style="label" />
-                    <TextField value={settings.judgeText.failMiss} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
-
-                <HBox align="center">
-                    <Text text={localize('JudgeText_FailOverload')} style="label" />
-                    <TextField value={settings.judgeText.failOverload} on-text-submit="OnJudgeTextChanged" />
-                </HBox>
-
+            <HBox gap="4">
                 <Button text={localize('ResetJudgeText')} on-click="OnResetJudgeText" />
-            </>}
+                <Button text={localize('ConvertJudgeTextToOffset')} on-click="OnConvertJudgeTextToOffset" />
+            </HBox>
         </>}
     </VBox>
 </Iris>

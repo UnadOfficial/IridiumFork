@@ -11,6 +11,9 @@ namespace Iridium.Patches
 	{
 		private static JudgeTextSettings Settings => Main.Settings.judgeText;
 
+		// Captured missAngle from scrHitTextManager.ShowHitText (game doesn't forward it to Show in non-coop)
+		private static float _capturedMissAngle;
+
 		private static double CalculateTimingFromAngle(float angularOffset)
 		{
 			var controller = scrController.instance;
@@ -26,13 +29,13 @@ namespace Iridium.Patches
 			return -standardTiming;
 		}
 
-		private static string GetOffsetText(double timing)
+		[HarmonyPatch(typeof(scrHitTextManager), "ShowHitText")]
+		public static class HitTextManagerShowPatch
 		{
-			if (double.IsNaN(timing) || double.IsInfinity(timing))
-				return "0ms";
-
-			long ms = (long)Math.Round(timing);
-			return $"{(ms >= 0 ? "+" : "-")}{Math.Abs(ms)}ms";
+			public static void Prefix(float missAngle)
+			{
+				_capturedMissAngle = missAngle;
+			}
 		}
 
 		[HarmonyPatch(typeof(scrHitTextMesh), "Init")]
@@ -40,47 +43,40 @@ namespace Iridium.Patches
 		{
 			public static void Postfix(scrHitTextMesh __instance, HitMargin hitMargin, TextMeshPro ___text)
 			{
-				if (!Settings.enableJudgeTextCustomization) return;
-				if (Settings.showAsOffset) return;
+				if (!Settings.enableJudgeTextCustomization)
+				{
+					___text.text = hitMargin.ToString();
+					return;
+				}
 
 				___text.text = Settings.GetTextForHitMargin((int)hitMargin);
-			}
-		}
-
-		[HarmonyPatch(typeof(scrHitTextManager), "ShowHitText")]
-		public static class HitTextManagerShowPatch
-		{
-			public static void Prefix(float missAngle, out float __state)
-			{
-				__state = missAngle;
 			}
 		}
 
 		[HarmonyPatch(typeof(scrHitTextMesh), "Show")]
 		public static class HitTextMeshShowPatch
 		{
-			public static void Prefix(scrHitTextMesh __instance, TextMeshPro ___text, float __state)
+			public static void Prefix(scrHitTextMesh __instance, TextMeshPro ___text)
 			{
-				if (!Settings.enableJudgeTextCustomization || !Settings.showAsOffset) return;
+				if (!Settings.enableJudgeTextCustomization) return;
+				if (___text == null) return;
 
-				if (___text != null)
-				{
-					double timing = CalculateTimingFromAngle(__state);
-					___text.text = GetOffsetText(timing);
-				}
+				string template = Settings.GetTextForHitMargin((int)__instance.hitMargin);
+				double timing = CalculateTimingFromAngle(_capturedMissAngle);
+				___text.text = JudgeTextSettings.ReplaceOffset(template, timing);
 			}
 		}
 
 		[HarmonyPatch(typeof(scrHitTextMesh), "Show")]
 		public static class HitTextMeshShowRotationFixPatch
 		{
-			public static void Postfix(scrHitTextMesh __instance, float __state)
+			public static void Postfix(scrHitTextMesh __instance)
 			{
 				if (scrController.coopMode) return;
 				if (__instance.hitMargin == HitMargin.Perfect) return;
 
 				__instance.transform.DOLocalRotate(
-					new Vector3(0f, 0f, __state * 20f),
+					new Vector3(0f, 0f, _capturedMissAngle * 20f),
 					2f,
 					RotateMode.LocalAxisAdd
 				);

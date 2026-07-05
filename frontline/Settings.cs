@@ -798,14 +798,6 @@ namespace Iridium
                 Save();
             });
 
-            _renderer.RegisterHandler("OnShowAsOffsetToggled", (obj) =>
-            {
-                bool value = obj is bool b ? b : false;
-                judgeText.showAsOffset = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
-                Save();
-            });
-
             _renderer.RegisterHandler("OnJudgeTextChanged", (obj) =>
             {
                 Save();
@@ -814,6 +806,12 @@ namespace Iridium
             _renderer.RegisterHandler("OnResetJudgeText", () =>
             {
                 judgeText.ResetToDefault();
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnConvertJudgeTextToOffset", () =>
+            {
+                judgeText.ConvertAllToOffset();
                 Save();
             });
         }

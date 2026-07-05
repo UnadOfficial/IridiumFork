@@ -1,28 +1,49 @@
-## r41_nightly4
+## 1.4.0_beta1
 
 > [!Info]
 > Iridium 从 1.3.0_beta1 开始就已经支持 MelonLoader，有关 Iridium 在 MelonLoader 上的安装，请查阅 README.md
 
+### 新增 / New Features / 새로운 기능
+
+- **自定义判定文本与偏移显示可以同时使用**：旧版只能二选一（要么自定义文字，要么显示偏移值），现在在自定义文本中加入 `{offset}` 即可同时显示自定义文字和偏移
+- **Custom judge text and offset display can now work together**: Previously you had to choose one (either custom text OR show offset); now just add `{offset}` in your custom text to have both
+- **사용자 정의 판정 텍스트와 오프셋 표시를 동시에 사용 가능**: 이전에는 둘 중 하나만 선택해야 했지만(커스텀 텍스트 또는 오프셋 표시), 이제 커스텀 텍스트에 `{offset}`을 추가하여 둘 다 표시할 수 있습니다
+
+- **一键转换为偏移格式**：在判定文本设置中点击"转换为偏移格式"，所有文本自动替换为 `{offset}ms`
+- **Convert all to offset**: One-click button in judge text settings to replace all texts with `{offset}ms`
+- **일괄 오프셋 변환**: 판정 텍스트 설정에서 "오프셋 형식으로 변환" 버튼 클릭 시 모든 텍스트가 `{offset}ms`로 변경됩니다
+
 ### 改进 / Improvements / 개선
 
-- **韩语支持**：新增 kr.json 韩语翻译，设置界面语言选择按钮下方增加提示区域
-- **Korean language support**: Added kr.json with Korean translations; hint area below language selector in settings
-- **한국어 지원**: kr.json 한국어 번역 추가, 설정 언어 선택 버튼 아래 힌트 영역 추가
+- **判定文本立即生效**：修改判定文本后，无需重启游戏，下一拍立即显示新文本
+- **Instant judge text updates**: Changes to judge text take effect on the next hit, no restart needed
+- **판정 텍스트 즉시 적용**: 판정 텍스트 수정 후 게임 재시작 없이 다음 타격부터 새 텍스트가 표시됩니다
 
-- **安装文档重构**：按 Mod Loader 分流到 docs/loader/，新增 MelonLoader 安装指南
-- **Installation docs restructured**: Redirected to loader-specific guides in docs/loader/; added MelonLoader guide
-- **설치 문서 재구성**: Mod Loader별로 docs/loader/로 분기, MelonLoader 설치 가이드 추가
-
-- **Patches 清理重构**：移除死代码(TweenBatchQueue/空 Patch)，修复冲突 Patch 互斥逻辑，统一 tab 缩进
-- **Patches cleanup**: Removed dead code (TweenBatchQueue/empty patches), added mutual exclusion for conflicting patches, unified tab indentation
-- **Patches 정리**: 죽은 코드 제거(TweenBatchQueue/빈 Patch), 충돌 Patch 상호 배제 로직 추가, 탭 들여쓰기 통일
+> [!Tip]
+> 留空 = 不显示该判定文字 / Leave empty = hide this judge text / 비워두면 해당 판정 텍스트가 표시되지 않습니다
 
 ### 修复 / Bug Fixes / 버그 수정
 
-- **编辑器快捷键不响应**：修复 else-if 链导致修饰键组合被前置匹配项拦截的问题
-- **Editor shortcuts not firing**: Fixed else-if chain blocking modifier key combos when earlier match intercepted
-- **편집기 단축키 미응답**: else-if 체인으로 인해 수정자 키 조합이 선행 항목에 차단되던 문제 수정
+- **关闭自定义判定文本后仍显示自定义文字**：现在关闭后正确显示游戏默认判定文本
+- **Disabled judge text customization still showed custom text**: Now correctly shows default game text when disabled
+- **판정 텍스트 사용자 정의 비활성화 시에도 커스텀 텍스트 표시되던 문제**: 비활성화 시 게임 기본 텍스트로 올바르게 표시됩니다
 
-- **切换场景时清理内存导致 scnEditor 崩溃**：移除此功能
-- **Clean on scene switch crashing scnEditor**: Removed this feature
-- **씬 전환 시 메모리 정리로 scnEditor 충돌**: 해당 기능 제거
+- **判定文本旋转修复**：修复单人模式下判定文本不旋转的问题
+- **Judge text rotation fix**: Fixed judge text not rotating in single player mode
+- **판정 텍스트 회전 수정**: 싱글 플레이 모드에서 판정 텍스트가 회전하지 않던 문제 수정
+
+---
+> [!NOTE]
+> **感谢各位 Iridium 使用者的反馈，Iridium 成功进入 Beta 阶段！**
+> **Thanks to all Iridium users for your feedback — Iridium has entered Beta!**
+> **모든 Iridium 사용자 여러분의 피드백 덕분에 Iridium이 Beta 단계에 진입했습니다!**
+
+### 本地化 / Localization / 지역화
+
+- **韩语支持**：判定文本设置相关翻译已添加韩语支持
+- **Korean language support**: Added Korean translations for judge text settings
+- **한국어 지원**: 판정 텍스트 설정 관련 한국어 번역 추가
+
+- **简体中文支持**：判定文本设置相关翻译已更新
+- **Simplified Chinese support**: Updated Chinese translations for judge text settings
+- **간체 중국어 지원**: 판정 텍스트 설정 관련 중국어 번역 업데이트
