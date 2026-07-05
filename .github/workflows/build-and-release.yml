@@ -251,3 +251,36 @@ jobs:
               core.setFailed(`Failed to upload ${zipFile}: ${error.message}`);
             }
           }
+
+    - name: Update Repository.json
+      shell: bash
+      run: |
+        mainTag=$(node scripts/get-version.js main v2 | grep VERSION_TAG | cut -d= -f2)
+        frontlineTag=$(node scripts/get-version.js frontline v3 | grep VERSION_TAG | cut -d= -f2)
+        baseTag="${{ steps.version_info.outputs.BASE_TAG }}"
+        tagName="${{ steps.version_info.outputs.TAG_NAME }}"
+
+        node -e "
+          const fs = require('fs');
+          const repo = {
+            Releases: [
+              {
+                Id: 'Iridium',
+                Version: '$baseTag',
+                DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_${frontlineTag}.zip'
+              },
+              {
+                Id: 'Iridium',
+                Version: '$baseTag',
+                DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_${mainTag}.zip'
+              }
+            ]
+          };
+          fs.writeFileSync('Repository.json', JSON.stringify(repo, null, 2) + '\n');
+        "
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add Repository.json
+        git commit -m "auto-update Repository.json for $baseTag [skip ci]"
+        git push origin main
