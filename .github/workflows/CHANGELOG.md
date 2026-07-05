@@ -1,6 +1,6 @@
 ## 1.4.0_beta1
 
-> [!Info]
+> [!WARNING]
 > Iridium 从 1.3.0_beta1 开始就已经支持 MelonLoader，有关 Iridium 在 MelonLoader 上的安装，请查阅 README.md
 
 ### 新增 / New Features / 새로운 기능
