@@ -219,6 +219,15 @@ namespace Iridium.Patches
 			// --- Custom Easing Engine (替代 DOTween) ---
 			var easingCond = () => Main.Settings.optimizer.enableCustomEasingEngine;
 			RegisterNestedPatches(typeof(CustomEasingPatches), easingCond);
+
+			// ModifyMod
+			{
+                // Async Input Optimize
+                _definitions.Add(new PatchDef(typeof(MargeMods.AsyncInputOptimize.Patch.UnityEngine__SceneManagement__SceneManager), () => MargeMods.AsyncInputOptimize.Main.State));
+                _definitions.Add(new PatchDef(typeof(MargeMods.AsyncInputOptimize.Patch.__scnGame), () => MargeMods.AsyncInputOptimize.Main.State));
+                _definitions.Add(new PatchDef(typeof(MargeMods.AsyncInputOptimize.Patch.__scrConductor), () => MargeMods.AsyncInputOptimize.Main.State));
+                _definitions.Add(new PatchDef(typeof(MargeMods.AsyncInputOptimize.Patch.__scrCountdown), () => MargeMods.AsyncInputOptimize.Main.State));
+            }
 		}
 
 		/// <summary>

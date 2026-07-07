@@ -29,7 +29,7 @@ namespace Iridium
         }
 
         // 多线程队列
-        // 注意: 此UNSAFE_MODE只能保证大部分情况下不会出现List被多次写入 小部分情况无法解决 只能改为无锁无等待转换(主线程->Task->主线程)
+        // 注意: 此UNSAFE_MODE只能保证大部分情况下不会出现List被多次写入 小部分情况无法解决 只能改为无锁等待转换(主线程->Task->主线程)
         private const string MODNAME_INFO = "[Iridium/INFO] "; // Prefix Name
         private const string MODNAME_WARN = "[Iridium/WARN] "; // Prefix Name
         private const string MODNAME_ERROR = "[Iridium/ERROR] "; // Prefix Name

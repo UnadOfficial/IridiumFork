@@ -30,8 +30,8 @@ namespace Iridium.Patches
 				if (__instance.userIsEditingAnInputField) return;
 
 				HandleEditorShortcuts(__instance, s);
+			}
 		}
-	}
 
 		private static void HandlePopupShortcuts(scnEditor editor, Config.EditorShortcutSettings s)
 		{
