@@ -2,11 +2,11 @@
 {
     public static class AsyncInputData
     {
-        public static long currFrameTick;
-        public static long prevFrameTick;
-        public static long offsetTick;
-        public static long offsetTick_REAL;
-        public static long[] offsetTicks = new long[30];
+        public static ulong currFrameTick;
+        public static ulong prevFrameTick;
+        public static ulong offsetTick;
+        public static ulong offsetTick_REAL;
+        public static ulong[] offsetTicks = new ulong[30];
         public static int offsetTicksIndex;
         public static double dspTime;
     }
