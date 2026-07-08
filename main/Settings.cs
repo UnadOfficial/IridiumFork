@@ -24,6 +24,7 @@ namespace Iridium
         public JudgeTextSettings judgeText = new();
         public PatchModeSettings patchMode = new();
         public EditorShortcutSettings editorShortcuts = new();
+        public AsyncInputSettings asyncInput = new();
 
         public string panelToggleHotkey = "Ctrl+F9";
 
@@ -41,6 +42,7 @@ namespace Iridium
             "LevelSelectSettings",
             "CompatibilitySettings",
             "HitSoundSettings",
+            "AsyncInputSettings",
             "EditorShortcuts"
         };
 
@@ -93,7 +95,8 @@ namespace Iridium
                             case 2: DrawLevelSelectTab(); break;
                             case 3: DrawCompatibilityTab(); break;
                             case 4: DrawHitSoundAndJudgeTextTab(); break;
-                            case 5: DrawEditorShortcutsTab(); break;
+                            case 5: DrawAsyncInputTab(); break;
+                            case 6: DrawEditorShortcutsTab(); break;
                         }
                     }
                     End();
@@ -1056,6 +1059,35 @@ AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPause
             if ((mods & EditorShortcutPatches.MOD_SHIFT) != 0) result += "S";
             return result;
         }
+
+        #region AsyncInput Tab
+        private void DrawAsyncInputTab()
+        {
+            var sizes = _sizesHolder.Begin();
+
+            Text(Localization.Get("AsyncInputSettings"), TextStyle.Title);
+            Separator();
+
+            GUI.changed = false;
+            IridiumPreset.SwitchOption(sizes, ref asyncInput.enableAIO, "EnableAsyncInput");
+            if (GUI.changed)
+            {
+                if (asyncInput.enableAIO)
+                    Modules.AsyncInputOptimize.Main.Enable();
+                else
+                    Modules.AsyncInputOptimize.Main.Disable();
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.UnityEngine__SceneManagement__SceneManager));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scnGame));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scrConductor));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scrCountdown));
+            }
+
+            Separator();
+            Text(Localization.Get("AsyncInputHint"), TextStyle.Secondary);
+            Text(Localization.Get("AsyncInputWarning"), TextStyle.Secondary);
+        }
+        #endregion
+
         #endregion
 
 		public void Save()

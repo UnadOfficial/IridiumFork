@@ -232,4 +232,9 @@ namespace Iridium.Config
         public int popupDiscardKey = 68; // KeyCode.D
         public int popupDiscardModifiers = 0;
     }
+
+    public class AsyncInputSettings
+    {
+        public bool enableAIO = false;
+    }
 }

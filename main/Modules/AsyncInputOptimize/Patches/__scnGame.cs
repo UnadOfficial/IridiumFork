@@ -1,8 +1,8 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 
-namespace Iridium.MargeMods.AsyncInputOptimize.Patch
+namespace Iridium.Modules.AsyncInputOptimize.Patch
 {
     [HarmonyPatch]
     public static class __scnGame

@@ -86,6 +86,9 @@ namespace Iridium
                 Iridium.Patches.AsyncPatchManager.Start();
                 Iridium.Patches.AsyncPatchManager.UpdateAllPatchesAsync();
 
+                if (Main.Settings.asyncInput.enableAIO)
+                    Modules.AsyncInputOptimize.Main.Enable();
+
                 if (Main.Settings.optimizer.enableOptimizer)
                 {
                     Iridium.Patches.OptimizerPatches.ResetDecorOptimization(true);
@@ -110,6 +113,7 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModDisabled"));
 
+                Modules.AsyncInputOptimize.Main.Disable();
                 Iridium.Patches.AsyncPatchManager.Stop();
                 Iridium.Patches.PatchManager.UnpatchAll();
             }

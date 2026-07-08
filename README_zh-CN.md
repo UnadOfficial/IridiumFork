@@ -79,9 +79,9 @@ https://discord.gg/ddndY4xXeK
 ## 自行构建
 
 1. 确保已安装 .NET SDK。
-2. 克隆本仓库：
+2. 带子module克隆本仓库：
    ```bash
-   git clone https://github.com/Xbodwf/Iridium.git
+   git clone --resursive https://github.com/Xbodwf/Iridium.git
    cd Iridium
    ```
 3. 在 `Iridium.csproj` 中设置游戏目录路径。

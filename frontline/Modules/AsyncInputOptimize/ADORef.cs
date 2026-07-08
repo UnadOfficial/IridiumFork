@@ -2,7 +2,7 @@
 using System;
 using System.Reflection;
 
-namespace Iridium.MargeMods.AsyncInputOptimize
+namespace Iridium.Modules.AsyncInputOptimize
 {
     public static class ADORef_scrConductor
     {

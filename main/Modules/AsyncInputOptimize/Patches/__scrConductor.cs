@@ -1,9 +1,9 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace Iridium.MargeMods.AsyncInputOptimize.Patch
+namespace Iridium.Modules.AsyncInputOptimize.Patch
 {
     [HarmonyPatch]
     public static class __scrConductor
@@ -37,30 +37,31 @@ namespace Iridium.MargeMods.AsyncInputOptimize.Patch
             yield return new CodeInstruction(OpCodes.Ldarg_0);
             yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchMidLayer), nameof(PatchMidLayer.ConductorUpdate)));
 
+            // R110: skip until Callvirt UpdateInput
+            // R136+: skip until Stfld prev_unityDspTime
             bool skip = true;
             foreach (CodeInstruction ci in instructions)
             {
-#if RELEASE_2_5_0_R110
-                if (ci.opcode == OpCodes.Callvirt && (ci.operand as MethodInfo).Name == "UpdateInput")
+                if (GameVersion.IsR110)
                 {
-                    skip = false;
-                    continue;
+                    if (ci.opcode == OpCodes.Callvirt && (ci.operand as MethodInfo)?.Name == "UpdateInput")
+                    {
+                        skip = false;
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (ci.opcode == OpCodes.Stfld && (ci.operand as FieldInfo)?.Name == "prev_unityDspTime")
+                    {
+                        skip = false;
+                        continue;
+                    }
                 }
                 if (skip)
                 {
                     continue;
                 }
-#else
-                if (ci.opcode == OpCodes.Stfld && (ci.operand as FieldInfo).Name == "prev_unityDspTime")
-                {
-                    skip = false;
-                    continue;
-                }
-                if (skip)
-                {
-                    continue;
-                }
-#endif
                 yield return SafeDSPTime.ReplaceDSPTime(ci);
             }
             yield break;

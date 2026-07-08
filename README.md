@@ -71,9 +71,9 @@ Select your modloader below for installation instructions:
 ## Build from Source
 
 1. Ensure the .NET SDK is installed.
-2. Clone this repository:
+2. Clone this repository with submodules:
    ```bash
-   git clone https://github.com/Xbodwf/Iridium.git
+   git clone --recursive https://github.com/Xbodwf/Iridium.git
    cd Iridium
    ```
 3. Set your game directory path in `Iridium.csproj`.

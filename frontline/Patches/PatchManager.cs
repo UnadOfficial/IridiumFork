@@ -223,10 +223,10 @@ namespace Iridium.Patches
 			// ModifyMod
 			{
                 // Async Input Optimize
-                _definitions.Add(new PatchDef(typeof(MargeMods.AsyncInputOptimize.Patch.UnityEngine__SceneManagement__SceneManager), () => MargeMods.AsyncInputOptimize.Main.State));
-                _definitions.Add(new PatchDef(typeof(MargeMods.AsyncInputOptimize.Patch.__scnGame), () => MargeMods.AsyncInputOptimize.Main.State));
-                _definitions.Add(new PatchDef(typeof(MargeMods.AsyncInputOptimize.Patch.__scrConductor), () => MargeMods.AsyncInputOptimize.Main.State));
-                _definitions.Add(new PatchDef(typeof(MargeMods.AsyncInputOptimize.Patch.__scrCountdown), () => MargeMods.AsyncInputOptimize.Main.State));
+                _definitions.Add(new PatchDef(typeof(Iridium.Modules.AsyncInputOptimize.Patch.UnityEngine__SceneManagement__SceneManager), () => Iridium.Main.Settings.asyncInput.enableAIO));
+                _definitions.Add(new PatchDef(typeof(Iridium.Modules.AsyncInputOptimize.Patch.__scnGame), () => Iridium.Main.Settings.asyncInput.enableAIO));
+                _definitions.Add(new PatchDef(typeof(Iridium.Modules.AsyncInputOptimize.Patch.__scrConductor), () => Iridium.Main.Settings.asyncInput.enableAIO));
+                _definitions.Add(new PatchDef(typeof(Iridium.Modules.AsyncInputOptimize.Patch.__scrCountdown), () => Iridium.Main.Settings.asyncInput.enableAIO));
             }
 		}
 

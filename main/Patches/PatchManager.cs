@@ -199,6 +199,13 @@ _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Ap
             // --- Custom Easing Engine (替代 DOTween) ---
             var easingCond = () => Main.Settings.optimizer.enableCustomEasingEngine;
             RegisterNestedPatches(typeof(CustomEasingPatches), easingCond);
+
+            // --- Async Input Optimize ---
+            var aioCond = () => Main.Settings.asyncInput.enableAIO;
+            _definitions.Add(new PatchDef(typeof(Modules.AsyncInputOptimize.Patch.UnityEngine__SceneManagement__SceneManager), aioCond));
+            _definitions.Add(new PatchDef(typeof(Modules.AsyncInputOptimize.Patch.__scnGame), aioCond));
+            _definitions.Add(new PatchDef(typeof(Modules.AsyncInputOptimize.Patch.__scrConductor), aioCond));
+            _definitions.Add(new PatchDef(typeof(Modules.AsyncInputOptimize.Patch.__scrCountdown), aioCond));
         }
 
         /// <summary>

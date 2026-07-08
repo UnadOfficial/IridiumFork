@@ -1,0 +1,167 @@
+using HarmonyLib;
+using System.Diagnostics;
+using System.Threading;
+using UnityEngine;
+using UnityEngine.LowLevel;
+using UnityEngine.PlayerLoop;
+
+namespace Iridium.Modules.AsyncInputOptimize
+{
+    [RequireComponent(typeof(AudioSource))]
+    public sealed class SafeDSPTime : MonoBehaviour
+    {
+        /// <summary>Stopwatch ticks per second — replaces the hardcoded 10_000_000 (FILETIME ticks/s).</summary>
+        private static readonly double TickToSec = 1.0 / Stopwatch.Frequency;
+
+        private static SafeDSPTime? m_instane;
+        internal static void Init()
+        {
+            if (m_instane != null)
+                return;
+            GameObject obj = new("[AsyncInputOptimize.dll]InterpolationTime");
+            DontDestroyOnLoad(obj);
+            m_instane = obj.AddComponent(typeof(SafeDSPTime)) as SafeDSPTime;
+        }
+        internal static void Destroy()
+        {
+            if (m_instane == null) return;
+            GameObject obj = m_instane.gameObject;
+            Object.Destroy(m_instane);
+            m_instane = null;
+            Object.Destroy(obj);
+        }
+        private void Start()
+        {
+            var source = GetComponent<AudioSource>();
+
+            source.clip = AudioClip.Create("Runner", 1, 1, 48000, false); ;
+            source.loop = true;
+            source.volume = 0;
+            source.Play();
+        }
+        private void Awake()
+        {
+            PlayerLoopSystem loop = PlayerLoop.GetCurrentPlayerLoop();
+            // 找到 PreUpdate 阶段
+            for (int i = 0; i < loop.subSystemList.Length; i++)
+            {
+                PlayerLoopSystem preUpdate = loop.subSystemList[i];
+                if (preUpdate.type == typeof(TimeUpdate))
+                {
+                    var subSystems = new System.Collections.Generic.List<PlayerLoopSystem>(preUpdate.subSystemList);
+
+                    // 创建你的自定义系统
+                    PlayerLoopSystem myEarlySystem = new PlayerLoopSystem
+                    {
+                        type = typeof(SafeDSPTime),
+                        updateDelegate = SafeDSPTime.UnityUpdate
+                    };
+
+                    // 插入在 UpdateTime 之后（UpdateTime 通常是 PreUpdate 的第一个子系统）
+                    subSystems.Insert(1, myEarlySystem);
+                    preUpdate.subSystemList = subSystems.ToArray();
+                    loop.subSystemList[i] = preUpdate;
+                    break;
+                }
+            }
+            PlayerLoop.SetPlayerLoop(loop);
+        }
+        private void OnAudioFilterRead(float[] data, int channels)
+        {
+            double dsp_time = AudioSettings.dspTime;
+            Volatile.Write(ref at_dsptime, dsp_time);
+            Volatile.Write(ref at_time, CppBrige.GetSystemTick());
+        }
+
+        private static void UnityUpdate()
+        {
+            AudioConfiguration ac = AudioSettings.GetConfiguration();
+            Volatile.Write(ref ut_precise, ac.dspBufferSize / (double)ac.sampleRate);
+            Volatile.Write(ref ut_lastmultiply, ut_multiply);
+            Volatile.Write(ref ut_multiply, Time.captureFramerate != 0
+            ? ((int)(Time.unscaledDeltaTime * 1E7 + 0.1) * 1E-7) / ((int)(Time.captureDeltaTime * 1E7 + 0.1) * 1E-7)
+            : ((int)(Time.timeScale * 1E6 + 0.1) * 1E-6));
+            Volatile.Write(ref ut_time, CppBrige.GetSystemTick());
+        }
+        private static double at_dsptime;
+        private static long at_time;
+        private static double ut_precise;
+        private static double ut_multiply;
+        private static double ut_lastmultiply;
+        private static long ut_time;
+
+        public static double GetAuidoPrecise()
+        {
+            return Volatile.Read(ref ut_precise);
+        }
+
+        public static CodeInstruction ReplaceDSPTime(CodeInstruction ci)
+        {
+            if (ci.opcode == System.Reflection.Emit.OpCodes.Call && (ci.operand as System.Reflection.MethodInfo) == typeof(AudioSettings).GetProperty("dspTime").GetMethod)
+                ci.operand = typeof(SafeDSPTime).GetProperty(nameof(InterpolationDSPTime)).GetMethod;
+            return ci;
+        }
+
+        public static double DSPTime
+        {
+            get
+            {
+                return Volatile.Read(ref at_dsptime) / 10_000_000;
+            }
+        }
+        public static double InterpolationDSPTime
+        {
+            get
+            {
+                // 其实就是dowhile 但是我不喜欢 所以用goto
+            RepeatType:
+                long at_time = Volatile.Read(ref SafeDSPTime.at_time);
+                long ut_time = Volatile.Read(ref SafeDSPTime.ut_time);
+                double dsp = Volatile.Read(ref at_dsptime);
+                double multiply = Volatile.Read(ref ut_multiply);
+                double lastmultiply = Volatile.Read(ref ut_lastmultiply);
+                long at_time_check = Volatile.Read(ref SafeDSPTime.at_time);
+                long ut_time_check = Volatile.Read(ref SafeDSPTime.ut_time);
+                if (at_time != at_time_check || ut_time != ut_time_check)
+                    goto RepeatType;
+                long time = CppBrige.GetSystemTick();
+                if (ut_time > at_time)
+                {
+                    return dsp + ((ut_time - at_time) * lastmultiply + (time - ut_time) * multiply) * TickToSec;
+                }
+                return dsp + ((time - at_time) * multiply) * TickToSec;
+            }
+        }
+
+        public static long DSPTimeAsFileTime
+        {
+            get
+            {
+                return (long)(Volatile.Read(ref at_dsptime) * 10_000_000.0);
+            }
+        }
+        public static long InterpolationDSPTimeAsFileTime
+        {
+            get
+            {
+            // 其实就是dowhile 但是我不喜欢 所以用goto
+            RepeatType:
+                long at_time = Volatile.Read(ref SafeDSPTime.at_time);
+                long ut_time = Volatile.Read(ref SafeDSPTime.ut_time);
+                double dsp = Volatile.Read(ref at_dsptime);
+                double multiply = Volatile.Read(ref ut_multiply);
+                double lastmultiply = Volatile.Read(ref ut_lastmultiply);
+                long at_time_check = Volatile.Read(ref SafeDSPTime.at_time);
+                long ut_time_check = Volatile.Read(ref SafeDSPTime.ut_time);
+                if (at_time != at_time_check || ut_time != ut_time_check)
+                    goto RepeatType;
+                long time = CppBrige.GetSystemTick();
+                if (ut_time > at_time)
+                {
+                    return (long)(dsp * Stopwatch.Frequency + (ut_time - at_time) * lastmultiply + (time - ut_time) * multiply);
+                }
+                return (long)(dsp * Stopwatch.Frequency + (time - at_time) * multiply);
+            }
+        }
+    }
+}

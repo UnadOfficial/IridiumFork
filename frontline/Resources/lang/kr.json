@@ -222,5 +222,9 @@
   "EnableCustomEasingEngine": "사용자 정의 이징 엔진 활성화",
   "CustomEasingEngineHint": "MoveTrack/RecolorTrack/MoveDecoration에 대해 DOTween을 경량 이징 엔진으로 대체합니다. 위의 개별 최적화 옵션과 호환되지 않습니다.",
   "CustomEasingEngineConflictDetected": "충돌하는 최적화 설정으로 인해 사용자 정의 이징 엔진이 자동으로 비활성화되었습니다. MoveTrack/RecolorTrack/MoveDecoration 최적화를 비활성화한 후 다시 활성화하세요.",
+  "AsyncInputSettings": "비동기 입력 최적화",
+  "EnableAsyncInput": "비동기 입력 최적화 활성화",
+  "AsyncInputHint": "고정밀 시스템 타이머를 사용하여 오디오 시간 정확도를 향상시키고 입력 지연을 줄입니다. 높은 BPM/고밀도 레벨에 권장됩니다.",
+  "AsyncInputWarning": "경고: 이 기능을 활성화한 상태에서 플레이한 레벨은 반드시 별도로 표시해야 합니다. 표시되지 않은 레벨로 인해 발생하는 모든 결과에 대해 Iridium 개발팀은 책임을 지지 않습니다.",
   "IridiumHint": "작성자는 영어와 중국어만 구사할 수 있습니다. 한국어 번역은 AI를 사용했으며 부정확할 수 있습니다. 번역에 기여하려면 https://github.com/adofaiex/Iridium를 방문해 주세요."
 }

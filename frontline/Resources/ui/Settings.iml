@@ -34,6 +34,7 @@
             <Button text={localize('LevelSelectSettings')} class={settings.currentTab == 'levelSelect' ? 'primary' : 'element'} on-click="OnTabClick('levelSelect')" />
             <Button text={localize('CompatibilitySettings')} class={settings.currentTab == 'compatibility' ? 'primary' : 'element'} on-click="OnTabClick('compatibility')" />
             <Button text={localize('HitSoundSettings')} class={settings.currentTab == 'hitSound' ? 'primary' : 'element'} on-click="OnTabClick('hitSound')" />
+            <Button text={localize('AsyncInputSettings')} class={settings.currentTab == 'asyncInput' ? 'primary' : 'element'} on-click="OnTabClick('asyncInput')" />
             <Button text={localize('EditorShortcuts')} class={settings.currentTab == 'editorShortcuts' ? 'primary' : 'element'} on-click="OnTabClick('editorShortcuts')" />
             <Text text={"Iridium " + getVersion()} style="secondary" />
         </HBox>
@@ -47,6 +48,7 @@
                 {settings.currentTab == 'compatibility' && <Reference path="@Compatibility.iml" />}
                 {settings.currentTab == 'hitSound' && <Reference path="@HitSound.iml" />}
                 {settings.currentTab == 'editorShortcuts' && <Reference path="@EditorShortcuts.iml" />}
+                {settings.currentTab == 'asyncInput' && <Reference path="@AsyncInput.iml" />}
             </ScrollView>
         </View>
 

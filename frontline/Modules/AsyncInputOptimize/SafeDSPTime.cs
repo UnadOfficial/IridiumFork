@@ -1,14 +1,18 @@
 ﻿using HarmonyLib;
+using System.Diagnostics;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
 
-namespace Iridium.MargeMods.AsyncInputOptimize
+namespace Iridium.Modules.AsyncInputOptimize
 {
     [RequireComponent(typeof(AudioSource))]
     public sealed class SafeDSPTime : MonoBehaviour
     {
+        /// <summary>Stopwatch ticks per second — replaces the hardcoded 10_000_000 (FILETIME ticks/s).</summary>
+        private static readonly double TickToSec = 1.0 / Stopwatch.Frequency;
+
         private static SafeDSPTime? m_instane;
         internal static void Init()
         {
@@ -136,7 +140,7 @@ namespace Iridium.MargeMods.AsyncInputOptimize
                 long ut_time_check = Volatile.Read(ref SafeDSPTime.ut_time);
                 if (at_time != at_time_check || ut_time != ut_time_check)
                     goto RepeatType;
-                long time = (long)CppBrige.GetSystemTick();
+                long time = CppBrige.GetSystemTick();
                 // if (ut_time > at_time)
                 // {
                 //     return dsp + ((ut_time - at_time) * lastmultiply + (time - ut_time) * multiply + offset) / 10_000_000.0;
@@ -144,9 +148,9 @@ namespace Iridium.MargeMods.AsyncInputOptimize
                 // return dsp + ((time - at_time) * multiply + offset) / 10_000_000.0;
                 if (ut_time > at_time)
                 {
-                    return dsp + ((ut_time - at_time) * lastmultiply + (time - ut_time) * multiply) / 10_000_000.0;
+                    return dsp + ((ut_time - at_time) * lastmultiply + (time - ut_time) * multiply) * TickToSec;
                 }
-                return dsp + ((time - at_time) * multiply) / 10_000_000.0;
+                return dsp + ((time - at_time) * multiply) * TickToSec;
             }
         }
 
@@ -174,7 +178,7 @@ namespace Iridium.MargeMods.AsyncInputOptimize
                 long ut_time_check = Volatile.Read(ref SafeDSPTime.ut_time);
                 if (at_time != at_time_check || ut_time != ut_time_check)
                     goto RepeatType;
-                long time = (long)CppBrige.GetSystemTick();
+                long time = CppBrige.GetSystemTick();
                 // if (ut_time > at_time)
                 // {
                 //     return (long)(dsp * 10_000_000.0 + (ut_time - at_time) * lastmultiply + (time - ut_time) * multiply + offset);
@@ -182,9 +186,9 @@ namespace Iridium.MargeMods.AsyncInputOptimize
                 // return (long)(dsp * 10_000_000.0 + (time - at_time) * multiply + offset);
                 if (ut_time > at_time)
                 {
-                    return (long)(dsp * 10_000_000.0 + (ut_time - at_time) * lastmultiply + (time - ut_time) * multiply);
+                    return (long)(dsp * Stopwatch.Frequency + (ut_time - at_time) * lastmultiply + (time - ut_time) * multiply);
                 }
-                return (long)(dsp * 10_000_000.0 + (time - at_time) * multiply);
+                return (long)(dsp * Stopwatch.Frequency + (time - at_time) * multiply);
             }
         }
     }

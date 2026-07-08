@@ -26,6 +26,7 @@ namespace Iridium
         public JudgeTextSettings judgeText = new();
         public PatchModeSettings patchMode = new();
         public EditorShortcutSettings editorShortcuts = new();
+        public AsyncInputSettings asyncInput = new();
 
         public string panelToggleHotkey = "Ctrl+F9";
 
@@ -54,7 +55,7 @@ namespace Iridium
         {
             if (_cachedLanguage != language || _cachedTabDisplayNames.Length == 0)
             {
-                _cachedTabDisplayNames = new[] { "EnableOptimizer", "UISettings", "LevelSelectSettings", "CompatibilitySettings", "HitSoundSettings", "EditorShortcuts" }
+                _cachedTabDisplayNames = new[] { "EnableOptimizer", "UISettings", "LevelSelectSettings", "CompatibilitySettings", "HitSoundSettings", "EditorShortcuts", "AsyncInputSettings" }
                     .Select(n => Localization.Get(n)).ToArray();
                 _cachedLanguage = language;
             }
@@ -113,6 +114,7 @@ namespace Iridium
             RegisterCompatibilityHandlers();
             RegisterHitSoundHandlers();
             RegisterEditorShortcutsHandlers();
+            RegisterAsyncInputHandlers();
 
             _rendererInitialized = true;
         }
@@ -830,6 +832,24 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 editorShortcuts.cameraFollowOnFloorSelect = value;
+                Save();
+            });
+        }
+
+        private void RegisterAsyncInputHandlers()
+        {
+            _renderer.RegisterHandler("OnAsyncInputToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                asyncInput.enableAIO = value;
+                if (value)
+                    Modules.AsyncInputOptimize.Main.Enable();
+                else
+                    Modules.AsyncInputOptimize.Main.Disable();
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.UnityEngine__SceneManagement__SceneManager));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scnGame));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scrConductor));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scrCountdown));
                 Save();
             });
         }

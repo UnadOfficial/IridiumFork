@@ -212,5 +212,9 @@
   "CustomEasingEngine": "自定义缓速引擎",
   "EnableCustomEasingEngine": "启用自定义缓速引擎",
   "CustomEasingEngineHint": "使用轻量级缓速引擎替代 DOTween 处理移动轨道/重新着色/移动装饰物。与上方的单独优化选项互斥。",
-  "CustomEasingEngineConflictDetected": "自定义缓速引擎因与优化设置冲突已自动禁用。"
+  "CustomEasingEngineConflictDetected": "自定义缓速引擎因与优化设置冲突已自动禁用。",
+  "AsyncInputSettings": "异步输入优化",
+  "EnableAsyncInput": "启用异步输入优化",
+  "AsyncInputHint": "提高音频时间精度、降低输入延迟，建议高 BPM / 高密度谱面时开启。",
+  "AsyncInputWarning": "警告：启用此功能游玩的谱面必须进行额外标注。未进行标注而导致的后果，Iridium 开发团队不予承担。"
 }
