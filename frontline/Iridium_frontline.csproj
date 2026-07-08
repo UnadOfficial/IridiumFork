@@ -27,6 +27,8 @@
 		<TextMeshProPath Condition="Exists('..\lib\v2.10.0\Unity.TextMeshPro.dll')">..\lib\v2.10.0\Unity.TextMeshPro.dll</TextMeshProPath>
 		<TextMeshProPath Condition="'$(TextMeshProPath)' == '' and Exists('..\lib\Unity.TextMeshPro.dll')">..\lib\Unity.TextMeshPro.dll</TextMeshProPath>
 		<TextMeshProPath Condition="'$(TextMeshProPath)' == '' and '$(GameManagedDir)' != '' and Exists('$(GameManagedDir)Unity.TextMeshPro.dll')">$(GameManagedDir)Unity.TextMeshPro.dll</TextMeshProPath>
+		<IrisImlDllPath Condition="Exists('..\out\Iris.Iml\Iris.Iml.dll')">..\out\Iris.Iml\Iris.Iml.dll</IrisImlDllPath>
+		<IrisImlDllPath Condition="'$(IrisImlDllPath)' == '' and Exists('..\lib\Iris.Iml.dll')">..\lib\Iris.Iml.dll</IrisImlDllPath>
 		<AssemblySearchPaths>$(GameManagedDir);$(GameLibDir);$(GameLibDir)ModManager\;$(AssemblySearchPaths)</AssemblySearchPaths>
 		<DefineConstants Condition="'$(TextMeshProPath)' != ''">$(DefineConstants);HAS_TEXTMESHPRO</DefineConstants>
 	</PropertyGroup>
@@ -44,6 +46,10 @@
 		</Reference>
 		<Reference Include="0Harmony">
 			<HintPath>..\lib\ModManager\0Harmony.dll</HintPath>
+		</Reference>
+		<ProjectReference Include="..\architectury\Iris.Iml\Iris.Iml.csproj" Condition="Exists('..\architectury\Iris.Iml\Iris.Iml.csproj')" />
+		<Reference Include="Iris.Iml" Condition="'$(IrisImlDllPath)' != ''">
+			<HintPath>$(IrisImlDllPath)</HintPath>
 		</Reference>
 		<Reference Include="Assembly-CSharp">
 			<HintPath>..\lib\v2.10.0\Assembly-CSharp.dll</HintPath>
@@ -325,14 +331,13 @@
 		<MakeDir Directories="$(OutDir)Resources" />
 		<ItemGroup>
 			<FilesToCopy Include="$(OutputPath)$(AssemblyName).dll" />
-			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll"
-						 Condition="Exists('$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll')" />
-			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll"
-						 Condition="Exists('$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll')" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll" Condition="Exists('$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll')" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll" Condition="Exists('$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll')" />
+			<FilesToCopy Include="$(ProjectDir)..\out\Iris.Iml\Iris.Iml.dll" Condition="Exists('$(ProjectDir)..\out\Iris.Iml\Iris.Iml.dll')" />
 			<FilesToCopy Include="$(ProjectDir)Info.json" />
 			<ResourceFiles Include="$(ProjectDir)Resources\**\*" Exclude="$(ProjectDir)Resources\**\*\" />
 		</ItemGroup>
-		<Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" ContinueOnError="true" />
 		<Copy SourceFiles="@(ResourceFiles)" DestinationFolder="$(OutDir)Resources\%(RecursiveDir)" SkipUnchangedFiles="true" />
 		<Message Text="Files copied to: $(OutDir)" Importance="high" />
 	</Target>

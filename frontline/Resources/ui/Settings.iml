@@ -1,0 +1,64 @@
+<Iris>
+    <Resources>
+        <Style name="title" on=".title">
+            <Setter property="color" value="#F8F9FA" />
+        </Style>
+        <Style name="subtitle" on=".subtitle">
+            <Setter property="color" value="#F1F3F5" />
+        </Style>
+        <Style name="label" on=".label">
+            <Setter property="color" value="#E9ECEF" />
+        </Style>
+        <Style name="secondary" on=".secondary">
+            <Setter property="color" value="#7D7E7F" />
+        </Style>
+        <Style name="primary" on=".primary">
+            <Setter property="background" value="#D973A5" />
+            <Setter property="color" value="#FFFFFF" />
+        </Style>
+        <Style name="element" on=".element">
+            <Setter property="background" value="#313338" />
+            <Setter property="color" value="#E9ECEF" />
+        </Style>
+
+        <Template name="LangBtn">
+            <Button text={item.displayName} class={settings.language == item.key ? 'primary' : 'element'} on-click="OnLanguageClick(item.key)" />
+        </Template>
+    </Resources>
+
+    <VBox class="padding">
+        <!-- Tab bar -->
+        <HBox>
+            <Button text={localize('EnableOptimizer')} class={settings.currentTab == 'optimizer' ? 'primary' : 'element'} on-click="OnTabClick('optimizer')" />
+            <Button text={localize('UISettings')} class={settings.currentTab == 'ui' ? 'primary' : 'element'} on-click="OnTabClick('ui')" />
+            <Button text={localize('LevelSelectSettings')} class={settings.currentTab == 'levelSelect' ? 'primary' : 'element'} on-click="OnTabClick('levelSelect')" />
+            <Button text={localize('CompatibilitySettings')} class={settings.currentTab == 'compatibility' ? 'primary' : 'element'} on-click="OnTabClick('compatibility')" />
+            <Button text={localize('HitSoundSettings')} class={settings.currentTab == 'hitSound' ? 'primary' : 'element'} on-click="OnTabClick('hitSound')" />
+            <Button text={localize('AsyncInputSettings')} class={settings.currentTab == 'asyncInput' ? 'primary' : 'element'} on-click="OnTabClick('asyncInput')" />
+            <Button text={localize('EditorShortcuts')} class={settings.currentTab == 'editorShortcuts' ? 'primary' : 'element'} on-click="OnTabClick('editorShortcuts')" />
+            <Text text={"Iridium " + getVersion()} style="secondary" />
+        </HBox>
+
+        <!-- Content area -->
+        <View class="background">
+            <ScrollView scrollPosition="contentScroll" height="500">
+                {settings.currentTab == 'optimizer' && <Reference path="@Optimizer.iml" />}
+                {settings.currentTab == 'ui' && <Reference path="@UISettings.iml" />}
+                {settings.currentTab == 'levelSelect' && <Reference path="@LevelSelect.iml" />}
+                {settings.currentTab == 'compatibility' && <Reference path="@Compatibility.iml" />}
+                {settings.currentTab == 'hitSound' && <Reference path="@HitSound.iml" />}
+                {settings.currentTab == 'editorShortcuts' && <Reference path="@EditorShortcuts.iml" />}
+                {settings.currentTab == 'asyncInput' && <Reference path="@AsyncInput.iml" />}
+            </ScrollView>
+        </View>
+
+        <!-- Async processing status -->
+        <Text text={getAsyncStatus()} style="secondary" />
+
+        <!-- Language selector -->
+        <HBox>
+            <ForEach items={getLanguages()} template="LangBtn" />
+        </HBox>
+        <Text text={localize('IridiumHint')} style="secondary" visible={localize('IridiumHint') != ''} />
+    </VBox>
+</Iris>

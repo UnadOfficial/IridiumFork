@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Iridium.Config
@@ -60,7 +61,9 @@ namespace Iridium.Config
         public int decorationsPerFrame = 50; // 每帧加载的装饰物数量
 
         // JSON Deserialize Optimization
-        public bool customLevelReadOptimization = true; // 自定义关卡谱面读取优化
+        public bool customLevelReadOptimization = false; // 自定义关卡谱面读取优化
+
+        public bool enableCustomEasingEngine = false; // 自定义缓速引擎（替代 DOTween）
 
         // --- Editor Floor Performance Optimizations ---
         public bool enableEditorFloorOptimization = false; // 主开关
@@ -89,7 +92,7 @@ namespace Iridium.Config
         public bool enableLobbyMusicPatch = false;
         public bool enableCustomBpm = false;
         public float customBpm = 120f;
-        public bool fastMusic = true;
+        public bool fastMusic = false;
         public bool customMusic = false;
         public string defaultMusicPath = string.Empty;
         public string fastMusicPath = string.Empty;
@@ -112,7 +115,7 @@ namespace Iridium.Config
         public bool fixEditorPlayResetMistakes = true;
         public bool fixTurnaroundCondition = true;
         public bool editorPauseEnabled = true;
-        public bool editorPauseAllowed = true; // Master switch: allow pause in editor auto-play
+        public bool editorPauseAllowed = false; // Master switch: allow pause in editor auto-play
         public int editorPauseKey = 32; // KeyCode.Space
         public int editorPauseModifiers = 0; // bit: 1=Ctrl 2=Alt 4=Shift 8=Win
         public bool fixCoopPauseLock = true;
@@ -136,9 +139,8 @@ namespace Iridium.Config
     public class JudgeTextSettings
     {
         public bool enableJudgeTextCustomization = false;
-        public bool showAsOffset = false; // 显示为偏移 (如 "5ms")
-        
-        // 自定义判定文本
+
+        // 自定义判定文本（支持 {offset} / {offset:x} 占位符）
         public string tooEarly = "TooEarly";
         public string veryEarly = "VeryEarly";
         public string earlyPerfect = "EarlyPerfect";
@@ -149,7 +151,7 @@ namespace Iridium.Config
         public string multipress = "Multipress";
         public string failMiss = "FailMiss";
         public string failOverload = "FailOverload";
-        
+
         public string GetTextForHitMargin(int hitMargin)
         {
             return hitMargin switch
@@ -167,7 +169,47 @@ namespace Iridium.Config
                 _ => ""
             };
         }
-        
+
+        public static string ReplaceOffset(string template, double offsetMs)
+        {
+            if (double.IsNaN(offsetMs) || double.IsInfinity(offsetMs))
+                offsetMs = 0;
+
+            return System.Text.RegularExpressions.Regex.Replace(template, @"\{offset(?::(\d+))?\}", match =>
+            {
+                double abs = Math.Abs(offsetMs);
+                bool isZero;
+                string formatted;
+                if (match.Groups[1].Success)
+                {
+                    int decimals = int.Parse(match.Groups[1].Value);
+                    formatted = abs.ToString("F" + decimals);
+                    isZero = Math.Round(abs, decimals) == 0;
+                }
+                else
+                {
+                    formatted = Math.Round(abs).ToString();
+                    isZero = Math.Round(abs) == 0;
+                }
+                string sign = offsetMs < 0 && !isZero ? "-" : "";
+                return sign + formatted;
+            });
+        }
+
+        public void ConvertAllToOffset()
+        {
+            tooEarly = "{offset}ms";
+            veryEarly = "{offset}ms";
+            earlyPerfect = "{offset}ms";
+            perfect = "{offset}ms";
+            latePerfect = "{offset}ms";
+            veryLate = "{offset}ms";
+            tooLate = "{offset}ms";
+            multipress = "{offset}ms";
+            failMiss = "{offset}ms";
+            failOverload = "{offset}ms";
+        }
+
         public void ResetToDefault()
         {
             tooEarly = "TooEarly";
@@ -195,47 +237,52 @@ namespace Iridium.Config
         public bool useILPatch = false;
     }
 
-    public class EditorShortcutSettings
-    {
-        public bool enableEditorShortcuts = false;
+	public class EditorShortcutSettings
+	{
+		public bool enableEditorShortcuts = false;
 
-        // --- Decoration shortcuts ---
+		// --- Decoration shortcuts ---
 
-        // Select All Decorations (default: Ctrl+Shift+A)
-        public int selectAllKey = 65; // KeyCode.A
-        public int selectAllModifiers = 5; // Ctrl+Shift
+		// Select All Decorations (default: Ctrl+Shift+A)
+		public int selectAllKey = 65; // KeyCode.A
+		public int selectAllModifiers = 5; // Ctrl+Shift
 
-        // Deselect All (default: Ctrl+Shift+D)
-        public int deselectAllKey = 68; // KeyCode.D
-        public int deselectAllModifiers = 5; // Ctrl+Shift
+		// Deselect All (default: Ctrl+Shift+D)
+		public int deselectAllKey = 68; // KeyCode.D
+		public int deselectAllModifiers = 5; // Ctrl+Shift
 
-        // Toggle Visibility (default: Ctrl+E)
-        public int toggleVisibilityKey = 69; // KeyCode.E
-        public int toggleVisibilityModifiers = 1; // Ctrl
+		// Toggle Visibility (default: Ctrl+E)
+		public int toggleVisibilityKey = 69; // KeyCode.E
+		public int toggleVisibilityModifiers = 1; // Ctrl
 
-        // Focus Decoration (default: Ctrl+G)
-        public int focusDecorationKey = 71; // KeyCode.G
-        public int focusDecorationModifiers = 1; // Ctrl
+		// Focus Decoration (default: Ctrl+G)
+		public int focusDecorationKey = 71; // KeyCode.G
+		public int focusDecorationModifiers = 1; // Ctrl
 
-        // --- Navigation shortcuts ---
+		// --- Navigation shortcuts ---
 
-        // Go To Selected Floor (default: Ctrl+Shift+N)
-        public int goToFloorKey = 78; // KeyCode.N
-        public int goToFloorModifiers = 5; // Ctrl+Shift
-        public bool cameraFollowOnFloorSelect = true; // SelectFloor 附带镜头跟随
+		// Go To Selected Floor (default: Ctrl+Shift+N)
+		public int goToFloorKey = 78; // KeyCode.N
+		public int goToFloorModifiers = 5; // Ctrl+Shift
+		public bool cameraFollowOnFloorSelect = true; // SelectFloor 附带镜头跟随
 
-        // Select All Floors (default: Ctrl+Shift+W)
-        public int selectAllFloorsKey = 87; // KeyCode.W
-        public int selectAllFloorsModifiers = 5; // Ctrl+Shift
+		// Select All Floors (default: Ctrl+Shift+W)
+		public int selectAllFloorsKey = 87; // KeyCode.W
+		public int selectAllFloorsModifiers = 5; // Ctrl+Shift
 
-        // --- Popup shortcuts ---
+		// --- Popup shortcuts ---
 
-        // Popup Save (default: Return)
-        public int popupSaveKey = 13; // KeyCode.Return
-        public int popupSaveModifiers = 0;
+		// Popup Save (default: Return)
+		public int popupSaveKey = 13; // KeyCode.Return
+		public int popupSaveModifiers = 0;
 
-        // Popup Discard (default: D)
-        public int popupDiscardKey = 68; // KeyCode.D
-        public int popupDiscardModifiers = 0;
-    }
+		// Popup Discard (default: D)
+		public int popupDiscardKey = 68; // KeyCode.D
+		public int popupDiscardModifiers = 0;
+	}
+
+	public class AsyncInputSettings
+	{
+		public bool enableAIO = false;
+	}
 }

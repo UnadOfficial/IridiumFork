@@ -1,0 +1,12 @@
+<Project>
+  <Target Name="UseFlatUnityLibsForIrisIml"
+          BeforeTargets="ResolveAssemblyReferences"
+          Condition="'$(MSBuildProjectName)' == 'Iris.Iml'">
+    <ItemGroup>
+      <Reference Update="@(Reference)"
+                 Condition="'%(Reference.HintPath)' != '' and !Exists('%(Reference.HintPath)') and Exists('$(MSBuildThisFileDirectory)lib\%(Reference.Identity).dll')">
+        <HintPath>$(MSBuildThisFileDirectory)lib\%(Reference.Identity).dll</HintPath>
+      </Reference>
+    </ItemGroup>
+  </Target>
+</Project>

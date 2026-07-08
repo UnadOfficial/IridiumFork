@@ -23,6 +23,7 @@ namespace Iridium
             Logger = new Logger();
             Settings = handler.LoadSettings<Settings>();
             Localization.Load();
+            Settings.ValidateCustomEasingConflict(Settings);
 
             handler.OnToggle += OnToggle;
             handler.OnGUI += () => Settings.OnGUI();
@@ -30,6 +31,12 @@ namespace Iridium
             handler.OnUpdate += OnUpdate;
 
             Harmony = new Harmony(handler.ModId);
+
+            // 预加载 UI 纹理资源，避免首次打开面板时卡顿
+            Iridium.UI.IridiumLayout.EnsureTexturesAlive();
+
+            // 初始化自定义缓速引擎
+            Iridium.Core.CustomEasingEngine.Initialize();
 
             Logger?.Log(Localization.Get("ModLoaded", Settings.language));
             return true;
@@ -66,6 +73,10 @@ namespace Iridium
                 }
             }
             Logger.TaskRun();
+
+            // 自定义缓速引擎帧驱动
+            if (Settings.optimizer.enableCustomEasingEngine)
+                Iridium.Core.CustomEasingEngine.Update(dt);
         }
 
         private static void OnToggle(bool value)
@@ -76,6 +87,9 @@ namespace Iridium
 
                 Iridium.Patches.AsyncPatchManager.Start();
                 Iridium.Patches.AsyncPatchManager.UpdateAllPatchesAsync();
+
+                if (Main.Settings.asyncInput.enableAIO)
+                    Modules.AsyncInputOptimize.Main.Enable();
 
                 if (Main.Settings.optimizer.enableOptimizer)
                 {
@@ -101,6 +115,7 @@ namespace Iridium
             {
                 Logger?.Log(Localization.Get("ModDisabled"));
 
+                Modules.AsyncInputOptimize.Main.Disable();
                 Iridium.Patches.AsyncPatchManager.Stop();
                 Iridium.Patches.PatchManager.UnpatchAll();
             }

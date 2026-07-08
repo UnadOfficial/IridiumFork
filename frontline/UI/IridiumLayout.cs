@@ -89,6 +89,23 @@ public static class IridiumLayout
 
     public static GUILayoutOption WidthMax => GUILayout.ExpandWidth(true);
 
+    // Expose GUIStyles for external use (e.g. IrisRenderer style registry)
+    public static GUIStyle PrimaryButton => Resolution.PrimaryButton;
+    public static GUIStyle ElementButton => Resolution.ElementButton;
+    public static GUIStyle NormalText => Resolution.NormalText;
+    public static GUIStyle SubtitleText => Resolution.SubtitleText;
+    public static GUIStyle TitleText => Resolution.TitleText;
+    public static GUIStyle SecondaryText => Resolution.SecondaryText;
+    public static GUIStyle PaddingContainer => Resolution.PaddingContainer;
+    public static GUIStyle Background0Container => Resolution.Background0Container;
+    public static GUIStyle Background1Container => Resolution.Background1Container;
+    public static GUIStyle HorizontalSeparator => Resolution.HorizontalSeparator;
+    public static GUIStyle SwitchOn => Resolution.SwitchOn;
+    public static GUIStyle SwitchOff => Resolution.SwitchOff;
+    public static GUIStyle CheckboxOn => Resolution.CheckboxOn;
+    public static GUIStyle CheckboxOff => Resolution.CheckboxOff;
+    public static GUIStyle TextFieldStyle => Resolution.TextField;
+
     public static void EnsureTexturesAlive()
     {
         if (Resolution.Textures.Any(x => x == null))

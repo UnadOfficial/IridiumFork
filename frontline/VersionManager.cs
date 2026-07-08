@@ -14,12 +14,12 @@ namespace Iridium
     public static class VersionManager
     {
         public static VersionType Type => VersionType.Beta;
-        public const int MinorVersion = 3;
+        public const int MinorVersion = 4;
 
         public static string GetFullVersionString()
         {
-            string baseVersion = Main.Handler?.ModVersion ?? "Error";
-            string adofaiSuffix = $"+adofai{BuildInfo.AdofaiVersion}";
+            string baseVersion = BuildInfo.ModVersion;
+            string adofaiSuffix = $"+adofai_{BuildInfo.AdofaiVersion}";
             if (Type == VersionType.Release)
             {
                 return $"{baseVersion}{adofaiSuffix}";
