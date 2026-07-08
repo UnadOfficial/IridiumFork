@@ -4,7 +4,7 @@
         <HBox>
             <Text text={localize('EnableAsyncInput')} style="label" />
             <Fill />
-            <Switch on={settings.asyncInput.enableAIO} on-change="OnAsyncInputToggled" />
+            <Switch value={settings.asyncInput.enableAIO} on-changed="OnAsyncInputToggled" />
         </HBox>
         <Text text={localize('AsyncInputHint')} style="secondary" />
         <Text text={localize('AsyncInputWarning')} style="secondary" />

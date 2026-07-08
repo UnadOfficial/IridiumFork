@@ -429,11 +429,11 @@ namespace Iridium.Patches
 		/// 补丁 DOTween.KillAll：游戏退出播放/倒带/切关时调用 DOTween.KillAll 清理所有 tween。
 		/// 我们在此同步清理自定义缓速引擎的所有 IrTween，确保状态复位。
 		/// </summary>
-		[HarmonyPatch(typeof(DOTween), "KillAll")]
+		[HarmonyPatch(typeof(DOTween), "KillAll", new[] { typeof(bool) })]
 		public static class DotweenKillAllPatch
 		{
 			[HarmonyPostfix]
-			public static void Postfix()
+			public static void Postfix(bool complete)
 			{
 				if (Main.Settings.optimizer.enableCustomEasingEngine)
 					CustomEasingEngine.KillAll();
