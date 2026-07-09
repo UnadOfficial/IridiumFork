@@ -48,7 +48,7 @@ namespace Iridium.Modules.AsyncInputOptimize
                 if (System.Math.Abs(delta) > (long)(audio_precise * freq * 4))
                 {
                     AsyncInputData.offsetTicksIndex = 0;
-                    AsyncInputData.offsetTick += delta;
+                    SafeDSPTime.AddOffset(delta);
                     Iridium.Main.Logger?.Warning("[AsyncInputOptimize] DSPTime XRUN Error");
                     goto JMP_RELOAD;
                 }
@@ -62,7 +62,7 @@ namespace Iridium.Modules.AsyncInputOptimize
                     delta = datas - AsyncInputData.offsetTick;
                     if (System.Math.Abs(delta) > (long)(audio_precise * freq / 2))
                     {
-                        AsyncInputData.offsetTick += delta;
+                        SafeDSPTime.AddOffset(delta);
                         Iridium.Main.Logger?.Log("[AsyncInputOptimize] Offset fix");
                     }
                 }

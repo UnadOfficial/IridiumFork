@@ -89,11 +89,16 @@ namespace Iridium.Modules.AsyncInputOptimize
         private static double ut_multiply;
         private static double ut_lastmultiply;
         private static long ut_time;
+        private static long offset;
 
         public static double GetAuidoPrecise()
         {
             return Volatile.Read(ref ut_precise);
         }
+
+        public static long GetOffset() => Volatile.Read(ref offset);
+        public static void SetOffset(long value) => Volatile.Write(ref offset, value);
+        public static void AddOffset(long value) => Volatile.Write(ref offset, Volatile.Read(ref offset) + value);
 
         public static CodeInstruction ReplaceDSPTime(CodeInstruction ci)
         {
@@ -120,6 +125,7 @@ namespace Iridium.Modules.AsyncInputOptimize
                 double dsp = Volatile.Read(ref at_dsptime);
                 double multiply = Volatile.Read(ref ut_multiply);
                 double lastmultiply = Volatile.Read(ref ut_lastmultiply);
+                long offset = Volatile.Read(ref SafeDSPTime.offset);
                 long at_time_check = Volatile.Read(ref SafeDSPTime.at_time);
                 long ut_time_check = Volatile.Read(ref SafeDSPTime.ut_time);
                 if (at_time != at_time_check || ut_time != ut_time_check)
@@ -127,9 +133,9 @@ namespace Iridium.Modules.AsyncInputOptimize
                 long time = CppBrige.GetSystemTick();
                 if (ut_time > at_time)
                 {
-                    return dsp + ((ut_time - at_time) * lastmultiply + (time - ut_time) * multiply) * TickToSec;
+                    return dsp + ((ut_time - at_time) * lastmultiply + (time - ut_time) * multiply + offset) * TickToSec;
                 }
-                return dsp + ((time - at_time) * multiply) * TickToSec;
+                return dsp + ((time - at_time) * multiply + offset) * TickToSec;
             }
         }
 
@@ -151,6 +157,7 @@ namespace Iridium.Modules.AsyncInputOptimize
                 double dsp = Volatile.Read(ref at_dsptime);
                 double multiply = Volatile.Read(ref ut_multiply);
                 double lastmultiply = Volatile.Read(ref ut_lastmultiply);
+                long offset = Volatile.Read(ref SafeDSPTime.offset);
                 long at_time_check = Volatile.Read(ref SafeDSPTime.at_time);
                 long ut_time_check = Volatile.Read(ref SafeDSPTime.ut_time);
                 if (at_time != at_time_check || ut_time != ut_time_check)
@@ -158,9 +165,9 @@ namespace Iridium.Modules.AsyncInputOptimize
                 long time = CppBrige.GetSystemTick();
                 if (ut_time > at_time)
                 {
-                    return (long)(dsp * Stopwatch.Frequency + (ut_time - at_time) * lastmultiply + (time - ut_time) * multiply);
+                    return (long)(dsp * Stopwatch.Frequency + (ut_time - at_time) * lastmultiply + (time - ut_time) * multiply + offset);
                 }
-                return (long)(dsp * Stopwatch.Frequency + (time - at_time) * multiply);
+                return (long)(dsp * Stopwatch.Frequency + (time - at_time) * multiply + offset);
             }
         }
     }
