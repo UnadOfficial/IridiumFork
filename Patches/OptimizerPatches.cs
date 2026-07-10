@@ -5,7 +5,6 @@ using Iridium.UI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
@@ -331,6 +330,8 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(scrDecorationManager), "UpdateBordersSizes")]
         public static class BorderScalingPatch
         {
+            private static readonly List<scrVisualDecoration> Targets = new(32);
+
             public static void Postfix(scrDecorationManager __instance)
             {
                 if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
@@ -338,42 +339,50 @@ namespace Iridium.Patches
                 var selected = ADOBase.editor?.selectedDecorations;
                 if (selected == null || selected.Count == 0) return;
 
-                // 优化：预计算目标集合，避免多次遍历
-                var targets = new List<scrVisualDecoration>(selected.Count + 1);
-                foreach (var ev in selected)
-                {
-                    if (ev != null && scrDecorationManager.GetDecoration(ev) is scrVisualDecoration decor)
-                        targets.Add(decor);
-                }
+                var targets = Targets;
+                targets.Clear();
 
-                // hoveredDecoration 是 LevelEvent 类型，需要转换为 scrDecoration
-                var hoveredDecor = __instance.hoveredDecoration != null
-                    ? scrDecorationManager.GetDecoration(__instance.hoveredDecoration) as scrVisualDecoration
-                    : null;
-
-                if (hoveredDecor != null)
+                try
                 {
-                    if (ADOBase.editor != null && ADOBase.editor.decorations.Contains(__instance.hoveredDecoration))
+                    foreach (var ev in selected)
                     {
-                        if (!targets.Contains(hoveredDecor))
-                            targets.Add(hoveredDecor);
+                        if (ev != null && scrDecorationManager.GetDecoration(ev) is scrVisualDecoration decor)
+                            targets.Add(decor);
                     }
-                    else
+
+                    // hoveredDecoration 是 LevelEvent 类型，需要转换为 scrDecoration
+                    var hoveredDecor = __instance.hoveredDecoration != null
+                        ? scrDecorationManager.GetDecoration(__instance.hoveredDecoration) as scrVisualDecoration
+                        : null;
+
+                    if (hoveredDecor != null)
                     {
-                        targets.Remove(hoveredDecor);
+                        if (ADOBase.editor != null && ADOBase.editor.decorations.Contains(__instance.hoveredDecoration))
+                        {
+                            if (!targets.Contains(hoveredDecor))
+                                targets.Add(hoveredDecor);
+                        }
+                        else
+                        {
+                            targets.Remove(hoveredDecor);
+                        }
+                    }
+
+                    foreach (var decor in targets)
+                    {
+                        if (decor.spriteRenderer?.sprite == null) continue;
+                        float ppu = decor.spriteRenderer.sprite.pixelsPerUnit;
+                        float offset = 0.5f / ppu;
+                        Vector3 baseScale = decor.transform.localScale;
+                        Vector2 sign = new(offset * Mathf.Sign(baseScale.x), offset * Mathf.Sign(baseScale.y));
+                        Vector3 ratio = decor.spriteRenderer.transform.localScale;
+                        decor.bordersRenderer.size = Vector2.Scale(decor.bordersRenderer.size - sign, ratio) + sign;
+                        decor.cachedBorderSize = decor.bordersRenderer.size;
                     }
                 }
-
-                foreach (var decor in targets)
+                finally
                 {
-                    if (decor.spriteRenderer?.sprite == null) continue;
-                    float ppu = decor.spriteRenderer.sprite.pixelsPerUnit;
-                    float offset = 0.5f / ppu;
-                    Vector3 baseScale = decor.transform.localScale;
-                    Vector2 sign = new(offset * Mathf.Sign(baseScale.x), offset * Mathf.Sign(baseScale.y));
-                    Vector3 ratio = decor.spriteRenderer.transform.localScale;
-                    decor.bordersRenderer.size = Vector2.Scale(decor.bordersRenderer.size - sign, ratio) + sign;
-                    decor.cachedBorderSize = decor.bordersRenderer.size;
+                    targets.Clear();
                 }
             }
         }
@@ -964,12 +973,7 @@ namespace Iridium.Patches
             {
                 if (!Main.Settings.optimizer.optimizeFilters) return;
 
-                // 优化：直接让原始方法继续执行，但提前做必要检查
                 __instance.AdjustDurationForHardbake();
-                if (ffxSetFilterAdvancedPlus.blacklistedFilterKeywords.Any(k => __instance.filterName.Contains(k)))
-                {
-                    // 通过返回 true 让原始方法处理，但已经跳过了黑名单检查
-                }
             }
         }
     }

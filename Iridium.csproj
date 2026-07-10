@@ -22,9 +22,9 @@
 		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Remove="frontline\**\*.cs;loaders\**\*.cs" />
-		<EmbeddedResource Remove="frontline\**\*;loaders\**\*" />
-		<None Remove="frontline\**\*;loaders\**\*" />
+		<Compile Remove="frontline\**\*.cs;loaders\**\*.cs;architectury\Iris.Iml\Properties\AssemblyInfo.cs;**\bin\**\*.cs;**\obj\**\*.cs;out\**\*.cs" />
+		<EmbeddedResource Remove="frontline\**\*;loaders\**\*;**\bin\**\*;**\obj\**\*;out\**\*" />
+		<None Remove="frontline\**\*;loaders\**\*;**\bin\**\*;**\obj\**\*;out\**\*" />
 	</ItemGroup>
 	
 	<ItemGroup>
