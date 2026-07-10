@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net481</TargetFramework>
+		<OutputType>Library</OutputType>
+		<RootNamespace>Iridium</RootNamespace>
+		<AssemblyName>Iridium.Loader.BepInEx</AssemblyName>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<OutputPath>..\..\bin\loaders\bepinex\</OutputPath>
+		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+	</PropertyGroup>
+	<ItemGroup>
+		<Reference Include="BepInEx">
+			<HintPath>..\..\lib\ModManager\BepInEx\BepInEx.dll</HintPath>
+		</Reference>
+		<Reference Include="0Harmony">
+			<HintPath>..\..\lib\ModManager\0Harmony.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine">
+			<HintPath>..\..\lib\v2.9.8\UnityEngine.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>..\..\lib\v2.9.8\UnityEngine.CoreModule.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.IMGUIModule">
+			<HintPath>..\..\lib\v2.9.8\UnityEngine.IMGUIModule.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.InputLegacyModule">
+			<HintPath>..\..\lib\v2.9.8\UnityEngine.InputLegacyModule.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.TextCoreTextEngineModule">
+			<HintPath>..\..\lib\v2.9.8\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.TextRenderingModule">
+			<HintPath>..\..\lib\v2.9.8\UnityEngine.TextRenderingModule.dll</HintPath>
+		</Reference>
+		<Reference Include="Newtonsoft.Json">
+			<HintPath>..\..\lib\v2.9.8\Newtonsoft.Json.dll</HintPath>
+		</Reference>
+		<ProjectReference Include="..\..\main\Iridium.csproj" />
+	</ItemGroup>
+</Project>
