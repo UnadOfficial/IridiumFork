@@ -309,6 +309,7 @@
 			<FilesToCopy Include="$(OutputPath)$(AssemblyName).dll" />
 			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll" Condition="Exists('$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll')" />
 			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll" Condition="Exists('$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll')" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\bepinex\net481\Iridium.Loader.BepInEx.dll" Condition="Exists('$(ProjectDir)..\bin\loaders\bepinex\net481\Iridium.Loader.BepInEx.dll')" />
 			<FilesToCopy Include="$(ProjectDir)..\out\Iris.Iml\Iris.Iml.dll" Condition="Exists('$(ProjectDir)..\out\Iris.Iml\Iris.Iml.dll')" />
 			<FilesToCopy Include="$(ProjectDir)Info.json" />
 			<ResourceFiles Include="$(ProjectDir)Resources\**\*" Exclude="$(ProjectDir)Resources\**\*\" />
@@ -322,14 +323,15 @@
 		<AutoLaunchGame>true</AutoLaunchGame>
 		<Loader></Loader>
 	</PropertyGroup>
-	<Target Name="ValidateLoader" BeforeTargets="DeployAndLaunch" Condition="'$(Loader)' != '' AND '$(Loader)' != 'ML' AND '$(Loader)' != 'UMM'">
-		<Error Text="Invalid Loader value '$(Loader)'. Use -p:Loader=ML or -p:Loader=UMM" />
+	<Target Name="ValidateLoader" BeforeTargets="DeployAndLaunch" Condition="'$(Loader)' != '' AND '$(Loader)' != 'ML' AND '$(Loader)' != 'UMM' AND '$(Loader)' != 'BepInEx'">
+		<Error Text="Invalid Loader value '$(Loader)'. Use -p:Loader=ML, -p:Loader=UMM, or -p:Loader=BepInEx" />
 	</Target>
 	<Target Name="DeployAndLaunch" AfterTargets="CopyToOut" Condition="'$(Loader)' != '' AND '$(GameExePath)' != '' AND Exists('$(GameExePath)')">
 		<PropertyGroup>
 			<GameDir>$([System.IO.Path]::GetDirectoryName($(GameExePath)))</GameDir>
 			<ModsDir Condition="'$(Loader)' == 'UMM'">$(GameDir)\Mods\$(AssemblyName)\</ModsDir>
 			<ModsDir Condition="'$(Loader)' == 'ML'">$(GameDir)\Mods\</ModsDir>
+			<ModsDir Condition="'$(Loader)' == 'BepInEx'">$(GameDir)\BepInEx\plugins\$(AssemblyName)\</ModsDir>
 		</PropertyGroup>
 		<MakeDir Directories="$(ModsDir)" />
 		<MakeDir Directories="$(ModsDir)Resources" />
