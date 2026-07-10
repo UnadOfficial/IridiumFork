@@ -67,6 +67,7 @@ $RECYCLE.BIN/
 
 # Game binaries (private submodule / manual copy)
 lib/
+everyday/
 
 # Other files
 TestModProject
