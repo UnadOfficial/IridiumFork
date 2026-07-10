@@ -11,8 +11,9 @@ namespace Iridium
 
         private void Awake()
         {
-            _handler = new BepInHandler(this);
+            _handler = new BepInHandler(Logger);
             Main.Initialize(_handler);
+            _handler.TriggerToggle(true);
         }
 
         private void Update()

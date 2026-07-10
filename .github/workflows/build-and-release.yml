@@ -53,6 +53,7 @@ jobs:
       run: |
         dotnet build loaders/ummloader/Iridium.Loader.UMM.csproj --configuration Release
         dotnet build loaders/melonloader/Iridium.Loader.Melon.csproj --configuration Release
+        dotnet build loaders/bepinex/Iridium.Loader.BepInEx.csproj --configuration Release
 
     - name: Build project (${{ matrix.game-version }})
       run: dotnet build ${{ matrix.project-dir }}/${{ matrix.project-file }} --configuration Release

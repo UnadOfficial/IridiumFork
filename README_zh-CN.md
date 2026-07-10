@@ -19,8 +19,8 @@ https://discord.gg/ddndY4xXeK
 
 ## 版本支持
 
-- **main 分支**：适用于 ADOFAI v2.9.8
-- **frontline 分支**：适用于 ADOFAI v2.10.0+
+- **main 分支**：适用于 ADOFAI v2
+- **frontline 分支**：适用于 ADOFAI v3
 
 ---
 
@@ -70,6 +70,7 @@ https://discord.gg/ddndY4xXeK
 
 - [UnityModManager](docs/loader/umm_zh-CN.md)
 - [MelonLoader](docs/loader/melonloader_zh-CN.md)
+- [BepInEx](docs/loader/bepinex_zh-CN.md)
 
 > [!CAUTION]
 > 除非是维护者推出的针对旧版游戏的特调版本，否则请勿在 ADOFAI **2.9.7 及以下**版本运行 Iridium。我们不保障此情况下的功能稳定性和兼容性。

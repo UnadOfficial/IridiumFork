@@ -12,7 +12,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="BepInEx">
-			<HintPath>..\..\lib\ModManager\BepInEx\BepInEx.dll</HintPath>
+			<HintPath>..\..\lib\ModManager\BepInEx\core\BepInEx.dll</HintPath>
 		</Reference>
 		<Reference Include="0Harmony">
 			<HintPath>..\..\lib\ModManager\0Harmony.dll</HintPath>

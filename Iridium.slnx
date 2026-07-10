@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="loaders/melonloader/Iridium.Loader.Melon.csproj" />
   <Project Path="loaders/ummloader/Iridium.Loader.UMM.csproj" />
+  <Project Path="loaders/bepinex/Iridium.Loader.BepInEx.csproj" />
   <Project Path="frontline/Iridium_frontline.csproj" />
   <Project Path="main/Iridium.csproj" />
   <Project Path="architectury/Iris.Iml/Iris.Iml.csproj" />

@@ -20,8 +20,8 @@ https://discord.gg/ddndY4xXeK
 
 ## Supported Versions
 
-- **main branch**: ADOFAI v2.9.8
-- **frontline branch**: ADOFAI v2.10.0+
+- **main branch**: ADOFAI v2
+- **frontline branch**: ADOFAI v3
 
 ---
 
@@ -62,6 +62,7 @@ Select your modloader below for installation instructions:
 
 - [UnityModManager](docs/loader/umm.md)
 - [MelonLoader](docs/loader/melonloader.md)
+- [BepInEx](docs/loader/bepinex.md)
 
 > [!CAUTION]
 > Unless it is a specially tuned version of the mod released for older game versions, do not attempt to run Iridium on ADOFAI **2.9.7 or below**. We do not guarantee functional stability or compatibility in such cases.
