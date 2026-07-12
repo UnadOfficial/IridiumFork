@@ -66,7 +66,12 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # Game binaries (private submodule / manual copy)
-lib/
+lib/*
+!lib/v2.10.0/
+lib/v2.10.0/*
+!lib/v2.10.0/Assembly-CSharp.dll
+!lib/v2.10.0/Assembly-CSharp-firstpass.dll
+!lib/v2.10.0/Unity.TextMeshPro.dll
 everyday/
 
 # Other files

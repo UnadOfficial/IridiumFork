@@ -23,13 +23,14 @@
 	</PropertyGroup>
 	<PropertyGroup>
 		<GameLibDir>$(MSBuildProjectDirectory)\..\lib\</GameLibDir>
+		<VersionedGameLibDir>$(GameLibDir)v2.10.0\</VersionedGameLibDir>
 		<GameManagedDir Condition="'$(GameManagedDir)' == '' and Exists('G:\SteamLibrary\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice_Data\Managed\Assembly-CSharp.dll')">G:\SteamLibrary\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice_Data\Managed\</GameManagedDir>
 		<TextMeshProPath Condition="Exists('..\lib\v2.10.0\Unity.TextMeshPro.dll')">..\lib\v2.10.0\Unity.TextMeshPro.dll</TextMeshProPath>
 		<TextMeshProPath Condition="'$(TextMeshProPath)' == '' and Exists('..\lib\Unity.TextMeshPro.dll')">..\lib\Unity.TextMeshPro.dll</TextMeshProPath>
 		<TextMeshProPath Condition="'$(TextMeshProPath)' == '' and '$(GameManagedDir)' != '' and Exists('$(GameManagedDir)Unity.TextMeshPro.dll')">$(GameManagedDir)Unity.TextMeshPro.dll</TextMeshProPath>
 		<IrisImlDllPath Condition="Exists('..\out\Iris.Iml\Iris.Iml.dll')">..\out\Iris.Iml\Iris.Iml.dll</IrisImlDllPath>
 		<IrisImlDllPath Condition="'$(IrisImlDllPath)' == '' and Exists('..\lib\Iris.Iml.dll')">..\lib\Iris.Iml.dll</IrisImlDllPath>
-		<AssemblySearchPaths>$(GameManagedDir);$(GameLibDir);$(GameLibDir)ModManager\;$(AssemblySearchPaths)</AssemblySearchPaths>
+		<AssemblySearchPaths>$(GameManagedDir);$(VersionedGameLibDir);$(GameLibDir);$(GameLibDir)ModManager\;$(AssemblySearchPaths)</AssemblySearchPaths>
 		<DefineConstants Condition="'$(TextMeshProPath)' != ''">$(DefineConstants);HAS_TEXTMESHPRO</DefineConstants>
 	</PropertyGroup>
 
