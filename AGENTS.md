@@ -20,6 +20,7 @@ These instructions apply to the whole repository. More specific `AGENTS.md` file
 - Preserve public entry points, loader contracts, serialized config names, and resource paths unless the task explicitly calls for a breaking change.
 - Treat `frontline/Resources/ui/*.iml` as contract-sensitive. Before changing UI context names or handlers, search for the corresponding `.iml` bindings and C# handler registrations.
 - For `frontline` settings work, preserve existing binding names such as `settings.*`, `defaultMusicPath`, and `fastMusicPath` unless all consumers are updated together.
+- Remember to update the version number in `Info.json` when a change requires a version bump or release packaging update.
 - Do not modify generated output directories such as `bin/`, `obj/`, or `out/` unless the user specifically asks for build artifacts.
 - This repository may contain dirty user changes. Inspect `git status --short` before editing and avoid reverting work you did not make.
 
