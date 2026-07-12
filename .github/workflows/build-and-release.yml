@@ -1,67 +1,80 @@
 name: Build and Release
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build solution
+    runs-on: windows-latest
+    timeout-minutes: 20
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        submodules: recursive
         
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '9.0.x'
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
+
+    - name: Restore dependencies
+      shell: pwsh
+      run: |
+        dotnet restore main/Iridium.csproj
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        dotnet restore architectury/Iris.Iml/Iris.Iml.csproj
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        dotnet restore loaders/ummloader/Iridium.Loader.UMM.csproj
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         
-    - name: Build project
-      run: dotnet build --configuration Release
+    - name: Build supported projects
+      shell: pwsh
+      run: |
+        dotnet build main/Iridium.csproj --configuration Release --no-restore -p:AutoLaunchGame=false
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        dotnet build architectury/Iris.Iml/Iris.Iml.csproj --configuration Release --no-restore
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        dotnet build loaders/ummloader/Iridium.Loader.UMM.csproj --configuration Release --no-restore -p:AutoLaunchGame=false
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         
     - name: Get version
       id: get_version
-      shell: bash
+      shell: pwsh
       run: |
-        output=$(node scripts/get-version.js)
-        while IFS= read -r line; do
-          if [[ $line =~ ^VERSION_TAG=(.*)$ ]]; then
-            version="${BASH_REMATCH[1]}"
-            echo "VERSION_TAG=$version" >> $GITHUB_OUTPUT
-          fi
-        done <<< "$output"
+        node scripts/get-version.js | ForEach-Object {
+          if ($_ -match '^VERSION_TAG=(.+)$') {
+            "VERSION_TAG=$($Matches[1])" >> $env:GITHUB_OUTPUT
+          }
+        }
         
     - name: Package artifacts
-      shell: bash
+      shell: pwsh
       run: |
-        version="${{ steps.get_version.outputs.VERSION_TAG }}"
-        zipName="Iridium_${version}.zip"
-        
-        if [ ! -d "out" ]; then
-          mkdir -p "out"
-        fi
-        
-        cd out
-        if [ -n "$(ls -A .)" ]; then
-          zip -r "../${zipName}" .
-        else
-          zip "../${zipName}" -r .
-        fi
-        cd ..
+        $zipName = "Iridium_${{ steps.get_version.outputs.VERSION_TAG }}.zip"
+        if (-not (Test-Path out)) {
+          throw "Build output directory 'out' was not created."
+        }
+        Compress-Archive -Path out\* -DestinationPath $zipName
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -71,18 +84,24 @@ jobs:
         retention-days: 7
         
   release:
+    name: Publish release
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 10
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
       
     - name: Download build artifacts
       uses: actions/download-artifact@v4

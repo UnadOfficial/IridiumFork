@@ -6,7 +6,7 @@ This workflow automatically builds and releases the Iridium mod when changes are
 
 ### Features
 
-- **Automatic Build**: Builds the .NET project using the same process as `build.sh`
+- **Automatic Build**: Builds the main, Iris.Iml, frontline, and UMM projects with .NET 9
 - **Version Detection**: Automatically extracts version information from `Info.json` and `VersionManager.cs`
 - **Artifact Packaging**: Creates a zip file with the build output
 - **Release Management**: Creates GitHub releases with the built artifacts
@@ -15,16 +15,16 @@ This workflow automatically builds and releases the Iridium mod when changes are
 ### Trigger Conditions
 
 - Pushes to the `main` branch
-- Tags starting with `v*`
 - Pull requests to the `main` branch (build only, no release)
+- Manual runs from the Actions tab (build only, no release)
 
 ### Workflow Steps
 
 1. **Build Job** (Windows environment):
    - Checkout repository
-   - Setup .NET SDK
-   - Setup Python
-   - Build project with `dotnet build`
+   - Checkout the Iris.Iml submodule
+   - Setup .NET 9 and Node.js 20
+   - Restore and build the supported projects with `dotnet build`
    - Extract version information
    - Package artifacts as zip file
    - Upload build artifacts
@@ -34,6 +34,9 @@ This workflow automatically builds and releases the Iridium mod when changes are
    - Check for existing releases with same name
    - Create new release or update existing one
    - Upload zip file as release asset
+
+The MelonLoader project is not built in CI because its referenced MelonLoader
+and `lib/v2.9.8` assemblies are not tracked in this repository.
 
 ### Version Format
 

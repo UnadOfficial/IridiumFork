@@ -3,8 +3,9 @@ const path = require('path');
 
 function getVersionInfo() {
     try {
+        const projectDir = process.env.IRIDIUM_PROJECT_DIR || 'main';
         // 读取 Info.json
-        const infoPath = path.join(__dirname, '..', 'Info.json');
+        const infoPath = path.join(__dirname, '..', projectDir, 'Info.json');
         const infoContent = fs.readFileSync(infoPath, 'utf8');
         const info = JSON.parse(infoContent);
         
@@ -12,7 +13,7 @@ function getVersionInfo() {
         const displayName = info.DisplayName || 'Iridium';
         
         // 读取 VersionManager.cs
-        const vmPath = path.join(__dirname, '..', 'VersionManager.cs');
+        const vmPath = path.join(__dirname, '..', projectDir, 'VersionManager.cs');
         const vmContent = fs.readFileSync(vmPath, 'utf8');
         
         // 提取版本类型
